@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Custom New Tab",
+  "version": "1.0.0",
+  "description": "Replaces the Chrome new tab page (Ctrl+T) with a custom HTML page.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "permissions": ["storage"]
+}

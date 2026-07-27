@@ -1,0 +1,160 @@
+:root {
+  --bg: #0f1115;
+  --fg: #e8eaed;
+  --muted: #9aa0a6;
+  --card: #1b1e24;
+  --accent: #7aa2f7;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9;
+    --fg: #1f2328;
+    --muted: #656d76;
+    --card: #ffffff;
+    --accent: #3b6fd4;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.wrap {
+  width: min(720px, 90vw);
+  text-align: center;
+  padding: 48px 0;
+}
+
+.clock {
+  font-size: clamp(56px, 12vw, 108px);
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.date { color: var(--muted); margin-top: -4px; }
+
+.greeting {
+  font-size: 20px;
+  font-weight: 400;
+  margin: 24px 0 28px;
+}
+
+.search input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--fg);
+  font-size: 16px;
+  outline: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+
+.search input:focus { border-color: var(--accent); }
+
+.links {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+.links a {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 16px 8px;
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 13px;
+  transition: transform .12s ease, background .12s ease;
+}
+
+.links a:hover { transform: translateY(-2px); }
+
+.links .favicon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.links span.label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit {
+  margin-top: 28px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.edit:hover { color: var(--fg); }
+
+dialog {
+  border: none;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--fg);
+  padding: 24px;
+  width: min(520px, 90vw);
+}
+
+dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+
+dialog h2 { margin: 0 0 4px; font-size: 18px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+
+dialog textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--muted);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 10px;
+  font: 13px/1.6 ui-monospace, monospace;
+  resize: vertical;
+}
+
+dialog menu {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+dialog menu button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+dialog menu #save { background: var(--accent); color: #fff; }

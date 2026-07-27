@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- <title>QTab</title> -->
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <main class="wrap">
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="date"></div>
+    <h1 class="greeting" id="greeting"></h1>
+
+    <form class="search" id="search-form" autocomplete="off">
+      <input type="text" id="q" placeholder="Search the web…" spellcheck="false">
+    </form>
+
+    <section class="links" id="links"></section>
+
+    <button class="edit" id="edit">edit shortcuts</button>
+
+    <dialog id="editor">
+      <form method="dialog">
+        <h2>Shortcuts</h2>
+        <p class="hint">One per line: <code>Name | https://url</code></p>
+        <textarea id="editor-text" rows="10" spellcheck="false"></textarea>
+        <menu>
+          <button value="cancel">Cancel</button>
+          <button value="save" id="save">Save</button>
+        </menu>
+      </form>
+    </dialog>
+  </main>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
