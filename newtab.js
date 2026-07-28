@@ -43,10 +43,11 @@ document.getElementById("search-form").addEventListener("submit", (e) => {
 function render(links) {
   const box = document.getElementById("links");
   box.textContent = "";
-  for (const { name, url } of links) {
+  for (const { name, url, target } of links) {
     const a = document.createElement("a");
     a.href = url;
     a.title = url;
+    if (target) a.target = target;
 
     const icon = document.createElement("div");
     icon.className = "favicon";
@@ -65,15 +66,15 @@ function parse(text) {
   return text
     .split("\n")
     .map((line) => {
-      const [name, url] = line.split("|").map((s) => (s || "").trim());
+      const [name, url, target] = line.split("|").map((s) => (s || "").trim());
       if (!name || !url) return null;
-      return { name, url: /^https?:\/\//i.test(url) ? url : `https://${url}` };
+      return { name, url: /^https?:\/\//i.test(url) ? url : `https://${url}`, target };
     })
     .filter(Boolean);
 }
 
 function serialize(links) {
-  return links.map(({ name, url }) => `${name} | ${url}`).join("\n");
+  return links.map(({ name, url, target }) => `${name} | ${url} ${target ? " | " + target : ""}`).join("\n");
 }
 
 let links = DEFAULT_LINKS;
