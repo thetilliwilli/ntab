@@ -26,8 +26,10 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
   the same file list with a filter in place of the editor — no placeholder note is created.
 - Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;
   a draft newer than its file (page closed mid-write) is restored on next load.
-- Several open new-tab pages stay in sync. A file changed by another program is reloaded when you come
-  back to the page, unless there are unsaved edits.
+- Each new-tab page has its own set of open tabs (kept across reloads); a brand new tab opens with the set
+  of the page you were in last. File contents, renames and deletes are synced between pages.
+- A file changed by another program is reloaded when you come back to the page, unless there are
+  unsaved edits.
 - After a browser restart Chrome may ask to re-allow folder access (one click). Choosing
   “Allow on every visit” in Chrome's prompt removes that step.
 - Status bar: cursor position, length, save state, font size `A− / A+`, word wrap, spaces per Tab, theme.

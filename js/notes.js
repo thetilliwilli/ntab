@@ -4,8 +4,10 @@
  * every edit:  draft:<name> in storage.local immediately  ->  file write after SAVE_DELAY  ->  draft removed.
  * a draft newer than its file (page closed before the write finished) wins on next load.
  *
- * other new-tab pages:  text/saved/rename/deleted via BroadcastChannel,
- *                       open tab list via the shared "session" key in storage.local.
+ * other new-tab pages:  file content, renames and deletes via BroadcastChannel.
+ *                       each page has its own set of open tabs (session):
+ *                         sessionStorage  this browser tab's own session (survives reload / browser restore)
+ *                         storage.local   session of the page worked in last, for brand new tabs
  */
 
 import * as fs from "./fs.js";
@@ -13,7 +15,6 @@ import * as editor from "./editor.js";
 import { fmtTime, extensionAlive } from "./util.js";
 
 const SAVE_DELAY = 300;
-const pageId = crypto.randomUUID();
 const bc = new BroadcastChannel("newtab-notes");
 const draftKey = (name) => `draft:${name}`;
 
@@ -77,7 +78,12 @@ export async function start({ fresh = false } = {}) {
   active = null;
   started = false;
 
-  const session = fresh ? null : (await local.get("session")).session;
+  if (fresh) {
+    try {
+      sessionStorage.removeItem("session");
+    } catch {}
+  }
+  const session = fresh ? null : ownSession() || (await local.get("session")).session;
   views = session?.views || {};
   for (const name of session?.tabs || []) {
     try {
@@ -314,6 +320,14 @@ async function checkExternal(n) {
 
 /* ---------- session ---------- */
 
+function ownSession() {
+  try {
+    return JSON.parse(sessionStorage.getItem("session"));
+  } catch {
+    return null;
+  }
+}
+
 function saveSession(delay = 150) {
   if (!started) return;
   clearTimeout(sessionTimer);
@@ -328,44 +342,24 @@ function writeSession() {
   for (const name of order) if (views[name]) kept[name] = views[name];
   views = kept;
   const edited = order.filter((name) => notes.get(name).edited);
-  local.set({ session: { tabs: order, active, views, edited, by: pageId } });
+  const session = { tabs: order, active, views, edited };
+  try {
+    sessionStorage.setItem("session", JSON.stringify(session));
+  } catch {}
+  // only the page in front becomes the template for new tabs
+  if (!document.hidden) local.set({ session });
 }
 
-/* another page changed the open tab list: follow it, keep our own active tab if still open */
-async function applySession(s) {
-  if (!started || s.by === pageId) return;
-  for (const [name, v] of Object.entries(s.views || {})) if (name !== active) views[name] = v;
-  const markEdited = () => (s.edited || []).forEach((name) => notes.has(name) && (notes.get(name).edited = true));
-  markEdited();
-  const tabs = s.tabs || [];
-  if (tabs.join("\n") === order.join("\n")) return;
-
-  for (const name of order) if (!tabs.includes(name)) dropLocal(name, false);
-  for (const name of tabs) {
-    if (notes.has(name)) continue;
-    try {
-      const n = await load(name);
-      if (n) notes.set(name, n);
-    } catch {}
-  }
-  order = tabs.filter((name) => notes.has(name));
-  markEdited();
-  if (!active && order.length) activate(order[0], false);
-  else emit();
-}
-
-function dropLocal(name, discard) {
+/* the file was deleted by another page */
+function dropLocal(name) {
   const n = notes.get(name);
   if (!n) return;
-  if (discard) {
-    clearTimeout(n.timer);
-    n.closed = true;
-  } else if (n.dirty) {
-    save(n);
-  }
+  clearTimeout(n.timer);
+  n.closed = true;
   const i = order.indexOf(name);
   notes.delete(name);
   order = order.filter((x) => x !== name);
+  saveSession();
   if (active === name) {
     active = null;
     const next = order[Math.min(i, order.length - 1)];
@@ -393,7 +387,6 @@ bc.onmessage = ({ data: m }) => {
       if (!n) return;
       clearTimeout(n.timer);
       n.text = m.text;
-      n.edited = true;
       n.dirty = false; // the sending page saves it
       n.error = null;
       if (active === n.name) editor.replaceText(m.text);
@@ -406,16 +399,13 @@ bc.onmessage = ({ data: m }) => {
       break;
     case "rename":
       renameLocal(m.from, m.to);
+      saveSession();
       break;
     case "deleted":
-      dropLocal(m.name, true);
+      dropLocal(m.name);
       break;
   }
 };
-
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.session?.newValue) applySession(changes.session.newValue);
-});
 
 function leaving() {
   if (!started) return;
@@ -425,7 +415,9 @@ function leaving() {
 
 function returning() {
   if (!extensionAlive()) return recoverStale();
-  if (started && active) checkExternal(notes.get(active));
+  if (!started) return;
+  saveSession(); // this page is in front now: new tabs should open with its set
+  if (active) checkExternal(notes.get(active));
 }
 
 /* the extension was reloaded under this page: write everything to the files, then load the new version */
