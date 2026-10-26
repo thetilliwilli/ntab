@@ -39,13 +39,13 @@ Edit via **edit shortcuts** at the bottom of the sidebar — a form or raw JSON
 (`[{ "name": "…", "url": "…", "target": "_blank" }]`). Shortcuts and settings live in
 `chrome.storage.sync`, so they follow your Chrome profile across machines.
 
-Icons: a downloaded icon if any, otherwise Chrome's own favicon cache (works for sites you've visited,
-no network), otherwise the first letter. `⤓` in the editor asks permission for that one site and downloads
-`/favicon.ico` (or the page's `<link rel="icon">`), stored as a 32×32 PNG in `chrome.storage.local`.
+Icons: your uploaded icon if any, otherwise Chrome's own favicon cache (sites you've visited in this
+profile, no network), otherwise the first letter. `⤒` in the editor uploads any image; it is scaled to a
+32×32 PNG and kept per hostname in `chrome.storage.local` (this machine only).
 
 ## Files
 
-- `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`, optional host access for icon download
+- `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`
 - `newtab.html` / `newtab.css` — layout and theme tokens (auto / light / dark)
 - `js/main.js` — wiring, settings, folder connect flow
 - `js/notes.js` — open notes, autosave + drafts, session, cross-page sync

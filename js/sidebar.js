@@ -55,7 +55,7 @@ function render() {
   }
 }
 
-/* icon: downloaded one > Chrome's favicon cache > first letter */
+/* icon: uploaded one > Chrome's favicon cache > first letter */
 export function iconEl(link, iconMap) {
   const span = el("span", "ico", (link.name.trim()[0] || "?").toUpperCase());
   const host = hostOf(link.url);

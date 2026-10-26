@@ -142,8 +142,8 @@ function row(link, i) {
   check.title = 'Open in a new browser tab (target="_blank")';
   check.append(box, "new tab");
 
-  const fetchBtn = el("button", "", "⤓");
-  fetchBtn.title = "Fetch favicon from the site";
+  const uploadBtn = el("button", "", "⤒");
+  uploadBtn.title = "Upload your own icon";
   const resetBtn = el("button", "", "↺");
   resetBtn.title = "Reset icon";
   const del = el("button", "del", "×");
@@ -159,7 +159,7 @@ function row(link, i) {
     if (box.checked) link.target = "_blank";
     else delete link.target;
   });
-  fetchBtn.addEventListener("click", () => fetchFor(link, fetchBtn, refreshIcon));
+  uploadBtn.addEventListener("click", () => uploadFor(link, refreshIcon));
   resetBtn.addEventListener("click", () => {
     const host = hostOf(normalize(link).url);
     if (!host) return;
@@ -204,73 +204,40 @@ function row(link, i) {
     renderRows();
   });
 
-  r.append(handle, iconEl(normalize(link), mergedIcons()), name, url, check, fetchBtn, resetBtn, del);
+  r.append(handle, iconEl(normalize(link), mergedIcons()), name, url, check, uploadBtn, resetBtn, del);
   return r;
 }
 
-/* ---------- favicon download ---------- */
+/* ---------- custom icon upload ---------- */
 
-async function fetchFor(link, btn, refreshIcon) {
-  let u;
+const picker = Object.assign(document.createElement("input"), { type: "file", accept: "image/*" });
+
+function pickFile() {
+  return new Promise((resolve) => {
+    picker.value = "";
+    picker.onchange = () => resolve(picker.files[0] || null);
+    picker.click();
+  });
+}
+
+/* any image the browser can decode (png, ico, svg, jpg…) -> 32x32 PNG data URL */
+async function uploadFor(link, refreshIcon) {
+  const host = hostOf(normalize(link).url);
+  if (!host) return msg("enter a valid URL first", "err");
+  const file = await pickFile();
+  if (!file) return;
+  const obj = URL.createObjectURL(file);
   try {
-    u = new URL(normalize(link).url);
-    if (!/^https?:$/.test(u.protocol)) throw new Error();
-  } catch {
-    return msg("enter a valid http(s) URL first", "err");
-  }
-  btn.disabled = true;
-  try {
-    // must be the first await: the permission prompt needs the click's user gesture
-    const granted = await chrome.permissions.request({ origins: [`${u.protocol}//${u.hostname}/*`] });
-    if (!granted) throw new Error("permission denied");
-    msg(`fetching icon for ${u.hostname}…`);
-    const data = await fetchIcon(u);
-    if (!data) throw new Error("no icon found");
-    pendingIcons[u.hostname] = data;
+    const img = await loadImg(obj);
+    const c = document.createElement("canvas");
+    c.width = c.height = 32;
+    c.getContext("2d").drawImage(img, 0, 0, 32, 32);
+    pendingIcons[host] = c.toDataURL("image/png");
     refreshIcon();
-    msg(`icon for ${u.hostname} fetched — Save to apply`, "ok");
-  } catch (e) {
-    msg(`${u.hostname}: ${e.message}`, "err");
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-/* /favicon.ico first, then <link rel=icon> from the home page; result is a 32x32 PNG data URL */
-async function fetchIcon(u) {
-  const icon = await tryIcon(`${u.origin}/favicon.ico`);
-  if (icon) return icon;
-  try {
-    const html = await (await fetch(`${u.origin}/`)).text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const tags = doc.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i]');
-    for (const tag of tags) {
-      const href = tag.getAttribute("href");
-      if (!href) continue;
-      const found = await tryIcon(new URL(href, `${u.origin}/`).href);
-      if (found) return found;
-    }
-  } catch {}
-  return null;
-}
-
-async function tryIcon(src) {
-  try {
-    const res = await fetch(src);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    if (!blob.size) return null;
-    const obj = URL.createObjectURL(blob);
-    try {
-      const img = await loadImg(obj);
-      const c = document.createElement("canvas");
-      c.width = c.height = 32;
-      c.getContext("2d").drawImage(img, 0, 0, 32, 32);
-      return c.toDataURL("image/png");
-    } finally {
-      URL.revokeObjectURL(obj);
-    }
+    msg(`icon for ${host} set — Save to apply`, "ok");
   } catch {
-    return null;
+    msg(`${file.name}: not an image the browser can read`, "err");
+  } finally {
+    URL.revokeObjectURL(obj);
   }
 }

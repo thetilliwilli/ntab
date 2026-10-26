@@ -6,6 +6,8 @@
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
-  "permissions": ["storage", "favicon"],
-  "optional_host_permissions": ["https://*/*", "http://*/*"]
+  "permissions": [
+    "storage",
+    "favicon"
+  ]
 }

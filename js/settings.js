@@ -2,7 +2,7 @@
  * storage layout
  *   sync   settings            editor/ui settings (small, shared across machines)
  *   sync   links.n, links.<i>  shortcuts, one item per link (sync has an 8 KB per-item limit)
- *   local  icons               { hostname: dataURL } downloaded favicons (per machine cache)
+ *   local  icons               { hostname: dataURL } user-uploaded icons (this machine only)
  *   local  session, draft:*    see notes.js
  */
 
@@ -91,7 +91,7 @@ export function onLinksChanged(cb) {
   });
 }
 
-/* downloaded favicons */
+/* user-uploaded icons */
 
 export async function getIcons() {
   return (await chrome.storage.local.get("icons")).icons || {};
