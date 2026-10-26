@@ -3,7 +3,7 @@
  *   sync   settings            editor/ui settings (small, shared across machines)
  *   sync   links.n, links.<i>  shortcuts, one item per link (sync has an 8 KB per-item limit)
  *   local  icons               { hostname: dataURL } user-uploaded icons (this machine only)
- *   local  session, draft:*    see notes.js
+ *   local  session, draft:*:*  see notes.js
  */
 
 import { extensionAlive } from "./util.js";
@@ -65,14 +65,8 @@ export function onSettingsChanged(cb) {
 export async function loadLinks() {
   const data = await chrome.storage.sync.get(null);
   const n = data["links.n"];
-  if (typeof n === "number") {
-    return Array.from({ length: n }, (_, i) => data[`links.${i}`]).filter(Boolean);
-  }
-  // first run of v2: migrate links kept in storage.local by v1
-  const { links } = await chrome.storage.local.get("links");
-  const result = Array.isArray(links) ? links : DEFAULT_LINKS;
-  await saveLinks(result);
-  return result;
+  if (typeof n !== "number") return DEFAULT_LINKS;
+  return Array.from({ length: n }, (_, i) => data[`links.${i}`]).filter(Boolean);
 }
 
 export async function saveLinks(links) {

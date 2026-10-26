@@ -16,13 +16,9 @@ function applyTheme(theme) {
   if (theme === "auto") delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
   try {
-    localStorage.setItem("theme", theme); // read synchronously on next load to avoid a theme flash
+    localStorage.setItem("theme", theme); // js/theme.js applies it before the first paint next time
   } catch {}
 }
-
-try {
-  applyTheme(localStorage.getItem("theme") || "auto");
-} catch {}
 
 function apply(s) {
   cfg = s;

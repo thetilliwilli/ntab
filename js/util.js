@@ -39,3 +39,40 @@ export function fmtSize(b) {
   if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
   return `${(b / 1048576).toFixed(1)} MB`;
 }
+
+/* drag to reorder: marks the drop side on hover, calls onDrop(fromKey, toKey, after); one drag at a time */
+let dragging = null; // { group, key }
+
+export const isDragging = (group) => dragging?.group === group;
+
+export function sortable(node, { group, key, vertical = false, onDrop, onEnd }) {
+  const unmark = (n) => n.classList.remove("drop-before", "drop-after");
+  node.addEventListener("dragstart", (e) => {
+    dragging = { group, key };
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(key));
+  });
+  node.addEventListener("dragend", () => {
+    dragging = null;
+    node.parentElement?.querySelectorAll(".drop-before, .drop-after").forEach(unmark);
+    onEnd?.();
+  });
+  node.addEventListener("dragover", (e) => {
+    if (!isDragging(group) || dragging.key === key) return;
+    e.preventDefault();
+    const r = node.getBoundingClientRect();
+    const after = vertical ? e.clientY > r.top + r.height / 2 : e.clientX > r.left + r.width / 2;
+    node.classList.toggle("drop-after", after);
+    node.classList.toggle("drop-before", !after);
+  });
+  node.addEventListener("dragleave", () => unmark(node));
+  node.addEventListener("drop", (e) => {
+    if (!isDragging(group)) return;
+    e.preventDefault();
+    const after = node.classList.contains("drop-after");
+    const from = dragging.key;
+    dragging = null;
+    unmark(node);
+    onDrop(from, key, after);
+  });
+}

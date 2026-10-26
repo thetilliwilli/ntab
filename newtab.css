@@ -206,7 +206,6 @@ body.collapsed .label { display: none; }
 
 .fly-name { font-weight: 600; }
 .fly-url { overflow: hidden; color: var(--muted); font: 12px var(--mono); text-overflow: ellipsis; }
-body.collapsed .side-edit { padding: 0 12px; }
 
 /* ---------- main ---------- */
 
@@ -231,16 +230,15 @@ body.collapsed .side-edit { padding: 0 12px; }
   border-bottom: 1px solid var(--border);
 }
 
-.tb-btn {
+.tb-add {
   flex: none;
+  width: 36px;
   height: auto;
-  padding: 0 12px;
+  padding: 0;
   border: 0;
   border-right: 1px solid var(--border);
-  font-weight: 600;
+  font-size: 17px;
 }
-
-.tb-add { width: 36px; padding: 0; font-size: 17px; font-weight: 400; }
 
 .tabs {
   flex: 1;
@@ -338,7 +336,10 @@ body.collapsed .side-edit { padding: 0 12px; }
   user-select: none;
 }
 
-.gutter-inner { padding: 6px 8px 6px 10px; white-space: pre; will-change: transform; }
+.gutter-inner { position: relative; padding: 6px 8px 6px 10px; white-space: pre; will-change: transform; }
+
+/* wrap mode: only the visible numbers, placed at measured line tops */
+.gutter-inner > div { position: absolute; left: 10px; right: 8px; }
 
 .editor textarea {
   width: 100%;

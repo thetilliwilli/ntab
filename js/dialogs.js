@@ -135,10 +135,11 @@ export function initClosePanel() {
 export function askClose(name) {
   const n = notes.getNote(name);
   if (!n) return;
-  if (!n.text.trim() || !n.edited) {
+  const empty = !n.text.trim();
+  if (empty || !n.edited) {
     if (target === name) hidePanel();
-    // empty: drop the file too; unchanged since opened: just close the tab
-    return notes.close(name, !n.text.trim()).catch((e) => notes.report(e.message));
+    // empty new note: drop its file too; unchanged since opened, or emptied: just close the tab
+    return notes.close(name, empty && n.created).catch((e) => notes.report(e.message));
   }
   target = name;
   $("cp-name").textContent = name;

@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SpaceNotes</title>
+  <title>NewTab</title>
   <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="icons/icon-64.png">
   <link rel="stylesheet" href="newtab.css">
+  <script src="js/theme.js"></script>
 </head>
 <body>
   <aside class="side">
@@ -17,7 +18,7 @@
 
   <main class="main">
     <div class="tabbar">
-      <button class="tb-btn tb-add" id="tab-add" title="Open a saved note (double-click the free space for a new one)">+</button>
+      <button class="tb-add" id="tab-add" title="Open a saved note (double-click the free space for a new one)">+</button>
       <div class="tabs" id="tabs"></div>
     </div>
 
@@ -31,7 +32,7 @@
 
     <div class="editor" id="editor" hidden>
       <div class="gutter" id="gutter"><div class="gutter-inner" id="gutter-inner"></div></div>
-      <textarea id="text" wrap="off" spellcheck="false" autocomplete="off"></textarea>
+      <textarea id="text" wrap="off" spellcheck="false" autocomplete="off" aria-label="Note text"></textarea>
       <div class="mirror" id="mirror" aria-hidden="true"></div>
     </div>
 
@@ -42,14 +43,14 @@
           <button class="primary" id="nothing-new">+ new note</button>
           <button id="nothing-change">change folder…</button>
         </div>
-        <input id="nothing-filter" class="file-filter" placeholder="filter by name…" spellcheck="false">
+        <input id="nothing-filter" class="file-filter" placeholder="filter by name…" aria-label="Filter notes by name" spellcheck="false">
         <div id="nothing-list" class="file-list"></div>
       </div>
     </div>
 
     <div class="close-panel" id="close-panel" hidden>
       <span>Close <b id="cp-name"></b> — save as</span>
-      <input id="cp-input" spellcheck="false">
+      <input id="cp-input" aria-label="File name to save as" spellcheck="false">
       <button id="cp-first" title="Use the first line of the note">first line</button>
       <button id="cp-current" title="Use the current tab name">current name</button>
       <button id="cp-save" class="primary">save &amp; close</button>
@@ -65,9 +66,9 @@
       <span id="font-size" class="st-num"></span>
       <button id="font-inc" title="Larger font">A+</button>
       <button id="wrap" class="toggle" title="Word wrap">Wrap</button>
-      <label class="st-field" title="Spaces inserted by Tab">Tab<input id="tab-size" type="number" min="1" max="8"></label>
+      <label class="st-field" title="Spaces inserted by Tab">Tab<input id="tab-size" type="number" min="1" max="8" aria-label="Spaces per Tab"></label>
       <label class="st-field" title="Theme">
-        <select id="theme">
+        <select id="theme" aria-label="Theme">
           <option value="auto">auto</option>
           <option value="light">light</option>
           <option value="dark">dark</option>
@@ -83,7 +84,7 @@
       <button id="files-close" class="dlg-x" title="Close">×</button>
     </div>
     <div class="dlg-body">
-      <input id="files-filter" class="file-filter" placeholder="filter by name…" spellcheck="false">
+      <input id="files-filter" class="file-filter" placeholder="filter by name…" aria-label="Filter notes by name" spellcheck="false">
       <div id="files-list" class="file-list"></div>
     </div>
   </dialog>
@@ -104,7 +105,7 @@
       </div>
       <div id="sc-json" hidden>
         <p class="muted hint">Array of <code>{ "name": "…", "url": "…", "target": "_blank" }</code> — <code>target</code> is optional.</p>
-        <textarea id="sc-json-text" spellcheck="false"></textarea>
+        <textarea id="sc-json-text" spellcheck="false" aria-label="Shortcuts JSON"></textarea>
         <p id="sc-json-err" class="err"></p>
       </div>
     </div>

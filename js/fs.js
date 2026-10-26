@@ -3,16 +3,21 @@
 import { idbGet, idbSet } from "./idb.js";
 
 let dir = null;
+let dirId = ""; // random id of the chosen folder: drafts and cross-page messages are scoped to it
 
 export const getDir = () => dir;
+export const getDirId = () => dirId;
 
 export async function restoreDir() {
-  dir = (await idbGet("dir")) || null;
+  [dir, dirId] = await Promise.all([idbGet("dir"), idbGet("dirId")]);
+  dir ||= null;
+  if (dir && !dirId) await idbSet("dirId", (dirId = crypto.randomUUID()));
   return dir;
 }
 
 export async function pickDir() {
   const handle = await window.showDirectoryPicker({ id: "newtab-notes", mode: "readwrite" });
+  if (!dir || !(await handle.isSameEntry(dir))) await idbSet("dirId", (dirId = crypto.randomUUID()));
   dir = handle;
   await idbSet("dir", handle);
   return handle;

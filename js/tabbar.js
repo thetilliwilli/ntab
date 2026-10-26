@@ -1,10 +1,11 @@
 import * as notes from "./notes.js";
 import { askClose } from "./dialogs.js";
-import { $, el, extStart } from "./util.js";
+import { $, el, extStart, sortable, isDragging } from "./util.js";
 
 const box = $("tabs");
-let dragName = null;
 let renaming = false;
+let shown = null; // tab order the strip was built for; saves only flip classes, they don't rebuild it
+let shownActive = null;
 
 export function initTabbar() {
   notes.subscribe(render);
@@ -25,62 +26,55 @@ export function initTabbar() {
 }
 
 function render() {
-  if (renaming || dragName) return;
-  box.textContent = "";
+  if (renaming || isDragging("tabs")) return;
+  const order = notes.getOrder();
   const active = notes.getActive();
-  for (const name of notes.getOrder()) {
-    const n = notes.getNote(name);
-    const tab = el("div", "tab");
-    tab.classList.toggle("active", name === active);
-    tab.classList.toggle("dirty", n.dirty);
-    tab.classList.toggle("err", !!n.error);
-    tab.title = name;
-    tab.draggable = true;
-
-    const label = el("span", "tab-name", name);
-    const x = el("button", "tab-x", "×");
-    x.title = "Close";
-    tab.append(label, x);
-
-    tab.addEventListener("click", () => name !== notes.getActive() && notes.activate(name));
-    tab.addEventListener("auxclick", (e) => e.button === 1 && askClose(name));
-    label.addEventListener("dblclick", () => startRename(tab, label, name));
-    x.addEventListener("click", (e) => {
-      e.stopPropagation();
-      askClose(name);
-    });
-
-    tab.addEventListener("dragstart", (e) => {
-      dragName = name;
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", name);
-    });
-    tab.addEventListener("dragend", () => {
-      dragName = null;
-      render();
-    });
-    tab.addEventListener("dragover", (e) => {
-      if (!dragName || dragName === name) return;
-      e.preventDefault();
-      const r = tab.getBoundingClientRect();
-      const after = e.clientX > r.left + r.width / 2;
-      tab.classList.toggle("drop-after", after);
-      tab.classList.toggle("drop-before", !after);
-    });
-    tab.addEventListener("dragleave", () => tab.classList.remove("drop-before", "drop-after"));
-    tab.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const after = tab.classList.contains("drop-after");
-      const order = notes.getOrder();
-      const before = after ? (order[order.indexOf(name) + 1] ?? null) : name;
-      const moving = dragName;
-      dragName = null;
-      notes.move(moving, before);
-    });
-
-    box.append(tab);
-    if (name === active) requestAnimationFrame(() => tab.scrollIntoView({ block: "nearest", inline: "nearest" }));
+  const key = order.join("\n");
+  if (key !== shown) {
+    box.replaceChildren(...order.map(tabEl));
+    shown = key;
+    shownActive = null;
   }
+  for (const tab of box.children) {
+    const n = notes.getNote(tab.dataset.name);
+    tab.classList.toggle("active", tab.dataset.name === active);
+    tab.classList.toggle("dirty", !!n?.dirty);
+    tab.classList.toggle("err", !!n?.error);
+  }
+  if (active !== shownActive) {
+    shownActive = active;
+    box.querySelector(".tab.active")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+}
+
+function tabEl(name) {
+  const tab = el("div", "tab");
+  tab.dataset.name = name;
+  tab.title = name;
+  tab.draggable = true;
+
+  const label = el("span", "tab-name", name);
+  const x = el("button", "tab-x", "×");
+  x.title = "Close";
+  tab.append(label, x);
+
+  tab.addEventListener("click", () => name !== notes.getActive() && notes.activate(name));
+  tab.addEventListener("auxclick", (e) => e.button === 1 && askClose(name));
+  label.addEventListener("dblclick", () => startRename(tab, label, name));
+  x.addEventListener("click", (e) => {
+    e.stopPropagation();
+    askClose(name);
+  });
+  sortable(tab, {
+    group: "tabs",
+    key: name,
+    onDrop(from, to, after) {
+      const order = notes.getOrder();
+      notes.move(from, after ? (order[order.indexOf(to) + 1] ?? null) : to);
+    },
+    onEnd: render,
+  });
+  return tab;
 }
 
 function startRename(tab, label, name) {
@@ -99,6 +93,7 @@ function startRename(tab, label, name) {
     done = true;
     const value = input.value.trim();
     renaming = false;
+    shown = null; // the label was swapped for the input: rebuild
     if (commit && value && value !== name) {
       try {
         await notes.rename(name, value);

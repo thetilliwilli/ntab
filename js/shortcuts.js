@@ -2,7 +2,7 @@
 
 import { getLinks, getIconMap, iconEl, loadImg } from "./sidebar.js";
 import { saveLinks, setIcons } from "./settings.js";
-import { $, el, hostOf } from "./util.js";
+import { $, el, hostOf, sortable } from "./util.js";
 
 const dlg = $("sc");
 const rows = $("sc-rows");
@@ -12,7 +12,6 @@ const jsonErr = $("sc-json-err");
 let draft = []; // [{ name, url, target? }] being edited
 let pendingIcons = {}; // hostname -> dataURL, or null = reset
 let mode = "form";
-let dragIndex = -1;
 
 export function initShortcutsDialog() {
   $("links-edit").addEventListener("click", openDialog);
@@ -127,11 +126,13 @@ function row(link, i) {
   const name = el("input");
   name.type = "text";
   name.placeholder = "Name";
+  name.setAttribute("aria-label", "Shortcut name");
   name.value = link.name;
 
   const url = el("input", "url");
   url.type = "text";
   url.placeholder = "https://…";
+  url.setAttribute("aria-label", "Shortcut URL");
   url.value = link.url;
   url.spellcheck = false;
 
@@ -174,34 +175,18 @@ function row(link, i) {
 
   // drag only from the handle so the inputs stay selectable
   handle.addEventListener("mousedown", () => (r.draggable = true));
-  r.addEventListener("dragstart", (e) => {
-    dragIndex = i;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(i));
-  });
-  r.addEventListener("dragend", () => {
-    r.draggable = false;
-    dragIndex = -1;
-    rows.querySelectorAll(".sc-row").forEach((x) => x.classList.remove("drop-before", "drop-after"));
-  });
-  r.addEventListener("dragover", (e) => {
-    if (dragIndex < 0 || dragIndex === i) return;
-    e.preventDefault();
-    const b = r.getBoundingClientRect();
-    const after = e.clientY > b.top + b.height / 2;
-    r.classList.toggle("drop-after", after);
-    r.classList.toggle("drop-before", !after);
-  });
-  r.addEventListener("dragleave", () => r.classList.remove("drop-before", "drop-after"));
-  r.addEventListener("drop", (e) => {
-    e.preventDefault();
-    const after = r.classList.contains("drop-after");
-    const [moved] = draft.splice(dragIndex, 1);
-    let to = i + (after ? 1 : 0);
-    if (dragIndex < to) to--;
-    draft.splice(to, 0, moved);
-    dragIndex = -1;
-    renderRows();
+  sortable(r, {
+    group: "shortcuts",
+    key: i,
+    vertical: true,
+    onDrop(from, to, after) {
+      const [moved] = draft.splice(from, 1);
+      let at = to + (after ? 1 : 0);
+      if (from < at) at--;
+      draft.splice(at, 0, moved);
+      renderRows();
+    },
+    onEnd: () => (r.draggable = false),
   });
 
   r.append(handle, iconEl(normalize(link), mergedIcons()), name, url, check, uploadBtn, resetBtn, del);

@@ -1,10 +1,13 @@
 /*
  * open notes, autosave, session and cross-tab sync.
  *
- * every edit:  draft:<name> in storage.local immediately  ->  file write after SAVE_DELAY  ->  draft removed.
- * a draft newer than its file (page closed before the write finished) wins on next load.
+ * every edit:  file write SAVE_DELAY after the last keystroke, at most MAX_WAIT after the first unsaved one.
+ * drafts:      draft:<folder id>:<name> in storage.local holds text that hasn't reached the file yet. it is written
+ *              when the page is hidden or closed with unsaved edits and when a file write fails, and removed after
+ *              the next successful write. a draft newer than its file wins on load; on start, old drafts are written
+ *              into their files.
  *
- * other new-tab pages:  file content, renames and deletes via BroadcastChannel.
+ * other new-tab pages:  saved content, renames and deletes via BroadcastChannel (same folder only).
  *                       each page has its own set of open tabs (session):
  *                         sessionStorage  this browser tab's own session (survives reload / browser restore)
  *                         storage.local   session of the page worked in last, for brand new tabs
@@ -15,14 +18,18 @@ import * as editor from "./editor.js";
 import { fmtTime, extensionAlive } from "./util.js";
 
 const SAVE_DELAY = 300;
+const MAX_WAIT = 2000;
+const OLD_DRAFT = 60_000; // younger drafts may belong to a page that is still open
 const bc = new BroadcastChannel("newtab-notes");
-const draftKey = (name) => `draft:${name}`;
+const draftKey = (name) => `draft:${fs.getDirId()}:${name}`;
+const post = (m) => bc.postMessage({ ...m, dir: fs.getDirId() });
 
-/* storage.local that turns into a no-op on a stale page instead of throwing */
+/* storage.local that turns into a no-op on a stale page and logs failures (quota) instead of throwing */
+const warn = (e) => console.warn("storage.local:", e?.message || e);
 const local = {
-  get: (key) => (extensionAlive() ? chrome.storage.local.get(key) : Promise.resolve({})),
-  set: (items) => (extensionAlive() ? chrome.storage.local.set(items) : Promise.resolve()),
-  remove: (keys) => (extensionAlive() ? chrome.storage.local.remove(keys) : Promise.resolve()),
+  get: (key) => (extensionAlive() ? chrome.storage.local.get(key).catch((e) => (warn(e), {})) : Promise.resolve({})),
+  set: (items) => (extensionAlive() ? chrome.storage.local.set(items).catch(warn) : Promise.resolve()),
+  remove: (keys) => (extensionAlive() ? chrome.storage.local.remove(keys).catch(warn) : Promise.resolve()),
 };
 
 const notes = new Map(); // name -> note
@@ -46,27 +53,50 @@ const emit = () => listeners.forEach((fn) => fn());
 
 function makeNote(name, text, mtime) {
   // edited: changed since the tab was opened; untouched tabs close without asking for a name
-  return { name, text, mtime, dirty: false, edited: false, saving: false, error: null, closed: false, timer: 0, chain: Promise.resolve() };
+  // created: made here as newN.txt; only such a note is deleted when closed empty
+  return {
+    name, text, mtime,
+    dirty: false, edited: false, created: false, drafted: false, saving: false, closed: false,
+    error: null, timer: 0, due: 0, chain: Promise.resolve(),
+  };
+}
+
+async function readFile(name) {
+  try {
+    return await fs.readNote(name);
+  } catch (e) {
+    if (e.name === "NotFoundError") return null;
+    throw e;
+  }
 }
 
 async function load(name) {
-  let text = null;
-  let mtime = 0;
-  try {
-    ({ text, lastModified: mtime } = await fs.readNote(name));
-  } catch (e) {
-    if (e.name !== "NotFoundError") throw e;
-  }
+  const file = await readFile(name);
   const draft = (await local.get(draftKey(name)))[draftKey(name)];
-  if (draft && (text === null || draft.ts > mtime) && draft.text !== text) {
-    const n = makeNote(name, draft.text, mtime);
-    n.dirty = true;
-    n.edited = true;
+  if (draft && (!file || draft.ts > file.lastModified) && draft.text !== file?.text) {
+    const n = makeNote(name, draft.text, file?.lastModified || 0);
+    n.dirty = n.edited = n.drafted = true;
     scheduleSave(n);
     return n;
   }
   if (draft) local.remove(draftKey(name));
-  return text === null ? null : makeNote(name, text, mtime);
+  return file && makeNote(name, file.text, file.lastModified);
+}
+
+/* drafts left behind (page closed while the folder was unwritable, …): put their text into the files */
+async function rescueDrafts() {
+  const prefix = draftKey("");
+  for (const [key, draft] of Object.entries(await local.get(null))) {
+    if (!key.startsWith(prefix) || Date.now() - draft.ts < OLD_DRAFT) continue;
+    const name = key.slice(prefix.length);
+    try {
+      const file = await readFile(name);
+      if (!file || (draft.ts > file.lastModified && draft.text !== file.text)) await fs.writeNote(name, draft.text);
+      await local.remove(key);
+    } catch (e) {
+      console.warn("cannot restore draft of", name, e);
+    }
+  }
 }
 
 /* ---------- lifecycle ---------- */
@@ -83,6 +113,7 @@ export async function start({ fresh = false } = {}) {
       sessionStorage.removeItem("session");
     } catch {}
   }
+  await rescueDrafts();
   const session = fresh ? null : ownSession() || (await local.get("session")).session;
   views = session?.views || {};
   for (const name of session?.tabs || []) {
@@ -90,6 +121,7 @@ export async function start({ fresh = false } = {}) {
       const n = await load(name);
       if (n) {
         if (session.edited?.includes(name)) n.edited = true;
+        if (session.created?.includes(name)) n.created = true;
         notes.set(name, n);
         order.push(name);
       }
@@ -104,14 +136,15 @@ export async function start({ fresh = false } = {}) {
 
 export async function create() {
   const name = await fs.nextNewName(new Set(order));
-  const mtime = await fs.writeNote(name, "");
-  notes.set(name, makeNote(name, "", mtime));
+  const n = makeNote(name, "", await fs.writeNote(name, ""));
+  n.created = true;
+  notes.set(name, n);
   order.push(name);
   activate(name);
   editor.focus();
 }
 
-export function activate(name, persist = true) {
+export function activate(name) {
   const n = notes.get(name);
   if (!n) return;
   if (active && active !== name && notes.has(active)) views[active] = editor.getView();
@@ -119,7 +152,7 @@ export function activate(name, persist = true) {
   editor.setText(n.text, views[name]);
   emit();
   reportStatus();
-  if (persist) saveSession();
+  saveSession();
   checkExternal(n);
 }
 
@@ -134,7 +167,7 @@ export async function open(name) {
   editor.focus();
 }
 
-/* closes the tab; the file stays unless del (used for empty notes and explicit deletes) */
+/* closes the tab; the file stays unless del (used for empty new notes and explicit deletes) */
 export async function close(name, del = false) {
   const n = notes.get(name);
   if (!n) return;
@@ -142,35 +175,40 @@ export async function close(name, del = false) {
     clearTimeout(n.timer);
     n.closed = true;
     await n.chain;
-    await fs.removeNote(name);
-    await local.remove(draftKey(name));
-    bc.postMessage({ t: "deleted", name });
+    await deleteFile(name);
   } else if (n.dirty) {
     await save(n);
   }
-  if (!notes.has(name)) return; // dropped meanwhile by another page
-  const i = order.indexOf(name);
-  notes.delete(name);
-  order = order.filter((x) => x !== name);
-  delete views[name];
-  if (active === name && !order.length) {
-    showNothing();
-    saveSession();
-  } else if (active === name) {
-    active = null;
-    activate(order[Math.min(i, order.length - 1)]);
-  } else {
-    saveSession();
-    emit();
-  }
+  detach(name);
 }
 
 /* deletes a note file from the folder, closing its tab if open */
 export async function remove(name) {
   if (notes.has(name)) return close(name, true);
+  await deleteFile(name);
+}
+
+async function deleteFile(name) {
   await fs.removeNote(name);
   await local.remove(draftKey(name));
-  bc.postMessage({ t: "deleted", name });
+  post({ t: "deleted", name });
+}
+
+/* takes the tab out of this page and shows a neighbour or the empty state */
+function detach(name) {
+  const n = notes.get(name);
+  if (!n) return;
+  clearTimeout(n.timer);
+  n.closed = true;
+  const i = order.indexOf(name);
+  notes.delete(name);
+  order = order.filter((x) => x !== name);
+  delete views[name];
+  saveSession();
+  if (active !== name) return emit();
+  active = null;
+  if (order.length) activate(order[Math.min(i, order.length - 1)]);
+  else showNothing();
 }
 
 /* renames note + file; returns the final file name */
@@ -187,15 +225,13 @@ export async function rename(name, wanted) {
     const mtime = await fs.writeNote(target, text);
     await fs.removeNote(name);
     await local.remove(draftKey(name));
+    n.drafted = false;
     renameLocal(name, target);
     n.mtime = mtime;
     n.error = null;
     if (n.text === text) n.dirty = false;
-    else {
-      local.set({ [draftKey(target)]: { text: n.text, ts: Date.now() } });
-      scheduleSave(n);
-    }
-    bc.postMessage({ t: "rename", from: name, to: target });
+    else scheduleSave(n);
+    post({ t: "rename", from: name, to: target });
   });
   n.chain = job.catch(() => {});
   await job;
@@ -246,11 +282,11 @@ export function onEdit(text) {
     n.edited = true;
     saveSession();
   }
-  local.set({ [draftKey(n.name)]: { text, ts: Date.now() } });
-  bc.postMessage({ t: "text", name: n.name, text });
   scheduleSave(n);
-  reportStatus();
-  if (!was) emit();
+  if (!was) {
+    reportStatus();
+    emit();
+  }
   if (!extensionAlive()) recoverStale();
 }
 
@@ -258,12 +294,19 @@ export const onView = () => saveSession(600);
 
 function scheduleSave(n) {
   clearTimeout(n.timer);
-  n.timer = setTimeout(() => save(n), SAVE_DELAY);
+  n.due ||= Date.now() + MAX_WAIT; // non-stop typing still reaches the file every MAX_WAIT
+  n.timer = setTimeout(() => save(n), Math.min(SAVE_DELAY, n.due - Date.now()));
+}
+
+function writeDraft(n) {
+  n.drafted = true;
+  local.set({ [draftKey(n.name)]: { text: n.text, ts: Date.now() } });
 }
 
 function save(n) {
   clearTimeout(n.timer);
   n.timer = 0;
+  n.due = 0;
   n.chain = n.chain.then(async () => {
     if (!n.dirty || n.closed) return;
     const { text, name } = n;
@@ -272,13 +315,17 @@ function save(n) {
     try {
       n.mtime = await fs.writeNote(name, text);
       n.error = null;
-      bc.postMessage({ t: "saved", name, mtime: n.mtime });
+      post({ t: "saved", name, mtime: n.mtime, text });
       if (n.text === text && n.name === name) {
         n.dirty = false;
-        await local.remove(draftKey(name));
+        if (n.drafted) {
+          n.drafted = false;
+          await local.remove(draftKey(name));
+        }
       }
     } catch (e) {
       n.error = e.message || String(e);
+      writeDraft(n);
     }
     n.saving = false;
     reportStatus();
@@ -341,32 +388,13 @@ function writeSession() {
   const kept = {};
   for (const name of order) if (views[name]) kept[name] = views[name];
   views = kept;
-  const edited = order.filter((name) => notes.get(name).edited);
-  const session = { tabs: order, active, views, edited };
+  const flagged = (flag) => order.filter((name) => notes.get(name)[flag]);
+  const session = { tabs: order, active, views, edited: flagged("edited"), created: flagged("created") };
   try {
     sessionStorage.setItem("session", JSON.stringify(session));
   } catch {}
   // only the page in front becomes the template for new tabs
   if (!document.hidden) local.set({ session });
-}
-
-/* the file was deleted by another page */
-function dropLocal(name) {
-  const n = notes.get(name);
-  if (!n) return;
-  clearTimeout(n.timer);
-  n.closed = true;
-  const i = order.indexOf(name);
-  notes.delete(name);
-  order = order.filter((x) => x !== name);
-  saveSession();
-  if (active === name) {
-    active = null;
-    const next = order[Math.min(i, order.length - 1)];
-    if (next) return activate(next, false);
-    return showNothing();
-  }
-  emit();
 }
 
 /* no open tabs: the page shows the empty state instead of the editor */
@@ -380,35 +408,33 @@ function showNothing() {
 /* ---------- events ---------- */
 
 bc.onmessage = ({ data: m }) => {
-  if (!started) return;
+  if (!started || m.dir !== fs.getDirId()) return;
   const n = notes.get(m.name);
   switch (m.t) {
-    case "text":
-      if (!n) return;
-      clearTimeout(n.timer);
-      n.text = m.text;
-      n.dirty = false; // the sending page saves it
-      n.error = null;
-      if (active === n.name) editor.replaceText(m.text);
-      reportStatus();
-      emit();
-      break;
     case "saved":
-      if (n && !n.dirty) n.mtime = Math.max(n.mtime, m.mtime);
-      if (n && active === n.name) reportStatus();
+      if (!n || n.dirty) return; // our own unsaved edits win, they are saved next
+      n.mtime = Math.max(n.mtime, m.mtime);
+      n.error = null;
+      if (m.text !== n.text) {
+        n.text = m.text;
+        if (active === n.name) editor.replaceText(m.text);
+      }
+      if (active === n.name) reportStatus();
       break;
     case "rename":
       renameLocal(m.from, m.to);
       saveSession();
       break;
     case "deleted":
-      dropLocal(m.name);
+      detach(m.name);
       break;
   }
 };
 
 function leaving() {
   if (!started) return;
+  // the file write below may not finish before the page is gone; the draft (one IPC message) does
+  for (const n of notes.values()) if (n.dirty) writeDraft(n);
   flushAll();
   writeSession();
 }
