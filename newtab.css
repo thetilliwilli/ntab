@@ -290,7 +290,7 @@ body.collapsed .side-edit { padding: 0 12px; }
   place-content: center;
   justify-items: center;
   gap: 14px;
-  background: var(--surface);
+  background: var(--panel);
   color: var(--muted);
 }
 
