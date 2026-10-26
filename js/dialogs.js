@@ -12,7 +12,7 @@ const filter = $("files-filter");
 let files = [];
 
 export function initFilesDialog({ onChangeFolder }) {
-  $("tab-open").addEventListener("click", openFiles);
+  $("tab-add").addEventListener("click", openFiles);
   $("files-close").addEventListener("click", () => dlg.close());
   $("files-change").addEventListener("click", () => {
     dlg.close();
@@ -28,7 +28,7 @@ export function initFilesDialog({ onChangeFolder }) {
   });
 }
 
-async function openFiles() {
+export async function openFiles() {
   $("files-dir").textContent = fs.getDir()?.name || "";
   filter.value = "";
   list.textContent = "";
