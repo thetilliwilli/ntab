@@ -2,36 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <!-- <title>QTab</title> -->
+  <title>New Tab</title>
   <link rel="stylesheet" href="newtab.css">
 </head>
 <body>
-  <main class="wrap">
-    <div class="clock" id="clock">--:--</div>
-    <div class="date" id="date"></div>
-    <h1 class="greeting" id="greeting"></h1>
+  <aside class="side">
+    <button class="side-toggle" id="side-toggle" title="Collapse / expand sidebar">≡</button>
+    <nav class="links" id="links"></nav>
+    <button class="side-edit" id="links-edit" title="Edit shortcuts"><span class="ico">✎</span><span class="label">edit shortcuts</span></button>
+  </aside>
 
-    <form class="search" id="search-form" autocomplete="off">
-      <input type="text" id="q" placeholder="Search the web…" spellcheck="false">
-    </form>
+  <main class="main">
+    <div class="tabbar">
+      <button class="tb-btn tb-add" id="tab-add" title="New note">+</button>
+      <button class="tb-btn" id="tab-open" title="Open a saved note">new</button>
+      <div class="tabs" id="tabs"></div>
+    </div>
 
-    <section class="links" id="links"></section>
+    <div class="gate" id="gate" hidden>
+      <p id="gate-msg"></p>
+      <div class="gate-actions">
+        <button class="primary" id="gate-btn"></button>
+        <button id="gate-alt" hidden>choose another folder…</button>
+      </div>
+    </div>
 
-    <button class="edit" id="edit">edit shortcuts</button>
+    <div class="editor" id="editor" hidden>
+      <div class="gutter" id="gutter"><div class="gutter-inner" id="gutter-inner"></div></div>
+      <textarea id="text" wrap="off" spellcheck="false" autocomplete="off"></textarea>
+      <div class="mirror" id="mirror" aria-hidden="true"></div>
+    </div>
 
-    <dialog id="editor">
-      <form method="dialog">
-        <h2>Shortcuts</h2>
-        <p class="hint">One per line: <code>Name | https://url</code></p>
-        <textarea id="editor-text" rows="10" spellcheck="false"></textarea>
-        <menu>
-          <button value="cancel">Cancel</button>
-          <button value="save" id="save">Save</button>
-        </menu>
-      </form>
-    </dialog>
+    <div class="close-panel" id="close-panel" hidden>
+      <span>Close <b id="cp-name"></b> — save as</span>
+      <input id="cp-input" spellcheck="false">
+      <span class="muted">.txt</span>
+      <button id="cp-first" title="Use the first line of the note">first line</button>
+      <button id="cp-current" title="Use the current tab name">current name</button>
+      <button id="cp-save" class="primary">save &amp; close</button>
+      <button id="cp-cancel">cancel</button>
+    </div>
+
+    <footer class="status">
+      <span id="st-pos">Ln 1, Col 1</span>
+      <span id="st-len">0 chars</span>
+      <span id="st-save" class="st-save"></span>
+      <span class="spacer"></span>
+      <button id="font-dec" title="Smaller font">A−</button>
+      <span id="font-size" class="st-num"></span>
+      <button id="font-inc" title="Larger font">A+</button>
+      <button id="wrap" class="toggle" title="Word wrap">Wrap</button>
+      <label class="st-field" title="Spaces inserted by Tab">Tab<input id="tab-size" type="number" min="1" max="8"></label>
+      <label class="st-field" title="Theme">
+        <select id="theme">
+          <option value="auto">auto</option>
+          <option value="light">light</option>
+          <option value="dark">dark</option>
+        </select>
+      </label>
+    </footer>
   </main>
 
-  <script src="newtab.js"></script>
+  <dialog id="files" class="dlg">
+    <div class="dlg-head">
+      <h2>Notes · <span id="files-dir"></span></h2>
+      <button id="files-change">change folder…</button>
+      <button id="files-close" class="dlg-x" title="Close">×</button>
+    </div>
+    <div class="dlg-body">
+      <input id="files-filter" class="file-filter" placeholder="filter by name…" spellcheck="false">
+      <div id="files-list" class="file-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="sc" class="dlg dlg-wide">
+    <div class="dlg-head">
+      <h2>Shortcuts</h2>
+      <div class="seg">
+        <button id="sc-mode-form">Form</button>
+        <button id="sc-mode-json">JSON</button>
+      </div>
+      <button id="sc-x" class="dlg-x" title="Close">×</button>
+    </div>
+    <div class="dlg-body">
+      <div id="sc-form">
+        <div id="sc-rows"></div>
+        <button id="sc-add" class="add">+ add shortcut</button>
+      </div>
+      <div id="sc-json" hidden>
+        <p class="muted hint">Array of <code>{ "name": "…", "url": "…", "target": "_blank" }</code> — <code>target</code> is optional.</p>
+        <textarea id="sc-json-text" spellcheck="false"></textarea>
+        <p id="sc-json-err" class="err"></p>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <span id="sc-msg" class="msg"></span>
+      <button id="sc-cancel">Cancel</button>
+      <button id="sc-save" class="primary">Save</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,100 @@
+/* notes folder access via the File System Access API; the directory handle is persisted in IndexedDB */
+
+import { idbGet, idbSet } from "./idb.js";
+
+let dir = null;
+
+export const getDir = () => dir;
+
+export async function restoreDir() {
+  dir = (await idbGet("dir")) || null;
+  return dir;
+}
+
+export async function pickDir() {
+  const handle = await window.showDirectoryPicker({ id: "newtab-notes", mode: "readwrite" });
+  dir = handle;
+  await idbSet("dir", handle);
+  return handle;
+}
+
+export async function hasPermission() {
+  return !!dir && (await dir.queryPermission({ mode: "readwrite" })) === "granted";
+}
+
+/* must run inside a user gesture */
+export async function requestPermission() {
+  return (await dir.requestPermission({ mode: "readwrite" })) === "granted";
+}
+
+export async function listNotes() {
+  const out = [];
+  for await (const h of dir.values()) {
+    if (h.kind !== "file" || !/\.txt$/i.test(h.name)) continue;
+    const f = await h.getFile();
+    out.push({ name: h.name, lastModified: f.lastModified, size: f.size });
+  }
+  return out;
+}
+
+export async function readNote(name) {
+  const f = await (await dir.getFileHandle(name)).getFile();
+  return { text: await f.text(), lastModified: f.lastModified };
+}
+
+export async function statNote(name) {
+  return (await (await dir.getFileHandle(name)).getFile()).lastModified;
+}
+
+/* returns the new lastModified */
+export async function writeNote(name, text) {
+  const h = await dir.getFileHandle(name, { create: true });
+  const w = await h.createWritable();
+  await w.write(text);
+  await w.close();
+  return (await h.getFile()).lastModified;
+}
+
+export async function removeNote(name) {
+  try {
+    await dir.removeEntry(name);
+  } catch (e) {
+    if (e.name !== "NotFoundError") throw e;
+  }
+}
+
+export async function exists(name) {
+  try {
+    await dir.getFileHandle(name);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* user text -> safe file base name (without .txt) */
+export function sanitize(text) {
+  const s = text
+    .replace(/\.txt$/i, "")
+    .replace(/[/\\:*?"<>|\x00-\x1f]/g, "_")
+    .trim()
+    .replace(/^\.+/, "")
+    .slice(0, 100)
+    .trim();
+  return s || "untitled";
+}
+
+/* "<base>.txt", or "<base> (2).txt", "<base> (3).txt"... if taken */
+export async function freeName(baseName) {
+  let name = `${baseName}.txt`;
+  for (let i = 2; await exists(name); i++) name = `${baseName} (${i}).txt`;
+  return name;
+}
+
+/* first unused newN.txt */
+export async function nextNewName(taken) {
+  for (let i = 1; ; i++) {
+    const name = `new${i}.txt`;
+    if (!taken.has(name) && !(await exists(name))) return name;
+  }
+}

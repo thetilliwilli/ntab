@@ -1,6 +1,9 @@
 # Custom New Tab
 
-Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a custom HTML page.
+Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a
+tabbed plain-text notepad (think Notepad++) and a vertical shortcuts sidebar. Notes are `.txt` files
+in a local folder you pick, saved on every change, and the open tabs survive browser restarts.
+No dependencies, no build step.
 
 ## Install (unpacked)
 
@@ -8,22 +11,41 @@ Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://n
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** and select this folder
 4. Press <kbd>Ctrl</kbd>+<kbd>T</kbd> — Chrome shows a one-time prompt to keep the change; click **Keep it**
+5. Click **choose folder…** and pick the folder for your notes
 
-## Files
-
-- `manifest.json` — MV3 manifest, `chrome_url_overrides.newtab` points at the page
-- `newtab.html` / `newtab.css` — the page itself (clock, greeting, search box, shortcut grid)
-- `newtab.js` — clock, search submit, shortcut rendering/editing (saved in `chrome.storage.local`)
-
-## Customizing
-
-Edit shortcuts from the page itself via the *edit shortcuts* link, or change `DEFAULT_LINKS` /
-`SEARCH_URL` at the top of `newtab.js`. After editing any file, hit the reload icon on the
-extension card in `chrome://extensions`.
+After editing any file, hit the reload icon on the extension card in `chrome://extensions`.
 
 ## Notes
 
-- Ctrl+T keeps keyboard focus in the address bar, so typing goes to the omnibox — that's Chrome's
-  behavior and a new tab page cannot steal focus. Click the page's search box to use it.
-- Only one extension can own the new tab page; if another one already overrides it, Chrome will ask
-  which to keep.
+- `[+]` creates `newN.txt`; `[new]` lists every `.txt` in the folder (filter, open, delete, change folder).
+- Double-click a tab to rename it (renames the file). Drag tabs to reorder. Middle-click or `×` closes.
+- Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
+  the file stays in the folder. Closing an empty tab deletes its file.
+- Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;
+  a draft newer than its file (page closed mid-write) is restored on next load.
+- Several open new-tab pages stay in sync. A file changed by another program is reloaded when you come
+  back to the page, unless there are unsaved edits.
+- After a browser restart Chrome may ask to re-allow folder access (one click). Choosing
+  “Allow on every visit” in Chrome's prompt removes that step.
+- Status bar: cursor position, length, save state, font size `A− / A+`, word wrap, spaces per Tab, theme.
+
+## Shortcuts
+
+Edit via **edit shortcuts** at the bottom of the sidebar — a form or raw JSON
+(`[{ "name": "…", "url": "…", "target": "_blank" }]`). Shortcuts and settings live in
+`chrome.storage.sync`, so they follow your Chrome profile across machines.
+
+Icons: a downloaded icon if any, otherwise Chrome's own favicon cache (works for sites you've visited,
+no network), otherwise the first letter. `⤓` in the editor asks permission for that one site and downloads
+`/favicon.ico` (or the page's `<link rel="icon">`), stored as a 32×32 PNG in `chrome.storage.local`.
+
+## Files
+
+- `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`, optional host access for icon download
+- `newtab.html` / `newtab.css` — layout and theme tokens (auto / light / dark)
+- `js/main.js` — wiring, settings, folder connect flow
+- `js/notes.js` — open notes, autosave + drafts, session, cross-page sync
+- `js/editor.js` — textarea, line numbers, Tab indent, cursor status
+- `js/fs.js` / `js/idb.js` — File System Access helpers, folder handle persisted in IndexedDB
+- `js/tabbar.js`, `js/dialogs.js` — tab strip, `[new]` dialog, close panel
+- `js/sidebar.js`, `js/shortcuts.js`, `js/settings.js` — shortcuts sidebar, its editor, storage
