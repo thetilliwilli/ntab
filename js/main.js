@@ -80,12 +80,26 @@ function showError(e) {
   if (e?.name !== "AbortError") notes.report(e?.message || String(e));
 }
 
-function setReady(ready) {
+let ready = false;
+
+/* gate (no folder) / empty state (no open tabs) / editor */
+function updateView() {
+  const none = !notes.getOrder().length;
   $("gate").hidden = ready;
-  $("editor").hidden = !ready;
+  $("editor").hidden = !ready || none;
+  $("nothing").hidden = !ready || !none;
   $("tab-add").disabled = !ready;
   $("tab-open").disabled = !ready;
 }
+
+function setReady(value) {
+  ready = value;
+  updateView();
+}
+
+notes.subscribe(updateView);
+$("nothing-new").addEventListener("click", () => $("tab-add").click());
+$("nothing-open").addEventListener("click", () => $("tab-open").click());
 
 function gate(message, label, action, alt = false) {
   setReady(false);

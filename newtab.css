@@ -199,7 +199,7 @@ body.collapsed .side-edit { padding: 0 12px; }
 }
 
 .tabbar { grid-row: 1; }
-.gate, .editor { grid-row: 2; }
+.gate, .editor, .nothing { grid-row: 2; }
 .close-panel { grid-row: 3; }
 .status { grid-row: 4; }
 
@@ -284,6 +284,17 @@ body.collapsed .side-edit { padding: 0 12px; }
 .gate-actions { display: flex; gap: 8px; }
 .gate-actions button { height: 32px; padding: 0 16px; border-color: var(--border); }
 .gate-actions .primary { border-color: var(--accent); }
+
+.nothing {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.nothing p { margin: 0; }
 
 /* ---------- editor ---------- */
 

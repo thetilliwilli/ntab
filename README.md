@@ -21,7 +21,8 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
 - Tabs show the full file name. Double-click a tab to rename the file — the extension is whatever you type
   (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
 - Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
-  the file stays in the folder. Closing an empty tab deletes its file.
+  the file stays in the folder. Closing an empty tab deletes its file. With no tabs open the page shows
+  an empty state with "new note" / "open saved" buttons — no placeholder note is created.
 - Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;
   a draft newer than its file (page closed mid-write) is restored on next load.
 - Several open new-tab pages stay in sync. A file changed by another program is reloaded when you come

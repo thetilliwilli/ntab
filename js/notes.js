@@ -82,8 +82,8 @@ export async function start({ fresh = false } = {}) {
     }
   }
   started = true;
-  if (!order.length) return create();
-  activate(order.includes(session?.active) ? session.active : order[0]);
+  if (order.length) activate(order.includes(session?.active) ? session.active : order[0]);
+  else showNothing();
 }
 
 export async function create() {
@@ -137,8 +137,10 @@ export async function close(name, del = false) {
   notes.delete(name);
   order = order.filter((x) => x !== name);
   delete views[name];
-  if (!order.length) return create();
-  if (active === name) {
+  if (active === name && !order.length) {
+    showNothing();
+    saveSession();
+  } else if (active === name) {
     active = null;
     activate(order[Math.min(i, order.length - 1)]);
   } else {
@@ -348,10 +350,18 @@ function dropLocal(name, discard) {
   if (active === name) {
     active = null;
     const next = order[Math.min(i, order.length - 1)];
-    if (next) activate(next, false);
-    else editor.setText("", null);
+    if (next) return activate(next, false);
+    return showNothing();
   }
   emit();
+}
+
+/* no open tabs: the page shows the empty state instead of the editor */
+function showNothing() {
+  active = null;
+  editor.setText("", null);
+  emit();
+  reportStatus();
 }
 
 /* ---------- events ---------- */
