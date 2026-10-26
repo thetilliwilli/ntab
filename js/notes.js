@@ -10,12 +10,19 @@
 
 import * as fs from "./fs.js";
 import * as editor from "./editor.js";
-import { fmtTime } from "./util.js";
+import { fmtTime, extensionAlive } from "./util.js";
 
 const SAVE_DELAY = 300;
 const pageId = crypto.randomUUID();
 const bc = new BroadcastChannel("newtab-notes");
 const draftKey = (name) => `draft:${name}`;
+
+/* storage.local that turns into a no-op on a stale page instead of throwing */
+const local = {
+  get: (key) => (extensionAlive() ? chrome.storage.local.get(key) : Promise.resolve({})),
+  set: (items) => (extensionAlive() ? chrome.storage.local.set(items) : Promise.resolve()),
+  remove: (keys) => (extensionAlive() ? chrome.storage.local.remove(keys) : Promise.resolve()),
+};
 
 const notes = new Map(); // name -> note
 let order = [];
@@ -48,14 +55,14 @@ async function load(name) {
   } catch (e) {
     if (e.name !== "NotFoundError") throw e;
   }
-  const draft = (await chrome.storage.local.get(draftKey(name)))[draftKey(name)];
+  const draft = (await local.get(draftKey(name)))[draftKey(name)];
   if (draft && (text === null || draft.ts > mtime) && draft.text !== text) {
     const n = makeNote(name, draft.text, mtime);
     n.dirty = true;
     scheduleSave(n);
     return n;
   }
-  if (draft) chrome.storage.local.remove(draftKey(name));
+  if (draft) local.remove(draftKey(name));
   return text === null ? null : makeNote(name, text, mtime);
 }
 
@@ -68,7 +75,7 @@ export async function start({ fresh = false } = {}) {
   active = null;
   started = false;
 
-  const session = fresh ? null : (await chrome.storage.local.get("session")).session;
+  const session = fresh ? null : (await local.get("session")).session;
   views = session?.views || {};
   for (const name of session?.tabs || []) {
     try {
@@ -127,7 +134,7 @@ export async function close(name, del = false) {
     n.closed = true;
     await n.chain;
     await fs.removeNote(name);
-    await chrome.storage.local.remove(draftKey(name));
+    await local.remove(draftKey(name));
     bc.postMessage({ t: "deleted", name });
   } else if (n.dirty) {
     await save(n);
@@ -153,7 +160,7 @@ export async function close(name, del = false) {
 export async function remove(name) {
   if (notes.has(name)) return close(name, true);
   await fs.removeNote(name);
-  await chrome.storage.local.remove(draftKey(name));
+  await local.remove(draftKey(name));
   bc.postMessage({ t: "deleted", name });
 }
 
@@ -170,13 +177,13 @@ export async function rename(name, wanted) {
     const text = n.text;
     const mtime = await fs.writeNote(target, text);
     await fs.removeNote(name);
-    await chrome.storage.local.remove(draftKey(name));
+    await local.remove(draftKey(name));
     renameLocal(name, target);
     n.mtime = mtime;
     n.error = null;
     if (n.text === text) n.dirty = false;
     else {
-      chrome.storage.local.set({ [draftKey(target)]: { text: n.text, ts: Date.now() } });
+      local.set({ [draftKey(target)]: { text: n.text, ts: Date.now() } });
       scheduleSave(n);
     }
     bc.postMessage({ t: "rename", from: name, to: target });
@@ -226,11 +233,12 @@ export function onEdit(text) {
   const was = n.dirty;
   n.text = text;
   n.dirty = true;
-  chrome.storage.local.set({ [draftKey(n.name)]: { text, ts: Date.now() } });
+  local.set({ [draftKey(n.name)]: { text, ts: Date.now() } });
   bc.postMessage({ t: "text", name: n.name, text });
   scheduleSave(n);
   reportStatus();
   if (!was) emit();
+  if (!extensionAlive()) recoverStale();
 }
 
 export const onView = () => saveSession(600);
@@ -254,7 +262,7 @@ function save(n) {
       bc.postMessage({ t: "saved", name, mtime: n.mtime });
       if (n.text === text && n.name === name) {
         n.dirty = false;
-        await chrome.storage.local.remove(draftKey(name));
+        await local.remove(draftKey(name));
       }
     } catch (e) {
       n.error = e.message || String(e);
@@ -312,7 +320,7 @@ function writeSession() {
   const kept = {};
   for (const name of order) if (views[name]) kept[name] = views[name];
   views = kept;
-  chrome.storage.local.set({ session: { tabs: order, active, views, by: pageId } });
+  local.set({ session: { tabs: order, active, views, by: pageId } });
 }
 
 /* another page changed the open tab list: follow it, keep our own active tab if still open */
@@ -404,7 +412,21 @@ function leaving() {
 }
 
 function returning() {
+  if (!extensionAlive()) return recoverStale();
   if (started && active) checkExternal(notes.get(active));
+}
+
+/* the extension was reloaded under this page: write everything to the files, then load the new version */
+let recovering = false;
+
+async function recoverStale() {
+  if (recovering) return;
+  recovering = true;
+  await flushAll();
+  if ([...notes.values()].some((n) => n.dirty || n.error)) {
+    return statusFn("extension was reloaded and saving failed — copy your text, then reload this tab", "err");
+  }
+  location.reload();
 }
 
 document.addEventListener("visibilitychange", () => (document.hidden ? leaving() : returning()));

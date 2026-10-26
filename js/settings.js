@@ -6,6 +6,8 @@
  *   local  session, draft:*    see notes.js
  */
 
+import { extensionAlive } from "./util.js";
+
 export const DEFAULT_SETTINGS = {
   fontSize: 14,
   wrap: false,
@@ -34,7 +36,7 @@ export async function loadSettings() {
 }
 
 function flushSettings() {
-  if (!pending) return;
+  if (!pending || !extensionAlive()) return;
   clearTimeout(pending);
   pending = null;
   lastWritten = JSON.stringify(pendingValue);

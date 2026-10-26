@@ -13,6 +13,9 @@ export function extStart(name) {
   return i > 0 ? i : name.length;
 }
 
+/* false once the extension is reloaded/updated while this page stays open ("Extension context invalidated") */
+export const extensionAlive = () => !!globalThis.chrome?.runtime?.id;
+
 export function hostOf(url) {
   try {
     return new URL(url).hostname || null;
