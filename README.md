@@ -21,7 +21,7 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
   except dotfiles (filter, open, delete, change folder).
 - Tabs show the full file name. Double-click a tab to rename the file — the extension is whatever you type
   (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
-- Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
+- Closing a tab you haven't edited since opening it just closes it. Closing an edited one opens a panel to name the file (first line / current name / anything typed);
   the file stays in the folder. Closing an empty tab deletes its file. With no tabs open the page shows
   the same file list with a filter in place of the editor — no placeholder note is created.
 - Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;

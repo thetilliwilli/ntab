@@ -44,7 +44,8 @@ export const report = (msg) => statusFn(msg, "err");
 const emit = () => listeners.forEach((fn) => fn());
 
 function makeNote(name, text, mtime) {
-  return { name, text, mtime, dirty: false, saving: false, error: null, closed: false, timer: 0, chain: Promise.resolve() };
+  // edited: changed since the tab was opened; untouched tabs close without asking for a name
+  return { name, text, mtime, dirty: false, edited: false, saving: false, error: null, closed: false, timer: 0, chain: Promise.resolve() };
 }
 
 async function load(name) {
@@ -59,6 +60,7 @@ async function load(name) {
   if (draft && (text === null || draft.ts > mtime) && draft.text !== text) {
     const n = makeNote(name, draft.text, mtime);
     n.dirty = true;
+    n.edited = true;
     scheduleSave(n);
     return n;
   }
@@ -81,6 +83,7 @@ export async function start({ fresh = false } = {}) {
     try {
       const n = await load(name);
       if (n) {
+        if (session.edited?.includes(name)) n.edited = true;
         notes.set(name, n);
         order.push(name);
       }
@@ -233,6 +236,10 @@ export function onEdit(text) {
   const was = n.dirty;
   n.text = text;
   n.dirty = true;
+  if (!n.edited) {
+    n.edited = true;
+    saveSession();
+  }
   local.set({ [draftKey(n.name)]: { text, ts: Date.now() } });
   bc.postMessage({ t: "text", name: n.name, text });
   scheduleSave(n);
@@ -320,13 +327,16 @@ function writeSession() {
   const kept = {};
   for (const name of order) if (views[name]) kept[name] = views[name];
   views = kept;
-  local.set({ session: { tabs: order, active, views, by: pageId } });
+  const edited = order.filter((name) => notes.get(name).edited);
+  local.set({ session: { tabs: order, active, views, edited, by: pageId } });
 }
 
 /* another page changed the open tab list: follow it, keep our own active tab if still open */
 async function applySession(s) {
   if (!started || s.by === pageId) return;
   for (const [name, v] of Object.entries(s.views || {})) if (name !== active) views[name] = v;
+  const markEdited = () => (s.edited || []).forEach((name) => notes.has(name) && (notes.get(name).edited = true));
+  markEdited();
   const tabs = s.tabs || [];
   if (tabs.join("\n") === order.join("\n")) return;
 
@@ -339,6 +349,7 @@ async function applySession(s) {
     } catch {}
   }
   order = tabs.filter((name) => notes.has(name));
+  markEdited();
   if (!active && order.length) activate(order[0], false);
   else emit();
 }
@@ -382,6 +393,7 @@ bc.onmessage = ({ data: m }) => {
       if (!n) return;
       clearTimeout(n.timer);
       n.text = m.text;
+      n.edited = true;
       n.dirty = false; // the sending page saves it
       n.error = null;
       if (active === n.name) editor.replaceText(m.text);
