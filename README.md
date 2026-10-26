@@ -62,11 +62,9 @@ profile, no network), otherwise the first letter. `⤒` in the editor uploads an
 No host permissions, no network requests, nothing leaves the browser except what Chrome sync does with
 `chrome.storage.sync`. Notes are only in the folder you choose.
 
-## Packaging for the Web Store
+## Publishing
 
-```sh
-git archive -o newtab.zip HEAD
-```
+See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
 
 ## Files
 
