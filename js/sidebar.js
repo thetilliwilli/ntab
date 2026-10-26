@@ -5,6 +5,28 @@ const box = $("links");
 let links = [];
 let icons = {};
 
+/* hover flyout over the sidebar: icon + full name + url; it is a real link itself */
+const fly = el("a", "flyout");
+fly.hidden = true;
+document.body.append(fly);
+fly.addEventListener("mouseleave", () => (fly.hidden = true));
+box.addEventListener("scroll", () => (fly.hidden = true));
+window.addEventListener("blur", () => (fly.hidden = true));
+
+function showFlyout(a, link) {
+  fly.href = link.url;
+  if (link.target) fly.target = link.target;
+  else fly.removeAttribute("target");
+  fly.textContent = "";
+  fly.append(a.querySelector(".ico").cloneNode(true), el("span", "fly-name", link.name), el("span", "fly-url", link.url));
+  const r = a.getBoundingClientRect();
+  fly.style.top = `${r.top}px`;
+  fly.style.left = `${r.left}px`;
+  fly.style.height = `${r.height}px`;
+  fly.style.minWidth = `${r.width}px`;
+  fly.hidden = false;
+}
+
 export const getLinks = () => links;
 export const getIconMap = () => icons;
 
@@ -26,9 +48,9 @@ function render() {
   for (const link of links) {
     const a = el("a", "link");
     a.href = link.url;
-    a.title = `${link.name}\n${link.url}`;
     if (link.target) a.target = link.target;
     a.append(iconEl(link, icons), el("span", "label", link.name));
+    a.addEventListener("mouseenter", () => showFlyout(a, link));
     box.append(a);
   }
 }

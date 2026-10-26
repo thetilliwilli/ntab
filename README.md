@@ -23,7 +23,7 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
   (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
 - Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
   the file stays in the folder. Closing an empty tab deletes its file. With no tabs open the page shows
-  an empty state with "new note" / "open saved" buttons — no placeholder note is created.
+  the same file list with a filter in place of the editor — no placeholder note is created.
 - Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;
   a draft newer than its file (page closed mid-write) is restored on next load.
 - Several open new-tab pages stay in sync. A file changed by another program is reloaded when you come
@@ -34,6 +34,7 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
 
 ## Shortcuts
 
+Hovering a shortcut shows a flyout with its icon, full name and URL (handy with the sidebar collapsed).
 Edit via **edit shortcuts** at the bottom of the sidebar — a form or raw JSON
 (`[{ "name": "…", "url": "…", "target": "_blank" }]`). Shortcuts and settings live in
 `chrome.storage.sync`, so they follow your Chrome profile across machines.

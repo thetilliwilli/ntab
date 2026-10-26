@@ -4,7 +4,7 @@ import * as notes from "./notes.js";
 import * as editor from "./editor.js";
 import { initSidebar } from "./sidebar.js";
 import { initShortcutsDialog } from "./shortcuts.js";
-import { initFilesDialog, initClosePanel, openFiles } from "./dialogs.js";
+import { initFilesDialog, initClosePanel, showInlineFiles } from "./dialogs.js";
 import { initTabbar } from "./tabbar.js";
 import { $ } from "./util.js";
 
@@ -85,9 +85,11 @@ let ready = false;
 /* gate (no folder) / empty state (no open tabs) / editor */
 function updateView() {
   const none = !notes.getOrder().length;
+  const wasHidden = $("nothing").hidden;
   $("gate").hidden = ready;
   $("editor").hidden = !ready || none;
   $("nothing").hidden = !ready || !none;
+  if (wasHidden && !$("nothing").hidden) showInlineFiles();
   $("tab-add").disabled = !ready;
 }
 
@@ -97,8 +99,6 @@ function setReady(value) {
 }
 
 notes.subscribe(updateView);
-$("nothing-new").addEventListener("click", () => notes.create().catch(showError));
-$("nothing-open").addEventListener("click", openFiles);
 
 function gate(message, label, action, alt = false) {
   setReady(false);

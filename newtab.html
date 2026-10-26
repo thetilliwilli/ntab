@@ -33,10 +33,14 @@
     </div>
 
     <div class="nothing" id="nothing" hidden>
-      <p>No open notes</p>
-      <div class="gate-actions">
-        <button class="primary" id="nothing-new">+ new note</button>
-        <button id="nothing-open">open saved…</button>
+      <div class="nothing-box">
+        <div class="nothing-head">
+          <span class="nothing-title">No open notes · <span id="nothing-dir"></span></span>
+          <button class="primary" id="nothing-new">+ new note</button>
+          <button id="nothing-change">change folder…</button>
+        </div>
+        <input id="nothing-filter" class="file-filter" placeholder="filter by name…" spellcheck="false">
+        <div id="nothing-list" class="file-list"></div>
       </div>
     </div>
 
