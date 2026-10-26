@@ -74,7 +74,7 @@ git archive -o newtab.zip HEAD
 
 - `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`
 - `newtab.html` / `newtab.css` — layout and theme tokens
-- `icons/` — page favicon and extension icons, made from `art/space-tab-icon.webp`
+- `icons/` — extension icons, made from `art/space-tab-icon.webp`
 - `js/theme.js` — applies the saved theme before the first paint
 - `js/main.js` — wiring, settings, folder connect flow
 - `js/notes.js` — open notes, autosave + drafts, session, cross-page sync
