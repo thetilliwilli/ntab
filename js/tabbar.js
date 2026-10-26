@@ -9,6 +9,8 @@ let renaming = false;
 export function initTabbar() {
   notes.subscribe(render);
   $("tab-add").addEventListener("click", () => notes.create().catch((e) => notes.report(e.message)));
+  // double-click on the free space right of the tabs = new note, like Notepad++
+  box.addEventListener("dblclick", (e) => e.target === box && !$("tab-add").disabled && $("tab-add").click());
   // vertical wheel scrolls the tab strip horizontally
   box.addEventListener(
     "wheel",

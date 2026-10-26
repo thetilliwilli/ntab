@@ -17,7 +17,7 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
 
 ## Notes
 
-- `[+]` creates `newN.txt`; `[new]` lists every file in the folder except dotfiles (filter, open, delete, change folder).
+- `[+]` (or a double-click on the free space of the tab bar) creates `newN.txt`; `[new]` lists every file in the folder except dotfiles (filter, open, delete, change folder).
 - Tabs show the full file name. Double-click a tab to rename the file — the extension is whatever you type
   (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
 - Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
