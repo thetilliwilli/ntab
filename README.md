@@ -68,13 +68,11 @@ No host permissions, no network requests, nothing leaves the browser except what
 git archive -o newtab.zip HEAD
 ```
 
-`.gitattributes` keeps `art/` (icon source) out of the archive.
-
 ## Files
 
 - `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`
 - `newtab.html` / `newtab.css` — layout and theme tokens
-- `icons/` — extension icons, made from `art/space-tab-icon.webp`
+- `icons/` — extension icons (the page itself uses an inline transparent 1×1 favicon)
 - `js/theme.js` — applies the saved theme before the first paint
 - `js/main.js` — wiring, settings, folder connect flow
 - `js/notes.js` — open notes, autosave + drafts, session, cross-page sync
