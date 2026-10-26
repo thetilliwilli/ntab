@@ -159,10 +159,9 @@ export async function remove(name) {
 export async function rename(name, wanted) {
   const n = notes.get(name);
   if (!n) return name;
-  const baseName = fs.sanitize(wanted);
-  let target = `${baseName}.txt`;
+  let target = fs.sanitize(wanted);
   if (target === name) return name;
-  if (await fs.exists(target)) target = await fs.freeName(baseName);
+  if (await fs.exists(target)) target = await fs.freeName(target);
 
   clearTimeout(n.timer);
   const job = n.chain.then(async () => {

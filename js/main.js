@@ -126,7 +126,7 @@ async function connect() {
   }
   const dir = await fs.restoreDir();
   if (!dir) {
-    return gate("Choose a folder where notes will be kept as .txt files.\nEvery change is saved there instantly.", "choose folder…", choose);
+    return gate("Choose a folder where notes will be kept as plain text files.\nEvery change is saved there instantly.", "choose folder…", choose);
   }
   if (await fs.hasPermission()) return start().catch((e) => gate(`Cannot open “${dir.name}”:\n${e.message}`, "choose folder…", choose));
   gate(

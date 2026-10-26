@@ -1,6 +1,6 @@
 import * as notes from "./notes.js";
 import { askClose } from "./dialogs.js";
-import { $, el, base } from "./util.js";
+import { $, el, extStart } from "./util.js";
 
 const box = $("tabs");
 let dragName = null;
@@ -34,7 +34,7 @@ function render() {
     tab.title = name;
     tab.draggable = true;
 
-    const label = el("span", "tab-name", base(name));
+    const label = el("span", "tab-name", name);
     const x = el("button", "tab-x", "×");
     x.title = "Close";
     tab.append(label, x);
@@ -84,11 +84,11 @@ function startRename(tab, label, name) {
   renaming = true;
   tab.draggable = false;
   const input = el("input", "tab-rename");
-  input.value = base(name);
+  input.value = name;
   input.spellcheck = false;
   label.replaceWith(input);
   input.focus();
-  input.select();
+  input.setSelectionRange(0, extStart(name)); // like file managers: select the name, not the extension
 
   let done = false;
   const finish = async (commit) => {
@@ -96,7 +96,7 @@ function startRename(tab, label, name) {
     done = true;
     const value = input.value.trim();
     renaming = false;
-    if (commit && value && value !== base(name)) {
+    if (commit && value && value !== name) {
       try {
         await notes.rename(name, value);
       } catch (e) {

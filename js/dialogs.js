@@ -2,7 +2,7 @@
 
 import * as notes from "./notes.js";
 import * as fs from "./fs.js";
-import { $, el, base, fmtTime, fmtSize } from "./util.js";
+import { $, el, extStart, fmtTime, fmtSize } from "./util.js";
 
 /* ---------- files dialog ---------- */
 
@@ -56,7 +56,7 @@ function renderFiles() {
     row.classList.toggle("open", notes.isOpen(f.name));
     const del = el("button", "fdel", "×");
     del.title = "Delete file";
-    row.append(el("span", "fname", base(f.name)), el("span", "fmeta", fmtTime(f.lastModified)), el("span", "fmeta", fmtSize(f.size)), del);
+    row.append(el("span", "fname", f.name), el("span", "fmeta", fmtTime(f.lastModified)), el("span", "fmeta", fmtSize(f.size)), del);
 
     row.addEventListener("click", () => {
       dlg.close();
@@ -91,11 +91,11 @@ let target = null;
 
 export function initClosePanel() {
   $("cp-first").addEventListener("click", () => {
-    if (target) input.value = notes.firstLine(target);
+    if (target) input.value = notes.firstLine(target) + target.slice(extStart(target)); // keep the current extension
     input.focus();
   });
   $("cp-current").addEventListener("click", () => {
-    if (target) input.value = base(target);
+    if (target) input.value = target;
     input.focus();
   });
   $("cp-save").addEventListener("click", confirmClose);
@@ -115,11 +115,11 @@ export function askClose(name) {
     return notes.close(name, true).catch((e) => notes.report(e.message));
   }
   target = name;
-  $("cp-name").textContent = base(name);
-  input.value = base(name);
+  $("cp-name").textContent = name;
+  input.value = name;
   panel.hidden = false;
   input.focus();
-  input.select();
+  input.setSelectionRange(0, extStart(name));
 }
 
 function hidePanel() {

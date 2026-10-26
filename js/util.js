@@ -7,8 +7,11 @@ export function el(tag, cls, text) {
   return e;
 }
 
-/* note file name without the .txt extension */
-export const base = (name) => name.replace(/\.txt$/i, "");
+/* index where the extension starts ("note.md" -> 4), or name.length if there is none */
+export function extStart(name) {
+  const i = name.lastIndexOf(".");
+  return i > 0 ? i : name.length;
+}
 
 export function hostOf(url) {
   try {

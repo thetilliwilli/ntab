@@ -1,7 +1,7 @@
 # Custom New Tab
 
 Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a
-tabbed plain-text notepad (think Notepad++) and a vertical shortcuts sidebar. Notes are `.txt` files
+tabbed plain-text notepad (think Notepad++) and a vertical shortcuts sidebar. Notes are plain text files
 in a local folder you pick, saved on every change, and the open tabs survive browser restarts.
 No dependencies, no build step.
 
@@ -17,8 +17,9 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
 
 ## Notes
 
-- `[+]` creates `newN.txt`; `[new]` lists every `.txt` in the folder (filter, open, delete, change folder).
-- Double-click a tab to rename it (renames the file). Drag tabs to reorder. Middle-click or `×` closes.
+- `[+]` creates `newN.txt`; `[new]` lists every file in the folder except dotfiles (filter, open, delete, change folder).
+- Tabs show the full file name. Double-click a tab to rename the file — the extension is whatever you type
+  (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
 - Closing a non-empty tab opens a panel to name the file (first line / current name / anything typed);
   the file stays in the folder. Closing an empty tab deletes its file.
 - Every keystroke is written to a draft in `chrome.storage.local` at once and to the file 300 ms later;

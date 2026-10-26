@@ -30,7 +30,7 @@ export async function requestPermission() {
 export async function listNotes() {
   const out = [];
   for await (const h of dir.values()) {
-    if (h.kind !== "file" || !/\.txt$/i.test(h.name)) continue;
+    if (h.kind !== "file" || h.name.startsWith(".")) continue;
     const f = await h.getFile();
     out.push({ name: h.name, lastModified: f.lastModified, size: f.size });
   }
@@ -72,22 +72,23 @@ export async function exists(name) {
   }
 }
 
-/* user text -> safe file base name (without .txt) */
+/* user text -> safe file name; the extension is whatever the user typed */
 export function sanitize(text) {
   const s = text
-    .replace(/\.txt$/i, "")
     .replace(/[/\\:*?"<>|\x00-\x1f]/g, "_")
     .trim()
     .replace(/^\.+/, "")
     .slice(0, 100)
     .trim();
-  return s || "untitled";
+  return s || "untitled.txt";
 }
 
-/* "<base>.txt", or "<base> (2).txt", "<base> (3).txt"... if taken */
-export async function freeName(baseName) {
-  let name = `${baseName}.txt`;
-  for (let i = 2; await exists(name); i++) name = `${baseName} (${i}).txt`;
+/* "note.md", or "note (2).md", "note (3).md"... if taken */
+export async function freeName(wanted) {
+  const i = wanted.lastIndexOf(".");
+  const [stem, ext] = i > 0 ? [wanted.slice(0, i), wanted.slice(i)] : [wanted, ""];
+  let name = wanted;
+  for (let n = 2; await exists(name); n++) name = `${stem} (${n})${ext}`;
   return name;
 }
 
