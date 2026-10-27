@@ -89,7 +89,7 @@ See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
 
 - `manifest.json` — MV3; `chrome_url_overrides.newtab`, permissions `storage`, `favicon`
 - `newtab.html` / `newtab.css` — layout and theme tokens
-- `icons/` — extension icons (the page itself uses an inline transparent 1×1 favicon)
+- `icons/` — `icon.svg` (source, also the page favicon) and the PNG sizes for the manifest
 - `js/theme.js` — applies the saved theme before the first paint
 - `js/main.js` — wiring, settings, screens, folder connect flow
 - `js/view.js` — current screen (home / notepad)
