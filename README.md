@@ -99,3 +99,4 @@ See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
 - `js/tabbar.js`, `js/dialogs.js` — tab strip, file list, close panel
 - `js/sidebar.js`, `js/shortcuts.js`, `js/settings.js` — sidebar and home tiles, the actions editor, storage
 - `js/util.js` — DOM helpers, drag-to-reorder
+- `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers, smoke test); not part of the package
