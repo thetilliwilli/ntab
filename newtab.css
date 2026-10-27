@@ -146,7 +146,28 @@ code { font-family: var(--mono); font-size: 12px; }
 .side-home { height: var(--bar-h); border-bottom: 1px solid var(--border); }
 .side-home.on { color: var(--accent); }
 
+.links-wrap { flex: 1; position: relative; min-height: 0; display: flex; }
 .links { flex: 1; overflow: hidden auto; padding: 6px 0; scrollbar-width: none; }
+
+/* shown only when there are more icons above / below; click scrolls by a page */
+.side-more {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: var(--panel);
+}
+
+.side-more:hover { background: var(--hover); }
+.side-more.up { top: 0; border-bottom: 1px solid var(--border); }
+.side-more.down { bottom: 0; border-top: 1px solid var(--border); }
+.side-more svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.links-wrap:not(.more-up) .up, .links-wrap:not(.more-down) .down { display: none; }
 
 .link {
   display: grid;

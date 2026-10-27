@@ -33,7 +33,22 @@ fly.addEventListener(
   },
   { passive: false },
 );
-side.addEventListener("scroll", () => (fly.hidden = true));
+side.addEventListener("scroll", () => {
+  fly.hidden = true;
+  markMore();
+});
+
+/* arrows at the edges of the sidebar when icons are cut off; clicking one scrolls by a page */
+const wrap = side.parentElement;
+function markMore() {
+  const top = side.scrollTop;
+  wrap.classList.toggle("more-up", top > 1);
+  wrap.classList.toggle("more-down", top + side.clientHeight < side.scrollHeight - 1);
+}
+const page = (dir) => side.scrollBy({ top: dir * (side.clientHeight - 48), behavior: "smooth" });
+$("links-up").addEventListener("click", () => page(-1));
+$("links-down").addEventListener("click", () => page(1));
+new ResizeObserver(markMore).observe(side);
 window.addEventListener("blur", () => (fly.hidden = true));
 
 function showFlyout(a, link) {
@@ -103,6 +118,7 @@ function render() {
   }
   if (!links.length) grid.append(el("p", "empty", "No actions yet — add some with ✎ at the bottom of the sidebar."));
   markView();
+  markMore();
 }
 
 function markView() {

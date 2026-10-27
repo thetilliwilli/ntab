@@ -12,7 +12,11 @@
     <button class="side-btn side-home" id="go-home" title="Home" aria-label="Home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5" /></svg>
     </button>
-    <nav class="links" id="links" aria-label="Actions"></nav>
+    <div class="links-wrap">
+      <nav class="links" id="links" aria-label="Actions"></nav>
+      <button class="side-more up" id="links-up" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="side-more down" id="links-down" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
     <button class="side-btn" id="theme-btn" aria-label="Theme"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
     <button class="side-btn" id="links-edit" title="Edit actions" aria-label="Edit actions">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg>
