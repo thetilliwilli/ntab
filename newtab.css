@@ -201,6 +201,23 @@ code { font-family: var(--mono); font-size: 12px; }
 .ico img, .ico svg { display: block; width: 100%; height: 100%; }
 .side .ico, .flyout .ico { --s: 32px; }
 
+/* right-click menu on a tab */
+.ctx-menu {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.ctx-item { height: 28px; padding: 0 12px; text-align: left; }
+.ctx-item.danger { color: var(--danger); }
+.ctx-item:hover, .ctx-item:focus-visible { background: var(--hover); outline: none; }
+
 .flyout {
   position: fixed;
   z-index: 50;

@@ -30,7 +30,8 @@ The notes folder is only touched when the notepad is opened, so the home screen 
   except dotfiles (filter, open, delete, change folder). With no tabs open the page shows the same list
   in place of the editor.
 - Tabs show the full file name. Double-click a tab to rename the file — the extension is whatever you type
-  (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes.
+  (`note.md`, `log`, …). Drag tabs to reorder. Middle-click or `×` closes. Right-click → **Delete file**
+  deletes the file and closes its tab at once, without asking.
 - Closing a tab:
   - not edited since it was opened, or empty — it just closes;
   - edited — a panel asks for the file name (first line / current name / anything typed);

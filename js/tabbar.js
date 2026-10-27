@@ -7,8 +7,43 @@ let renaming = false;
 let shown = null; // tab order the strip was built for; saves only flip classes, they don't rebuild it
 let shownActive = null;
 
+/* right-click menu on a tab; picking "Delete file" is the confirmation */
+const menu = el("div", "ctx-menu");
+const menuDel = el("button", "ctx-item danger", "Delete file");
+let menuFor = null;
+menu.hidden = true;
+menu.setAttribute("role", "menu");
+menuDel.setAttribute("role", "menuitem");
+menu.append(menuDel);
+document.body.append(menu);
+
+function openMenu(e, name) {
+  e.preventDefault();
+  menuFor = name;
+  menu.hidden = false;
+  // keep it inside the window
+  const x = Math.min(e.clientX, innerWidth - menu.offsetWidth - 4);
+  const y = Math.min(e.clientY, innerHeight - menu.offsetHeight - 4);
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+  menuDel.focus();
+}
+
+const closeMenu = () => (menu.hidden = true);
+
+menuDel.addEventListener("click", () => {
+  closeMenu();
+  notes.close(menuFor, true).catch((err) => notes.report(`delete failed: ${err.message}`));
+});
+menu.addEventListener("keydown", (e) => e.key === "Escape" && closeMenu());
+menu.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("pointerdown", (e) => !menu.contains(e.target) && closeMenu(), true);
+window.addEventListener("blur", closeMenu);
+window.addEventListener("resize", closeMenu);
+
 export function initTabbar() {
   notes.subscribe(render);
+  box.addEventListener("scroll", closeMenu);
   // double-click on the free space right of the tabs = new note, like Notepad++
   box.addEventListener("dblclick", (e) => {
     if (e.target === box && !$("tab-add").disabled) notes.create().catch((err) => notes.report(err.message));
@@ -60,6 +95,7 @@ function tabEl(name) {
 
   tab.addEventListener("click", () => name !== notes.getActive() && notes.activate(name));
   tab.addEventListener("auxclick", (e) => e.button === 1 && askClose(name));
+  tab.addEventListener("contextmenu", (e) => openMenu(e, name));
   label.addEventListener("dblclick", () => startRename(tab, label, name));
   x.addEventListener("click", (e) => {
     e.stopPropagation();
