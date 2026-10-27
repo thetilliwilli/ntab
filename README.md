@@ -1,4 +1,4 @@
-# Custom New Tab
+# NTab: Notepad New Tab
 
 Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a home
 screen of large action tiles and a narrow sidebar with the same actions. One of the actions is a tabbed

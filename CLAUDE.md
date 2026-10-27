@@ -20,8 +20,9 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 
 - Chrome Web Store: v1 `1.0.0` is live. Local version is `2.0.0` and has NOT been published yet; there were big
   changes since (home screen etc.), so bump to `2.1.0`/`3.0.0` when publishing (see PUBLISHING.md).
-- Extension name stays "Custom New Tab". Page `<title>` is `newtab`. Favicon and extension icon: blue "N" in a
-  square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with
+- Extension name: "NTab: Notepad New Tab" (`short_name` "NTab"; was "Custom New Tab" in v1). "New tab" and
+  "notepad" are in the name for store search; no keyword stuffing. Page `<title>` is `newtab`.
+- Favicon and extension icon: blue "N" in a square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with
   `magick -background none -density 1152 icons/icon.svg -resize NxN PNG32:icons/icon-N.png`).
 - No migrations: the v1 shortcuts migration was removed on purpose; existing users' saved lists don't get the
   notepad action automatically (only `DEFAULT_LINKS` starts with it; the editor offers "add it back" and warns

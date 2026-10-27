@@ -1,5 +1,5 @@
 {
-  "name": "custom-new-tab",
+  "name": "ntab",
   "private": true,
   "description": "Chrome extension; no dependencies, package.json only holds the packaging script",
   "scripts": {

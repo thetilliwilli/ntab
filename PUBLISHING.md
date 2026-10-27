@@ -29,7 +29,7 @@ Dashboard → **Package** → **Upload new package** → `ignore/newtab.zip`.
 ## 4. Check the other tabs (only if something changed)
 
 - **Store listing** — description, screenshots (1280×800 or 640×400), store icon 128×128
-  (`icons/icon-128.png`). Update when features or the look changed.
+  (`icons/icon-128.png`). The store name and short summary come from `name` and `description` in `manifest.json`. Update when features or the look changed.
 - **Privacy** — if `permissions` in `manifest.json` changed, add a justification for each new one.
   Current ones:
   - `storage`: Saves settings, shortcuts, open tabs and unsaved drafts.
