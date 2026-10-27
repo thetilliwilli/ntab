@@ -6,7 +6,6 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 ## The user
 
 - Speaks Russian: answer in Russian. Code, comments, UI text, commit messages and docs stay in English.
-- Linux (Fedora), Google Chrome (`google-chrome`, v155 at the time of writing).
 - Priorities: the user's own productivity and speed come first; strict, square, minimal design.
 
 ## Working rules
@@ -79,34 +78,3 @@ No test framework. `test/` holds a headless-Chrome harness driven over the DevTo
   editor (type switch, add it back, save warning, JSON validation), sidebar wheel scroll under the flyout and
   edge arrows, tab right-click delete (incl. right after typing, no resurrection after reload).
 - Known flaky: a timing race in an old two-page sync test, not a product bug.
-
-## Open questions (user hasn't decided)
-
-- Git history is public and contains the author email of all commits and an old icon source
-  `art/space-tab-icon.webp` (removed from the tree, still in history). The user was told; nothing rewritten.
-- No LICENSE file (MIT was suggested).
-- Store listing screenshots are outdated (no home screen). Store description draft for the next release:
-
-```
-A calm new tab page: a home screen of big action tiles and a tabbed plain-text notepad.
-
-HOME SCREEN
-Every new tab opens on a home screen of large square tiles — your sites and the notepad. Your notes never appear on screen by themselves, so it is safe to open a new tab while sharing your screen or streaming. Switching between screens adds nothing to the browser history.
-
-SIDEBAR
-A narrow bar on the left with the same actions as icons. Hover an icon to see its full name and URL. At the top — Home, at the bottom — the theme switch (auto / light / dark) and the actions editor.
-
-NOTEPAD
-• Notes are plain text files in a local folder you choose — open them in any other editor too.
-• Tabs like Notepad++: double-click the tab bar for a new note, double-click a tab to rename the file, drag to reorder, right-click to delete.
-• Saved as you type. If the page closes before a write finishes, the text is kept as a draft and written on the next start.
-• Open tabs survive reloads and browser restarts; each new-tab page keeps its own set, synced with the others.
-• Line numbers, word wrap, font size, tab width, light and dark themes.
-• Fast with big files.
-
-ACTIONS
-Edit the list in a form or as raw JSON. Each action is a link or the notepad. Icons come from Chrome's own favicon cache, or upload your own. The list follows your Chrome profile through sync.
-
-PRIVACY
-No accounts, no servers, no network requests, no tracking. Notes stay in your folder; settings stay in your browser.
-```
