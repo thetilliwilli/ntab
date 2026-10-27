@@ -24,6 +24,15 @@ fly.addEventListener("click", (e) => {
   }
   fly.hidden = true;
 });
+/* the flyout covers the icon under the cursor, so the wheel lands on it: scroll the sidebar instead */
+fly.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    side.scrollTop += e.deltaMode ? e.deltaY * 48 : e.deltaY;
+  },
+  { passive: false },
+);
 side.addEventListener("scroll", () => (fly.hidden = true));
 window.addEventListener("blur", () => (fly.hidden = true));
 
