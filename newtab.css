@@ -18,7 +18,7 @@
 
   --mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --side-w: 168px;
+  --side-w: 60px;
   --bar-h: 32px;
   --status-h: 26px;
 }
@@ -85,8 +85,6 @@ body {
   font: 13px/1.4 var(--ui);
 }
 
-body.collapsed { --side-w: 44px; }
-
 button, input, select, textarea { font: inherit; color: inherit; }
 
 button {
@@ -127,85 +125,115 @@ code { font-family: var(--mono); font-size: 12px; }
   border-right: 1px solid var(--border);
 }
 
-.side-toggle {
-  flex: none;
-  width: 100%;
-  height: var(--bar-h);
-  padding: 0 13px;
-  text-align: left;
-  font-size: 16px;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.links { flex: 1; overflow: hidden auto; padding: 4px 0; }
-
-.link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 32px;
-  padding: 0 12px 0 10px;
-  border-left: 2px solid transparent;
-  color: var(--fg);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.link:hover { background: var(--hover); border-left-color: var(--accent); }
-
-.ico {
+.side-btn {
   flex: none;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-left: 3px solid transparent;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.side-btn:hover { color: var(--fg); }
+.side-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+#theme-btn { border-top: 1px solid var(--border); }
+
+/* height of the notepad tab bar, so their bottom borders line up */
+.side-home { height: var(--bar-h); border-bottom: 1px solid var(--border); }
+.side-home.on { color: var(--accent); }
+
+.links { flex: 1; overflow: hidden auto; padding: 6px 0; scrollbar-width: none; }
+
+.link {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.link:hover { background: var(--hover); border-left-color: var(--accent); }
+.link.on { background: var(--hover); border-left-color: var(--accent); }
+
+.ico {
+  --s: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--s);
+  height: var(--s);
   background: var(--accent);
   color: var(--accent-fg);
-  font: 600 11px/1 var(--ui);
+  font: 600 calc(var(--s) * 0.55)/1 var(--ui);
 }
 
-.ico.img { background: transparent; }
-.ico img { display: block; width: 20px; height: 20px; }
-
-.label { overflow: hidden; text-overflow: ellipsis; }
-
-.side-edit {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: var(--status-h);
-  padding: 0 12px;
-  border: 0;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  text-align: left;
-}
-
-.side-edit .ico { background: transparent; color: var(--muted); font-size: 13px; }
-
-body.collapsed .label { display: none; }
+.ico.img { background: transparent; color: var(--accent); }
+.ico img, .ico svg { display: block; width: 100%; height: 100%; }
+.side .ico, .flyout .ico { --s: 32px; }
 
 .flyout {
   position: fixed;
   z-index: 50;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   max-width: calc(100vw - 16px);
-  padding: 0 14px 0 10px;
+  padding: 0 14px 0 11px;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-left: 2px solid var(--accent);
+  border-left: 3px solid var(--accent);
   color: var(--fg);
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .fly-name { font-weight: 600; }
 .fly-url { overflow: hidden; color: var(--muted); font: 12px var(--mono); text-overflow: ellipsis; }
+
+/* ---------- home ---------- */
+
+.home { overflow: auto; background: var(--bg); }
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 132px);
+  justify-content: center;
+  gap: 20px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 56px 24px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: auto;
+  aspect-ratio: 1;
+  padding: 0 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.tile:hover { background: var(--surface); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+.tile .ico { --s: 56px; }
+.tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-grid .empty { grid-column: 1 / -1; }
 
 /* ---------- main ---------- */
 
@@ -498,7 +526,7 @@ body.collapsed .label { display: none; }
 
 .sc-row {
   display: grid;
-  grid-template-columns: 16px 20px minmax(100px, 1fr) minmax(160px, 2.2fr) auto 28px 28px 28px;
+  grid-template-columns: 16px 20px 86px minmax(100px, 1fr) minmax(160px, 2.2fr) auto 28px 28px 28px;
   gap: 6px;
   align-items: center;
   padding: 4px 0;
@@ -507,6 +535,8 @@ body.collapsed .label { display: none; }
 
 .sc-row input[type="text"] { min-width: 0; height: 26px; padding: 0 6px; }
 .sc-row .url { font-family: var(--mono); font-size: 12px; }
+.sc-row select { height: 26px; }
+.sc-what { grid-column: span 2; color: var(--muted); font-size: 12px; }
 .sc-row button { height: 26px; padding: 0; border-color: var(--border); }
 .sc-row .del:hover { background: var(--danger); color: #fff; }
 .sc-handle { color: var(--muted); text-align: center; cursor: grab; user-select: none; }
@@ -514,7 +544,21 @@ body.collapsed .label { display: none; }
 .sc-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
 .sc-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
 
-.add { width: 100%; height: 28px; margin-top: 8px; border: 1px dashed var(--border-strong); }
+.sc-adds { display: flex; gap: 8px; margin-top: 8px; }
+.add { flex: 1; height: 28px; border: 1px dashed var(--border-strong); }
+
+.sc-nonotes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 6px 6px 6px 10px;
+  border-left: 3px solid var(--danger);
+  background: var(--surface);
+}
+
+.sc-nonotes span { flex: 1; }
+.sc-nonotes button { height: 26px; border-color: var(--border); }
 
 .hint { margin: 0 0 8px; font-size: 12px; }
 

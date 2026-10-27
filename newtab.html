@@ -9,12 +9,21 @@
 </head>
 <body>
   <aside class="side">
-    <button class="side-toggle" id="side-toggle" title="Collapse / expand sidebar">≡</button>
-    <nav class="links" id="links"></nav>
-    <button class="side-edit" id="links-edit" title="Edit shortcuts"><span class="ico">✎</span><span class="label">edit shortcuts</span></button>
+    <button class="side-btn side-home" id="go-home" title="Home" aria-label="Home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5" /></svg>
+    </button>
+    <nav class="links" id="links" aria-label="Actions"></nav>
+    <button class="side-btn" id="theme-btn" aria-label="Theme"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+    <button class="side-btn" id="links-edit" title="Edit actions" aria-label="Edit actions">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg>
+    </button>
   </aside>
 
-  <main class="main">
+  <section class="home" id="home" aria-label="Home">
+    <div class="home-grid" id="home-grid"></div>
+  </section>
+
+  <main class="main" id="notepad" hidden>
     <div class="tabbar">
       <button class="tb-add" id="tab-add" title="Open a saved note (double-click the free space for a new one)">+</button>
       <div class="tabs" id="tabs"></div>
@@ -65,13 +74,6 @@
       <button id="font-inc" title="Larger font">A+</button>
       <button id="wrap" class="toggle" title="Word wrap">Wrap</button>
       <label class="st-field" title="Spaces inserted by Tab">Tab<input id="tab-size" type="number" min="1" max="8" aria-label="Spaces per Tab"></label>
-      <label class="st-field" title="Theme">
-        <select id="theme" aria-label="Theme">
-          <option value="auto">auto</option>
-          <option value="light">light</option>
-          <option value="dark">dark</option>
-        </select>
-      </label>
     </footer>
   </main>
 
@@ -89,7 +91,7 @@
 
   <dialog id="sc" class="dlg dlg-wide">
     <div class="dlg-head">
-      <h2>Shortcuts</h2>
+      <h2>Actions</h2>
       <div class="seg">
         <button id="sc-mode-form">Form</button>
         <button id="sc-mode-json">JSON</button>
@@ -99,10 +101,18 @@
     <div class="dlg-body">
       <div id="sc-form">
         <div id="sc-rows"></div>
-        <button id="sc-add" class="add">+ add shortcut</button>
+        <div class="sc-nonotes" id="sc-nonotes" hidden>
+          <span>Notepad isn't in the list — without it there is no way to open your notes.</span>
+          <button id="sc-notes-back">add it back</button>
+        </div>
+        <div class="sc-adds">
+          <button id="sc-add" class="add">+ link</button>
+          <button id="sc-add-notes" class="add">+ notepad</button>
+        </div>
       </div>
       <div id="sc-json" hidden>
-        <p class="muted hint">Array of <code>{ "name": "…", "url": "…", "target": "_blank" }</code> — <code>target</code> is optional.</p>
+        <p class="muted hint">Array of links <code>{ "name": "…", "url": "…", "target": "_blank" }</code> (<code>target</code> is optional)
+          and the notepad <code>{ "type": "notes", "name": "Notes" }</code>.</p>
         <textarea id="sc-json-text" spellcheck="false" aria-label="Shortcuts JSON"></textarea>
         <p id="sc-json-err" class="err"></p>
       </div>

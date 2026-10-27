@@ -1,9 +1,9 @@
 # Custom New Tab
 
-Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a
-tabbed plain-text notepad (think Notepad++) and a vertical shortcuts sidebar. Notes are plain text files
-in a local folder you pick, saved as you type, and the open tabs survive browser restarts.
-No dependencies, no build step. Requires Chrome 122+.
+Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a home
+screen of large action tiles and a narrow sidebar with the same actions. One of the actions is a tabbed
+plain-text notepad (think Notepad++): notes are plain text files in a local folder you pick, saved as you
+type, and the open tabs survive browser restarts. No dependencies, no build step. Requires Chrome 122+.
 
 ## Install
 
@@ -13,11 +13,18 @@ From the Chrome Web Store, or unpacked:
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** and select this folder
 4. Press <kbd>Ctrl</kbd>+<kbd>T</kbd> — Chrome shows a one-time prompt to keep the change; click **Keep it**
-5. Click **choose folder…** and pick the folder for your notes
+5. Click **Notes**, then **choose folder…** and pick the folder for your notes
 
 After editing any file, hit the reload icon on the extension card in `chrome://extensions`.
 
-## Notes
+## Home screen
+
+Every new tab, reload and browser restart starts at the home screen, so notes never appear on screen by
+themselves (handy when sharing the screen). The notepad opens from its tile or its sidebar icon; the
+house button at the top of the sidebar goes back home. Switching screens adds no browser history.
+The notes folder is only touched when the notepad is opened, so the home screen loads instantly.
+
+## Notepad
 
 - Double-click the free space of the tab bar to create `newN.txt`. `[+]` lists every file in the folder
   except dotfiles (filter, open, delete, change folder). With no tabs open the page shows the same list
@@ -40,24 +47,35 @@ After editing any file, hit the reload icon on the extension card in `chrome://e
   unsaved edits.
 - After a browser restart Chrome may ask to re-allow folder access (one click). Choosing
   “Allow on every visit” in Chrome's prompt removes that step.
-- Status bar: cursor position, length, save state, font size `A− / A+`, word wrap, spaces per Tab, theme
-  (auto / light / dark).
+- Status bar: cursor position, length, save state, font size `A− / A+`, word wrap, spaces per Tab.
 
-## Shortcuts
+## Actions
 
-Hovering a shortcut shows a flyout with its icon, full name and URL (handy with the sidebar collapsed).
-Edit via **edit shortcuts** at the bottom of the sidebar — a form or raw JSON
-(`[{ "name": "…", "url": "…", "target": "_blank" }]`). Shortcuts and settings live in
-`chrome.storage.sync`, so they follow your Chrome profile across machines.
+One list drives both the home tiles and the sidebar. Hovering a sidebar icon shows a flyout with its full
+name and URL. Edit with ✎ at the bottom of the sidebar (the button above it switches the theme:
+auto / light / dark) — a form or raw JSON:
+
+```json
+[
+  { "type": "notes", "name": "Notes" },
+  { "name": "Gmail", "url": "https://mail.google.com" },
+  { "name": "YouTube", "url": "https://youtube.com", "target": "_blank" }
+]
+```
+
+An item without `type` is a link; `"type": "notes"` opens the notepad. The default list starts with the
+notepad. If it is removed, the editor shows **add it back** and asks before saving a list without it.
+Actions and settings live in `chrome.storage.sync`, so they follow your Chrome profile across machines.
 
 Icons: your uploaded icon if any, otherwise Chrome's own favicon cache (sites you've visited in this
-profile, no network), otherwise the first letter. `⤒` in the editor uploads any image; it is scaled to a
-32×32 PNG and kept per hostname in `chrome.storage.local` (this machine only).
+profile, no network) or the built-in notepad icon, otherwise the first letter. `⤒` in the editor uploads
+any image; it is scaled to a 128×128 PNG and kept per hostname (or `notes`) in `chrome.storage.local`
+(this machine only).
 
 ## Permissions and privacy
 
-- `storage` — settings and shortcuts (sync), open tabs, drafts and uploaded icons (local).
-- `favicon` — reads shortcut icons from Chrome's local favicon cache.
+- `storage` — settings and actions (sync), open tabs, drafts and uploaded icons (local).
+- `favicon` — reads action icons from Chrome's local favicon cache.
 
 No host permissions, no network requests, nothing leaves the browser except what Chrome sync does with
 `chrome.storage.sync`. Notes are only in the folder you choose.
@@ -72,10 +90,11 @@ See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
 - `newtab.html` / `newtab.css` — layout and theme tokens
 - `icons/` — extension icons (the page itself uses an inline transparent 1×1 favicon)
 - `js/theme.js` — applies the saved theme before the first paint
-- `js/main.js` — wiring, settings, folder connect flow
+- `js/main.js` — wiring, settings, screens, folder connect flow
+- `js/view.js` — current screen (home / notepad)
 - `js/notes.js` — open notes, autosave + drafts, session, cross-page sync
 - `js/editor.js` — textarea, line numbers, Tab indent, cursor status
 - `js/fs.js` / `js/idb.js` — File System Access helpers, folder handle persisted in IndexedDB
 - `js/tabbar.js`, `js/dialogs.js` — tab strip, file list, close panel
-- `js/sidebar.js`, `js/shortcuts.js`, `js/settings.js` — shortcuts sidebar, its editor, storage
+- `js/sidebar.js`, `js/shortcuts.js`, `js/settings.js` — sidebar and home tiles, the actions editor, storage
 - `js/util.js` — DOM helpers, drag-to-reorder

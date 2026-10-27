@@ -6,11 +6,19 @@ import { initSidebar } from "./sidebar.js";
 import { initShortcutsDialog } from "./shortcuts.js";
 import { initFilesDialog, initClosePanel, showInlineFiles } from "./dialogs.js";
 import { initTabbar } from "./tabbar.js";
+import { setView, onView } from "./view.js";
 import { $ } from "./util.js";
 
 /* ---------- settings ---------- */
 
 let cfg = settings.DEFAULT_SETTINGS;
+
+const THEMES = ["auto", "light", "dark"];
+const THEME_ICONS = {
+  auto: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
+  light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  dark: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>',
+};
 
 function applyTheme(theme) {
   if (theme === "auto") delete document.documentElement.dataset.theme;
@@ -23,13 +31,14 @@ function applyTheme(theme) {
 function apply(s) {
   cfg = s;
   applyTheme(s.theme);
-  document.body.classList.toggle("collapsed", s.sidebarCollapsed);
   editor.configure(s);
   $("font-size").textContent = s.fontSize;
   $("wrap").classList.toggle("on", s.wrap);
   $("wrap").setAttribute("aria-pressed", s.wrap);
   $("tab-size").value = s.tabSize;
-  $("theme").value = s.theme;
+  const btn = $("theme-btn");
+  btn.title = `Theme: ${s.theme} (click to switch)`;
+  btn.firstElementChild.innerHTML = THEME_ICONS[s.theme] || THEME_ICONS.auto;
 }
 
 function update(patch) {
@@ -41,8 +50,7 @@ $("font-dec").addEventListener("click", () => update({ fontSize: Math.max(9, cfg
 $("font-inc").addEventListener("click", () => update({ fontSize: Math.min(32, cfg.fontSize + 1) }));
 $("wrap").addEventListener("click", () => update({ wrap: !cfg.wrap }));
 $("tab-size").addEventListener("change", (e) => update({ tabSize: Math.min(8, Math.max(1, parseInt(e.target.value, 10) || 4)) }));
-$("theme").addEventListener("change", (e) => update({ theme: e.target.value }));
-$("side-toggle").addEventListener("click", () => update({ sidebarCollapsed: !cfg.sidebarCollapsed }));
+$("theme-btn").addEventListener("click", () => update({ theme: THEMES[(THEMES.indexOf(cfg.theme) + 1) % THEMES.length] }));
 
 /* ---------- editor / status bar ---------- */
 
@@ -148,4 +156,18 @@ async function connect() {
   );
 }
 
-await connect();
+/* ---------- screens: home (action tiles) / notepad ---------- */
+
+/* the notes folder is touched only when the notepad is opened for the first time on this page */
+let connecting = null;
+
+onView((view) => {
+  $("home").hidden = view !== "home";
+  $("notepad").hidden = view !== "notes";
+  if (view !== "notes") return;
+  if (!connecting) connecting = connect().catch(showError);
+  else if (ready && notes.getOrder().length) editor.focus();
+  else if (ready) $("nothing-filter").focus();
+});
+
+$("go-home").addEventListener("click", () => setView("home"));

@@ -1,27 +1,29 @@
-/* shortcuts editor: form mode and raw JSON mode (like VS Code settings) */
+/* actions editor: form mode and raw JSON mode (like VS Code settings) */
 
 import { getLinks, getIconMap, iconEl, loadImg } from "./sidebar.js";
 import { saveLinks, setIcons } from "./settings.js";
-import { $, el, hostOf, sortable } from "./util.js";
+import { $, el, hostOf, isNotes, iconKey, sortable } from "./util.js";
 
 const dlg = $("sc");
 const rows = $("sc-rows");
 const jsonText = $("sc-json-text");
 const jsonErr = $("sc-json-err");
 
-let draft = []; // [{ name, url, target? }] being edited
-let pendingIcons = {}; // hostname -> dataURL, or null = reset
+const ICON_SIZE = 128; // uploaded icons are drawn up to 56px on the home tiles
+
+let draft = []; // [{ name, url, target? } | { type: "notes", name }] being edited
+let pendingIcons = {}; // icon key -> dataURL, or null = reset
 let mode = "form";
+
+const newNotes = () => ({ type: "notes", name: "Notes" });
 
 export function initShortcutsDialog() {
   $("links-edit").addEventListener("click", openDialog);
   $("sc-mode-form").addEventListener("click", () => setMode("form"));
   $("sc-mode-json").addEventListener("click", () => setMode("json"));
-  $("sc-add").addEventListener("click", () => {
-    draft.push({ name: "", url: "" });
-    renderRows();
-    rows.lastElementChild?.querySelector("input")?.focus();
-  });
+  $("sc-add").addEventListener("click", () => addRow({ name: "", url: "" }, false));
+  $("sc-add-notes").addEventListener("click", () => addRow(newNotes(), false));
+  $("sc-notes-back").addEventListener("click", () => addRow(newNotes(), true));
   $("sc-save").addEventListener("click", save);
   $("sc-cancel").addEventListener("click", () => dlg.close());
   $("sc-x").addEventListener("click", () => dlg.close());
@@ -33,6 +35,13 @@ function openDialog() {
   setMode("form", true);
   msg("");
   dlg.showModal();
+}
+
+function addRow(action, first) {
+  if (first) draft.unshift(action);
+  else draft.push(action);
+  renderRows();
+  (first ? rows.firstElementChild : rows.lastElementChild)?.querySelector("input")?.focus();
 }
 
 function msg(text, kind = "") {
@@ -66,13 +75,15 @@ function setMode(m, force = false) {
 const fixUrl = (u) => (/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`);
 
 function normalize(l) {
-  const out = { name: String(l.name ?? "").trim(), url: fixUrl(String(l.url ?? "").trim()) };
+  const name = String(l.name ?? "").trim();
+  if (isNotes(l)) return { type: "notes", name: name || "Notes" };
+  const out = { name, url: fixUrl(String(l.url ?? "").trim()) };
   if (l.target) out.target = String(l.target);
   return out;
 }
 
-/* drops untouched empty rows, normalizes the rest */
-const cleanList = (list) => list.filter((l) => String(l.name ?? "").trim() || String(l.url ?? "").trim()).map(normalize);
+/* drops untouched empty link rows, normalizes the rest */
+const cleanList = (list) => list.filter((l) => isNotes(l) || String(l.name ?? "").trim() || String(l.url ?? "").trim()).map(normalize);
 
 function parseJson() {
   try {
@@ -80,7 +91,10 @@ function parseJson() {
     if (!Array.isArray(data)) throw new Error("top level must be an array");
     data.forEach((l, i) => {
       if (!l || typeof l !== "object") throw new Error(`item ${i + 1}: must be an object`);
-      if (typeof l.name !== "string" || typeof l.url !== "string") throw new Error(`item ${i + 1}: "name" and "url" must be strings`);
+      if (l.type != null && l.type !== "notes") throw new Error(`item ${i + 1}: "type" can only be "notes" (or left out for a link)`);
+      if (typeof l.name !== "string") throw new Error(`item ${i + 1}: "name" must be a string`);
+      if (isNotes(l)) return;
+      if (typeof l.url !== "string") throw new Error(`item ${i + 1}: "url" must be a string`);
       if (l.target != null && typeof l.target !== "string") throw new Error(`item ${i + 1}: "target" must be a string`);
     });
     jsonErr.textContent = "";
@@ -100,8 +114,9 @@ function mergedIcons() {
 async function save() {
   const list = mode === "json" ? parseJson() : cleanList(draft);
   if (!list) return;
-  const bad = list.findIndex((l) => !l.name || !hostOf(l.url));
-  if (bad !== -1) return msg(`shortcut ${bad + 1}: name and a valid URL are required`, "err");
+  const bad = list.findIndex((l) => !isNotes(l) && (!l.name || !hostOf(l.url)));
+  if (bad !== -1) return msg(`item ${bad + 1}: name and a valid URL are required`, "err");
+  if (!list.some(isNotes) && !confirm("The notepad isn't in the list, so there will be no way to open your notes.\nSave anyway?")) return;
   try {
     await saveLinks(list);
     if (Object.keys(pendingIcons).length) await setIcons(mergedIcons());
@@ -116,6 +131,7 @@ async function save() {
 function renderRows() {
   rows.textContent = "";
   draft.forEach((link, i) => rows.append(row(link, i)));
+  $("sc-nonotes").hidden = draft.some(isNotes);
 }
 
 function row(link, i) {
@@ -123,50 +139,46 @@ function row(link, i) {
   const handle = el("span", "sc-handle", "⋮⋮");
   handle.title = "Drag to reorder";
 
+  const type = el("select");
+  type.setAttribute("aria-label", "Action type");
+  type.append(new Option("link", "link"), new Option("notepad", "notes"));
+  type.value = isNotes(link) ? "notes" : "link";
+  type.addEventListener("change", () => {
+    if (type.value === "notes") {
+      link.type = "notes";
+      delete link.url;
+      delete link.target;
+    } else {
+      delete link.type;
+      link.url = "";
+    }
+    renderRows();
+  });
+
   const name = el("input");
   name.type = "text";
   name.placeholder = "Name";
-  name.setAttribute("aria-label", "Shortcut name");
+  name.setAttribute("aria-label", "Action name");
   name.value = link.name;
-
-  const url = el("input", "url");
-  url.type = "text";
-  url.placeholder = "https://…";
-  url.setAttribute("aria-label", "Shortcut URL");
-  url.value = link.url;
-  url.spellcheck = false;
-
-  const check = el("label", "sc-check");
-  const box = el("input");
-  box.type = "checkbox";
-  box.checked = !!link.target;
-  check.title = 'Open in a new browser tab (target="_blank")';
-  check.append(box, "new tab");
 
   const uploadBtn = el("button", "", "⤒");
   uploadBtn.title = "Upload your own icon";
   const resetBtn = el("button", "", "↺");
   resetBtn.title = "Reset icon";
   const del = el("button", "del", "×");
-  del.title = "Remove shortcut";
+  del.title = "Remove";
 
   const refreshIcon = () => r.querySelector(".ico").replaceWith(iconEl(normalize(link), mergedIcons()));
 
   name.addEventListener("input", () => (link.name = name.value));
-  url.addEventListener("input", () => (link.url = url.value));
-  url.addEventListener("change", refreshIcon);
   name.addEventListener("change", refreshIcon);
-  box.addEventListener("change", () => {
-    if (box.checked) link.target = "_blank";
-    else delete link.target;
-  });
   uploadBtn.addEventListener("click", () => uploadFor(link, refreshIcon));
   resetBtn.addEventListener("click", () => {
-    const host = hostOf(normalize(link).url);
-    if (!host) return;
-    pendingIcons[host] = null;
+    const key = iconKey(normalize(link));
+    if (!key) return;
+    pendingIcons[key] = null;
     refreshIcon();
-    msg(`icon for ${host} reset — Save to apply`);
+    msg(`icon for ${key} reset — Save to apply`);
   });
   del.addEventListener("click", () => {
     draft.splice(i, 1);
@@ -189,7 +201,32 @@ function row(link, i) {
     onEnd: () => (r.draggable = false),
   });
 
-  r.append(handle, iconEl(normalize(link), mergedIcons()), name, url, check, uploadBtn, resetBtn, del);
+  r.append(handle, iconEl(normalize(link), mergedIcons()), type, name);
+  if (isNotes(link)) {
+    r.append(el("span", "sc-what", "opens the notepad"));
+  } else {
+    const url = el("input", "url");
+    url.type = "text";
+    url.placeholder = "https://…";
+    url.setAttribute("aria-label", "Link URL");
+    url.value = link.url;
+    url.spellcheck = false;
+    url.addEventListener("input", () => (link.url = url.value));
+    url.addEventListener("change", refreshIcon);
+
+    const check = el("label", "sc-check");
+    const box = el("input");
+    box.type = "checkbox";
+    box.checked = !!link.target;
+    check.title = 'Open in a new browser tab (target="_blank")';
+    check.append(box, "new tab");
+    box.addEventListener("change", () => {
+      if (box.checked) link.target = "_blank";
+      else delete link.target;
+    });
+    r.append(url, check);
+  }
+  r.append(uploadBtn, resetBtn, del);
   return r;
 }
 
@@ -205,21 +242,23 @@ function pickFile() {
   });
 }
 
-/* any image the browser can decode (png, ico, svg, jpg…) -> 32x32 PNG data URL */
+/* any image the browser can decode (png, ico, svg, jpg…) -> ICON_SIZE square PNG data URL */
 async function uploadFor(link, refreshIcon) {
-  const host = hostOf(normalize(link).url);
-  if (!host) return msg("enter a valid URL first", "err");
+  const key = iconKey(normalize(link));
+  if (!key) return msg("enter a valid URL first", "err");
   const file = await pickFile();
   if (!file) return;
   const obj = URL.createObjectURL(file);
   try {
     const img = await loadImg(obj);
     const c = document.createElement("canvas");
-    c.width = c.height = 32;
-    c.getContext("2d").drawImage(img, 0, 0, 32, 32);
-    pendingIcons[host] = c.toDataURL("image/png");
+    c.width = c.height = ICON_SIZE;
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, ICON_SIZE, ICON_SIZE);
+    pendingIcons[key] = c.toDataURL("image/png");
     refreshIcon();
-    msg(`icon for ${host} set — Save to apply`, "ok");
+    msg(`icon for ${key} set — Save to apply`, "ok");
   } catch {
     msg(`${file.name}: not an image the browser can read`, "err");
   } finally {

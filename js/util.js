@@ -24,6 +24,12 @@ export function hostOf(url) {
   }
 }
 
+/* an action is a link ({ name, url, target? }) or the notepad ({ type: "notes", name }) */
+export const isNotes = (action) => action.type === "notes";
+
+/* key of an action's uploaded icon: the hostname for links, "notes" for the notepad */
+export const iconKey = (action) => (isNotes(action) ? "notes" : hostOf(action.url));
+
 const pad = (n) => String(n).padStart(2, "0");
 
 /* HH:MM:SS for today, YYYY-MM-DD HH:MM otherwise */

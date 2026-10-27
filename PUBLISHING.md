@@ -34,7 +34,7 @@ Dashboard → **Package** → **Upload new package** → `newtab.zip`.
   Current ones:
   - `storage`: Saves settings, shortcuts, open tabs and unsaved drafts.
   - `favicon`: Shows website icons for the user's shortcuts from Chrome's local favicon cache.
-  - Single purpose: Replaces the new tab page with a plain-text notepad and a shortcuts sidebar.
+  - Single purpose: Replaces the new tab page with a home screen of shortcuts and a plain-text notepad.
   - Remote code: No. Data usage: collects nothing.
 
 ## 5. Submit

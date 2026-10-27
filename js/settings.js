@@ -1,8 +1,8 @@
 /*
  * storage layout
  *   sync   settings            editor/ui settings (small, shared across machines)
- *   sync   links.n, links.<i>  shortcuts, one item per link (sync has an 8 KB per-item limit)
- *   local  icons               { hostname: dataURL } user-uploaded icons (this machine only)
+ *   sync   links.n, links.<i>  actions (links and the notepad), one per item (sync has an 8 KB per-item limit)
+ *   local  icons               { hostname | "notes": dataURL } user-uploaded icons (this machine only)
  *   local  session, draft:*:*  see notes.js
  */
 
@@ -13,10 +13,10 @@ export const DEFAULT_SETTINGS = {
   wrap: false,
   tabSize: 4,
   theme: "auto",
-  sidebarCollapsed: false,
 };
 
 export const DEFAULT_LINKS = [
+  { type: "notes", name: "Notes" },
   { name: "Gmail", url: "https://mail.google.com" },
   { name: "GitHub", url: "https://github.com" },
   { name: "YouTube", url: "https://youtube.com" },
@@ -60,7 +60,7 @@ export function onSettingsChanged(cb) {
   });
 }
 
-/* shortcuts */
+/* actions */
 
 export async function loadLinks() {
   const data = await chrome.storage.sync.get(null);
