@@ -217,7 +217,7 @@ export async function rename(name, wanted) {
   if (!n) return name;
   let target = fs.sanitize(wanted);
   if (target === name) return name;
-  if (await fs.exists(target)) target = await fs.freeName(target);
+  target = await fs.freeName(target);
 
   clearTimeout(n.timer);
   const job = n.chain.then(async () => {
@@ -290,7 +290,7 @@ export function onEdit(text) {
   if (!extensionAlive()) recoverStale();
 }
 
-export const onView = () => saveSession(600);
+export const onScroll = () => saveSession(600);
 
 function scheduleSave(n) {
   clearTimeout(n.timer);

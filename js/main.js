@@ -56,7 +56,7 @@ $("theme-btn").addEventListener("click", () => update({ theme: THEMES[(THEMES.in
 
 editor.init({
   onInput: notes.onEdit,
-  onView: notes.onView,
+  onScroll: notes.onScroll,
   onCursor({ ln, col, len, sel }) {
     $("st-pos").textContent = `Ln ${ln}, Col ${col}${sel ? ` (${sel} sel)` : ""}`;
     $("st-len").textContent = `${len} chars`;

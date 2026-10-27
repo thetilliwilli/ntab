@@ -135,7 +135,6 @@ code { font-family: var(--mono); font-size: 12px; }
   border: 0;
   border-left: 3px solid transparent;
   color: var(--muted);
-  font-size: 18px;
 }
 
 .side-btn:hover { color: var(--fg); }
@@ -482,7 +481,6 @@ code { font-family: var(--mono); font-size: 12px; }
 .st-save[data-kind="err"] { color: var(--danger); font-weight: 600; }
 .st-field { gap: 6px; }
 .st-field input { width: 40px; height: 18px; padding: 0 2px; }
-.st-field select { height: 18px; padding: 0 2px; }
 
 /* ---------- dialogs ---------- */
 

@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS = {
   theme: "auto",
 };
 
-export const DEFAULT_LINKS = [
+const DEFAULT_LINKS = [
   { type: "notes", name: "Notes" },
   { name: "Gmail", url: "https://mail.google.com" },
   { name: "GitHub", url: "https://github.com" },

@@ -68,7 +68,7 @@ export async function removeNote(name) {
   }
 }
 
-export async function exists(name) {
+async function exists(name) {
   try {
     await dir.getFileHandle(name);
     return true;

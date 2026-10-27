@@ -20,7 +20,7 @@ let shownCount = -1; // line count the wrap-off gutter shows
 let tops = []; // wrap on: top of every line, then the total height
 let width = 0;
 const heights = new Map(); // wrap on: line text -> height at the current width and font
-let handlers = { onInput() {}, onView() {}, onCursor() {} };
+let handlers = { onInput() {}, onScroll() {}, onCursor() {} };
 
 export function init(h) {
   handlers = { ...handlers, ...h };
@@ -33,14 +33,14 @@ export function init(h) {
   });
   ta.addEventListener("scroll", () => {
     syncScroll();
-    handlers.onView();
+    handlers.onScroll();
   });
   ta.addEventListener("keydown", onKey);
   // caret moves by keyboard and mouse
   document.addEventListener("selectionchange", () => {
     if (document.activeElement !== ta) return;
     cursor();
-    handlers.onView();
+    handlers.onScroll();
   });
   new ResizeObserver(() => wrap && scheduleGutter()).observe(ta);
 }

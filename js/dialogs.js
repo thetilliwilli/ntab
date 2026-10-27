@@ -94,7 +94,7 @@ export function initFilesDialog({ onChangeFolder }) {
   $("nothing-change").addEventListener("click", onChangeFolder);
 }
 
-export function openFiles() {
+function openFiles() {
   $("files-dir").textContent = fs.getDir()?.name || "";
   dlg.showModal();
   $("files-filter").focus();
