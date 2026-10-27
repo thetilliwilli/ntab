@@ -13,13 +13,15 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 - Commit to `master` after each finished change (no need to ask). Push to `origin`
   (https://github.com/thetilliwilli/ntab, public) only when asked.
 - Verify changes in the headless test harness (see Testing) before committing; check screenshots for visual work.
-- No npm dependencies, no build step, no frameworks. `package.json` exists only for `npm run pack`.
+- No npm dependencies, no build step, no frameworks. `package.json` exists only for `npm run release`.
 - Before publishing anything outward (store, GitHub settings, …) confirm with the user.
 
 ## Product decisions (don't undo without asking)
 
-- Chrome Web Store: v1 `1.0.0` is live. Local version is `2.0.0` and has NOT been published yet; there were big
-  changes since (home screen etc.), so bump to `2.1.0`/`3.0.0` when publishing (see PUBLISHING.md).
+- Chrome Web Store: `2.0.0` is live (store/published.json; built around commit beec02f, before the home screen).
+  Local version is `2.1.0`. Releases: `npm run release` (see PUBLISHING.md); the user uploads by hand.
+- When a user-visible feature changes, update `store/description.txt` (feature list and WHAT'S NEW) in the
+  same commit, and `store/demo.mjs` / the scenes in `scripts/release.mjs` if the screenshots would be wrong.
 - Extension name: "NTab: Notepad New Tab" (`short_name` "NTab"; was "Custom New Tab" in v1). "New tab" and
   "notepad" are in the name for store search; no keyword stuffing. Page `<title>` is `newtab`.
 - Favicon and extension icon: blue "N" in a square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with

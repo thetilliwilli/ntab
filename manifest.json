@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NTab: Notepad New Tab",
   "short_name": "NTab",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Plain-text notepad with tabs in your new tab page. Notes are saved as files in a local folder. Quick links sidebar.",
   "minimum_chrome_version": "122",
   "icons": {

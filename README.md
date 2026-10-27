@@ -83,7 +83,8 @@ No host permissions, no network requests, nothing leaves the browser except what
 
 ## Publishing
 
-See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
+`npm run release` builds the package, store texts and screenshots into `ignore/publish/`; see
+[PUBLISHING.md](PUBLISHING.md).
 
 ## Files
 
@@ -99,4 +100,5 @@ See [PUBLISHING.md](PUBLISHING.md); the package is built with `npm run pack`.
 - `js/tabbar.js`, `js/dialogs.js` — tab strip, file list, close panel
 - `js/sidebar.js`, `js/shortcuts.js`, `js/settings.js` — sidebar and home tiles, the actions editor, storage
 - `js/util.js` — DOM helpers, drag-to-reorder
+- `store/`, `scripts/release.mjs` — store listing sources and the release builder
 - `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers, smoke test); not part of the package

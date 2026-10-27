@@ -1,0 +1,1 @@
+Shows website icons for the user's sites from Chrome's local favicon cache.

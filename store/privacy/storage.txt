@@ -1,0 +1,1 @@
+Saves settings, the user's list of sites, open notepad tabs, unsaved drafts and uploaded icons.
