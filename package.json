@@ -3,6 +3,6 @@
   "private": true,
   "description": "Chrome extension; no dependencies, package.json only holds the packaging script",
   "scripts": {
-    "pack": "git diff --quiet HEAD || { echo 'Uncommitted changes: commit first, the archive is built from HEAD'; exit 1; }; git archive -o newtab.zip HEAD manifest.json newtab.html newtab.css js icons && unzip -l newtab.zip"
+    "pack": "git diff --quiet HEAD || { echo 'Uncommitted changes: commit first, the archive is built from HEAD'; exit 1; }; mkdir -p ignore && git archive -o ignore/newtab.zip HEAD manifest.json newtab.html newtab.css js icons && unzip -l ignore/newtab.zip"
   }
 }

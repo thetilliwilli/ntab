@@ -18,13 +18,13 @@ Commit everything.
 npm run pack
 ```
 
-Creates `newtab.zip` with only the extension files (`manifest.json`, `newtab.html`, `newtab.css`, `js/`, `icons/`)
+Creates `ignore/newtab.zip` with only the extension files (`manifest.json`, `newtab.html`, `newtab.css`, `js/`, `icons/`)
 and lists them. It is built from the last commit and refuses to run with uncommitted changes.
-`newtab.zip` is git-ignored.
+The `ignore/` folder is git-ignored.
 
 ## 3. Upload
 
-Dashboard → **Package** → **Upload new package** → `newtab.zip`.
+Dashboard → **Package** → **Upload new package** → `ignore/newtab.zip`.
 
 ## 4. Check the other tabs (only if something changed)
 
