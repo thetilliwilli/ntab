@@ -18,10 +18,7 @@ export const DEFAULT_SETTINGS = {
 const DEFAULT_LINKS = [
   { type: "notes", name: "Notes" },
   { name: "Gmail", url: "https://mail.google.com" },
-  { name: "GitHub", url: "https://github.com" },
   { name: "YouTube", url: "https://youtube.com" },
-  { name: "Calendar", url: "https://calendar.google.com" },
-  { name: "Claude", url: "https://claude.ai" },
 ];
 
 /* settings */

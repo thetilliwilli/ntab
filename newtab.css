@@ -270,7 +270,9 @@ code { font-family: var(--mono); font-size: 12px; }
 .tile:hover { background: var(--surface); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
 .tile .ico { --s: 56px; }
 .tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.home-grid .empty { grid-column: 1 / -1; }
+.tile-add { background: transparent; border: 1px dashed var(--border-strong); color: var(--muted); font-family: inherit; cursor: pointer; }
+.tile-add .ico { background: none; color: var(--accent); font-size: 48px; font-weight: 300; }
+.tile-add:hover { border-style: solid; color: var(--fg); }
 
 /* ---------- main ---------- */
 

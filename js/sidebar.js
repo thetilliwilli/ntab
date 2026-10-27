@@ -116,9 +116,19 @@ function render() {
     tile.append(iconEl(link, icons), el("span", "tile-name", link.name));
     grid.append(tile);
   }
-  if (!links.length) grid.append(el("p", "empty", "No actions yet — add some with ✎ at the bottom of the sidebar."));
+  grid.append(addTile());
   markView();
   markMore();
+}
+
+/* last home tile: opens the actions editor */
+function addTile() {
+  const b = el("button", "tile tile-add");
+  b.type = "button";
+  b.title = "Add or edit actions";
+  b.append(el("span", "ico", "+"), el("span", "tile-name", "Add"));
+  b.addEventListener("click", () => $("links-edit").click());
+  return b;
 }
 
 function markView() {
