@@ -134,6 +134,8 @@ async function screenshots(icons) {
     console.log(`✓ screenshot ${n}: ${what.label}`);
   };
 
+  // all screenshots in the light theme, one consistent style (the user's choice)
+
   // first visit: grant the folder (the stub's picker), later loads restore the open tabs from the session
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await openNotepad(P);
@@ -148,11 +150,11 @@ async function screenshots(icons) {
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await shot(2, { label: "home screen" });
 
-  // 3. dark theme, wrapped text, sidebar flyout
-  P = await prepare(P, icons, { theme: "dark", active: "meeting-notes.txt", wrap: true });
+  // 3. wrapped text, sidebar flyout
+  P = await prepare(P, icons, { theme: "light", active: "meeting-notes.txt", wrap: true });
   await openNotepad(P);
   await caret(P, "decision by next Tuesday");
-  await shot(3, { label: "dark theme + flyout", hover: "#links .link:nth-child(5)" });
+  await shot(3, { label: "flyout", hover: "#links .link:nth-child(5)" });
 
   // 4. file list
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
@@ -161,7 +163,7 @@ async function screenshots(icons) {
   await shot(4, { label: "file list" });
 
   // 5. actions editor
-  P = await prepare(P, icons, { theme: "dark", active: "todo.md" });
+  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await P.ev(`document.getElementById('links-edit').click()`);
   await shot(5, { label: "actions editor" });
   await closePage(P);
@@ -226,15 +228,23 @@ async function hover(P, selector) {
 /* site icons as uploaded-icon data URLs keyed by hostname (what the extension stores for uploads) */
 async function fetchIcons() {
   const icons = {};
+  const missing = [];
   for (const a of demo.actions.filter((a) => a.url)) {
-    // one at a time: parallel requests to this service tend to stall
+    // one at a time with retries: this service stalls on parallel requests and sometimes on single ones
     const host = new URL(a.url).hostname;
-    try {
-      const res = await fetch(`https://www.google.com/s2/favicons?domain=${host}&sz=128`, { signal: AbortSignal.timeout(8000) });
-      if (res.ok) icons[host] = `data:${res.headers.get("content-type") || "image/png"};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
-    } catch {}
+    for (let attempt = 0; attempt < 3 && !icons[host]; attempt++) {
+      try {
+        const res = await fetch(`https://www.google.com/s2/favicons?domain=${host}&sz=128`, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) icons[host] = `data:${res.headers.get("content-type") || "image/png"};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+      } catch {}
+    }
+    if (!icons[host]) missing.push(host);
   }
-  if (!Object.keys(icons).length) notes.push("Site icons could not be fetched (offline?): the screenshots show letters. Run again with network.");
+  if (missing.length) {
+    const msg = `Site icons not fetched for ${missing.join(", ")} (offline?): those show letters on the screenshots. Run again.`;
+    notes.push(msg);
+    console.log("! " + msg);
+  }
   return icons;
 }
 

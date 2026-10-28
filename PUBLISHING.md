@@ -31,6 +31,7 @@ published it, run `npm run release:done` to record the version.
 - `store/published.json` — the version live in the store, its permissions and commit
 - `scripts/release.mjs` — the script; screenshot scenes are in `screenshots()`
 
+All screenshots use the light theme (one style for the whole listing).
 Screenshots are taken in headless Chrome (`CHROME=/path/to/chrome` to override) on the test page from `test/`.
 Site icons are fetched from Google's favicon service; offline, the tiles show letters (the README says so).
 

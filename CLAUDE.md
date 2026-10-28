@@ -18,10 +18,11 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 
 ## Product decisions (don't undo without asking)
 
-- Chrome Web Store: `2.0.0` is live (store/published.json; built around commit beec02f, before the home screen).
-  Local version is `2.1.0`. Releases: `npm run release` (see PUBLISHING.md); the user uploads by hand.
+- Chrome Web Store: the live version, its permissions and commit are in `store/published.json` (the user runs
+  `npm run release:done` after publishing). Releases: `npm run release` (see PUBLISHING.md); the user uploads by hand.
 - When a user-visible feature changes, update `store/description.txt` (feature list and WHAT'S NEW) in the
   same commit, and `store/demo.mjs` / the scenes in `scripts/release.mjs` if the screenshots would be wrong.
+- Store screenshots and promo tiles share one style: light theme only.
 - Extension name: "NTab: Notepad New Tab" (`short_name` "NTab"; was "Custom New Tab" in v1). "New tab" and
   "notepad" are in the name for store search; no keyword stuffing. Page `<title>` is `newtab`.
 - Favicon and extension icon: blue "N" in a square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with
