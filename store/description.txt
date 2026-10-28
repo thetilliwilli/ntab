@@ -4,6 +4,7 @@ Notes are ordinary text files in a folder you choose on your computer. Every cha
 
 HOME SCREEN
 • Big tiles for your sites and the notepad, plus the same icons in a slim sidebar
+• Add a site with the "+" tile: paste the address, the name fills in by itself
 • Every new tab starts here, so your notes never pop up on screen by themselves (handy when sharing your screen)
 • Site icons from Chrome's own cache, or upload your own
 • Hover a sidebar icon to see its full name and address
@@ -26,10 +27,7 @@ PRIVACY
 • Permissions: "storage" for settings and your site list, "favicon" to show site icons from Chrome's local cache
 
 WHAT'S NEW
-• New name: NTab
-• Home screen with large tiles; the notepad is one of them, "Add" opens the editor
-• Right-click a tab to delete the file
-• Arrows in the sidebar when there are more icons than fit
-• New icon
+• The home screen is split into Apps (the notepad) and Links
+• The "+" tile adds a site in a small dialog: address, name, icon, new tab
 
 Note: only one extension can replace the new tab page. If another one already does, Chrome will ask which to keep.

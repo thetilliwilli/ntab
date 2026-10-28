@@ -128,6 +128,35 @@
     </div>
   </dialog>
 
+  <dialog id="add" class="dlg dlg-narrow">
+    <form method="dialog" id="add-form">
+      <div class="dlg-head">
+        <h2>Add link</h2>
+        <button type="button" id="add-x" class="dlg-x" title="Close">×</button>
+      </div>
+      <div class="dlg-body add-body">
+        <label for="add-url">URL</label>
+        <input id="add-url" type="text" class="url" placeholder="https://…" spellcheck="false" autocomplete="off">
+        <label for="add-name">Name</label>
+        <input id="add-name" type="text" spellcheck="false" autocomplete="off">
+        <span>Icon</span>
+        <div class="add-icon">
+          <span class="ico" id="add-ico"></span>
+          <button type="button" id="add-upload">upload…</button>
+          <button type="button" id="add-reset" hidden>reset</button>
+          <span class="muted" id="add-ico-note">from Chrome's cache of the site</span>
+        </div>
+        <span></span>
+        <label class="sc-check"><input id="add-blank" type="checkbox"> open in a new browser tab</label>
+      </div>
+      <div class="dlg-foot">
+        <span id="add-msg" class="msg"></span>
+        <button type="button" id="add-cancel">Cancel</button>
+        <button id="add-save" class="primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

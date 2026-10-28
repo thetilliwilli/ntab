@@ -52,7 +52,10 @@ The notes folder is only touched when the notepad is opened, so the home screen 
 
 ## Actions
 
-One list drives both the home tiles and the sidebar. Hovering a sidebar icon shows a flyout with its full
+One list drives both the home tiles and the sidebar. The home screen groups it: the notepad under **Apps**,
+links under **Links**; the sidebar keeps the list order. The dashed **+ Add** tile at the end of Links opens a
+small dialog for one new link (URL, name — defaults to the host name —, icon upload, new tab); it is added at
+the end of the list. Hovering a sidebar icon shows a flyout with its full
 name and URL. Edit with ✎ at the bottom of the sidebar (the button above it switches the theme:
 auto / light / dark) — a form or raw JSON:
 

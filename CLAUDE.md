@@ -35,7 +35,9 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 - Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
   (screen sharing). Switching home ⇄ notepad adds no history entries and isn't stored. The notes folder is only
   touched when the notepad is first opened on the page.
-- One action list drives both the home tiles and the sidebar. Action = link `{name, url, target?}` or notepad
+- One action list drives both the home tiles and the sidebar. Home groups it into "Apps" (notepad) and "Links";
+  the sidebar keeps the list order. The "+ Add" tile (last in Links) opens the one-link dialog (`#add`), not
+  the full editor (✎). Action = link `{name, url, target?}` or notepad
   `{type: "notes", name}`. Uploaded icons are 128×128 PNG, keyed by hostname or `"notes"`.
 - Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows at the top/bottom edge when
   icons are cut off. Home button on top; theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.

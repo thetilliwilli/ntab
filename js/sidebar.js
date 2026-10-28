@@ -2,6 +2,7 @@
 
 import { loadLinks, onLinksChanged, getIcons, onIconsChanged } from "./settings.js";
 import { getView, setView, onView } from "./view.js";
+import { openAddDialog } from "./shortcuts.js";
 import { $, el, isNotes, iconKey } from "./util.js";
 
 const side = $("links");
@@ -110,24 +111,29 @@ function render() {
     item.append(iconEl(link, icons));
     item.addEventListener("mouseenter", () => showFlyout(item, link));
     side.append(item);
-
-    const tile = actionEl(link, "tile");
-    tile.title = isNotes(link) ? link.name : link.url;
-    tile.append(iconEl(link, icons), el("span", "tile-name", link.name));
-    grid.append(tile);
   }
-  grid.append(addTile());
+  // home: the notepad under "Apps", links under "Links" (the sidebar keeps the list order)
+  const apps = links.filter(isNotes);
+  if (apps.length) grid.append(el("h2", "home-head", "Apps"), ...apps.map(tile));
+  grid.append(el("h2", "home-head", "Links"), ...links.filter((l) => !isNotes(l)).map(tile), addTile());
   markView();
   markMore();
 }
 
-/* last home tile: opens the actions editor */
+function tile(link) {
+  const t = actionEl(link, "tile");
+  t.title = isNotes(link) ? link.name : link.url;
+  t.append(iconEl(link, icons), el("span", "tile-name", link.name));
+  return t;
+}
+
+/* last "Links" tile: adds one link */
 function addTile() {
   const b = el("button", "tile tile-add");
   b.type = "button";
-  b.title = "Add or edit actions";
+  b.title = "Add a link";
   b.append(el("span", "ico", "+"), el("span", "tile-name", "Add"));
-  b.addEventListener("click", () => $("links-edit").click());
+  b.addEventListener("click", openAddDialog);
   return b;
 }
 

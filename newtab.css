@@ -270,6 +270,20 @@ code { font-family: var(--mono); font-size: 12px; }
 .tile:hover { background: var(--surface); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
 .tile .ico { --s: 56px; }
 .tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-head {
+  grid-column: 1 / -1;
+  margin: 0 0 -8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-head:not(:first-child) { margin-top: 16px; }
+
 .tile-add { background: transparent; border: 1px dashed var(--border-strong); color: var(--muted); font-family: inherit; cursor: pointer; }
 .tile-add .ico { background: none; color: var(--accent); font-size: 48px; font-weight: 300; }
 .tile-add:hover { border-style: solid; color: var(--fg); }
@@ -498,6 +512,8 @@ code { font-family: var(--mono); font-size: 12px; }
 .dlg[open] { display: flex; flex-direction: column; }
 .dlg::backdrop { background: rgba(0, 0, 0, 0.35); }
 .dlg-wide { width: min(1000px, 95vw); }
+.dlg-narrow { width: min(480px, 92vw); }
+.dlg form { display: contents; }
 
 .dlg-head {
   flex: none;
@@ -555,6 +571,18 @@ code { font-family: var(--mono); font-size: 12px; }
 .fdel { width: 28px; height: 27px; padding: 0; color: var(--muted); }
 .fdel:hover { background: var(--danger); color: #fff; }
 .empty { padding: 16px; color: var(--muted); text-align: center; }
+
+/* add link dialog */
+
+.add-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; padding: 14px 12px; }
+.add-body > label, .add-body > span { color: var(--muted); }
+.add-body input[type="text"] { height: 28px; padding: 0 8px; }
+.add-body .url { font-family: var(--mono); font-size: 12px; }
+.add-body > .sc-check { color: var(--fg); }
+.add-icon { display: flex; align-items: center; gap: 8px; }
+.add-icon .ico { --s: 32px; }
+.add-icon button { height: 28px; padding: 0 10px; border-color: var(--border); }
+.add-icon .muted { font-size: 12px; }
 
 /* shortcuts dialog */
 
