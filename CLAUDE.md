@@ -67,7 +67,8 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
 
 ## Testing
 
-No test framework. `test/` holds a headless-Chrome harness driven over the DevTools protocol:
+No test framework. `test/` holds a headless-Chrome harness driven over the DevTools protocol (raw CDP; Playwright/Puppeteer/browser MCP
+were considered and declined, keep it dependency-free):
 
 - `test/stub.js` mocks `chrome.storage` (backed by `localStorage` keys `stub:local` / `stub:sync`),
   `chrome.runtime`, and maps `showDirectoryPicker()` to the OPFS folder `notes`.
