@@ -32,6 +32,8 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
   when saving without it). The user explicitly declined both migrations.
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.
+- Theme colors stay our own tokens: Chrome has no API to read its theme colors (only light/dark is known);
+  matching the default Chrome palette was offered and declined.
 - Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
   (screen sharing). Switching home ⇄ notepad adds no history entries and isn't stored. The notes folder is only
   touched when the notepad is first opened on the page.
