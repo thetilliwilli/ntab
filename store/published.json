@@ -1,5 +1,8 @@
 {
-  "version": "2.0.0",
-  "permissions": ["storage", "favicon"],
-  "commit": "beec02f"
+  "version": "2.1.0",
+  "permissions": [
+    "storage",
+    "favicon"
+  ],
+  "commit": "a6e2f63"
 }
