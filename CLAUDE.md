@@ -24,7 +24,8 @@ store releases, and the header comment of `js/notes.js` for the save/draft/sessi
   same commit, and `store/demo.mjs` / the scenes in `scripts/release.mjs` if the screenshots would be wrong.
 - Store screenshots and promo tiles share one style: light theme only.
 - Extension name: "NTab: Notepad New Tab" (`short_name` "NTab"; was "Custom New Tab" in v1). "New tab" and
-  "notepad" are in the name for store search; no keyword stuffing. Page `<title>` is `newtab`.
+  "notepad" are in the name for store search; no keyword stuffing. Page title: "new" on the home
+  screen, "Notes" in the notepad (`js/view.js`).
 - Favicon and extension icon: blue "N" in a square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with
   `magick -background none -density 1152 icons/icon.svg -resize NxN PNG32:icons/icon-N.png`).
 - No migrations: the v1 shortcuts migration was removed on purpose; existing users' saved lists don't get the
