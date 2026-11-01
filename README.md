@@ -49,7 +49,7 @@ shows a reminder with **Export backup** and **Later** (3 days).
 
 ## Notepad
 
-- Double-click the free space of the tab bar to create a note (`new 1`, `new 2`…). `[+]` lists every note
+- Double-click the free space of the tab bar to create a note (`new1`, `new2`…). `[+]` lists every note
   (filter, open, delete). With no tabs open the page shows the same list in place of the editor.
 - A note's name is any string (`todo`, `todo.md`, `log.txt`); it only matters when the note is downloaded.
   Double-click a tab to rename. Drag tabs to reorder. Middle-click or `×` closes. Right-click → **Download**

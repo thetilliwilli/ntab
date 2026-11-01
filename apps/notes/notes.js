@@ -68,10 +68,10 @@ export async function start() {
   else showNothing();
 }
 
-/* "new 1", or the first number no note has */
+/* "new1", or the first number no note has */
 async function newName() {
   const taken = new Set((await db.all("notes")).map((n) => n.name));
-  for (let i = 1; ; i++) if (!taken.has(`new ${i}`)) return `new ${i}`;
+  for (let i = 1; ; i++) if (!taken.has(`new${i}`)) return `new${i}`;
 }
 
 export async function create() {

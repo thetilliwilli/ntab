@@ -28,7 +28,7 @@ await sleep(300);
 await P.type("two");
 await sleep(700);
 let all = await notes(P);
-ok("two notes: “new 1”, “new 2”", all.length === 2 && (await byName(P, "new 1"))?.text === "first line\nsecond" && (await byName(P, "new 2"))?.text === "two");
+ok("two notes: “new1”, “new2”", all.length === 2 && (await byName(P, "new1"))?.text === "first line\nsecond" && (await byName(P, "new2"))?.text === "two");
 ok("status says saved", /^saved /.test(await P.ev(`document.getElementById('st-save').textContent`)));
 
 // rename by double-click on the tab: any string, no extension added
@@ -36,14 +36,14 @@ await P.ev(`document.querySelectorAll('#tabs .tab-name')[1].dispatchEvent(new Mo
 await sleep(100);
 await P.ev(`(() => { const i = document.querySelector('.tab-rename'); i.value = 'plan'; i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
 await sleep(300);
-ok("renamed to “plan”", (await byName(P, "plan"))?.text === "two" && JSON.stringify(await tabs(P)) === '["new 1","plan"]');
+ok("renamed to “plan”", (await byName(P, "plan"))?.text === "two" && JSON.stringify(await tabs(P)) === '["new1","plan"]');
 
 // a second page: opens with the session of the page used last, follows edits, renames and deletes
 await sleep(300);
 const Q = await newPage();
 await sleep(1000);
 await openApp(Q, "notes");
-ok("page 2 opens the same tabs", JSON.stringify(await tabs(Q)) === '["new 1","plan"]', JSON.stringify(await tabs(Q)));
+ok("page 2 opens the same tabs", JSON.stringify(await tabs(Q)) === '["new1","plan"]', JSON.stringify(await tabs(Q)));
 await Q.ev(`document.querySelectorAll('#tabs .tab')[1].click()`);
 await sleep(100);
 await P.ev(`document.querySelectorAll('#tabs .tab')[1].click(); const t = document.getElementById('text'); t.focus(); t.setSelectionRange(3, 3)`);
@@ -53,16 +53,16 @@ ok("page 2 gets the text", (await Q.ev(`document.getElementById("text").value`))
 await P.ev(`document.querySelectorAll('#tabs .tab-name')[1].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
 await P.ev(`(() => { const i = document.querySelector('.tab-rename'); i.value = 'plan.md'; i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
 await sleep(500);
-ok("page 2 gets the new name", JSON.stringify(await tabs(Q)) === '["new 1","plan.md"]', JSON.stringify(await tabs(Q)));
+ok("page 2 gets the new name", JSON.stringify(await tabs(Q)) === '["new1","plan.md"]', JSON.stringify(await tabs(Q)));
 
 // download: the file is named exactly like the note
 const dl = fs.mkdtempSync(path.join(os.tmpdir(), "ntab-dl-"));
 await P.send("Page.setDownloadBehavior", { behavior: "allow", downloadPath: dl });
-const nameless = (await notes(P)).find((n) => n.name === "new 1");
+const nameless = (await notes(P)).find((n) => n.name === "new1");
 await P.ev(`document.querySelectorAll('#tabs .tab')[0].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 50 }))`);
 await P.ev(`document.querySelector('.ctx-menu .ctx-item').click()`);
 await sleep(800);
-ok("downloaded as “new 1” (no extension added)", fs.readdirSync(dl).join() === "new 1" && fs.readFileSync(path.join(dl, "new 1"), "utf8") === nameless.text, fs.readdirSync(dl).join());
+ok("downloaded as “new1” (no extension added)", fs.readdirSync(dl).join() === "new1" && fs.readFileSync(path.join(dl, "new1"), "utf8") === nameless.text, fs.readdirSync(dl).join());
 
 // delete from the tab menu: gone here and on page 2
 await P.ev(`document.querySelectorAll('#tabs .tab')[0].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 50 }))`);

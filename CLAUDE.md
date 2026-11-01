@@ -24,7 +24,8 @@ save/session model, and `shell/apps.js` for the app contract.
   `npm run release:done` after publishing). Releases: `npm run release` (see PUBLISHING.md); the user uploads by hand.
 - When a user-visible feature changes, update `store/description.txt` (feature list and WHAT'S NEW) in the
   same commit, and `store/demo.mjs` / the scenes in `scripts/release.mjs` if the screenshots would be wrong.
-- Store screenshots and promo tiles share one style: light theme only.
+- Store screenshots and promo tiles share one style: light theme only. Screenshot 1 (the title one, also on the
+  marquee tile) is always the home screen with its tiles; the apps come after it.
 - Extension name: "NTab: Notepad New Tab" (`short_name` "NTab"; was "Custom New Tab" in v1). "New tab" and
   "notepad" are in the name for store search; no keyword stuffing. Page title: "new" on the home
   screen, the app's name in an app (`shell/main.js`).

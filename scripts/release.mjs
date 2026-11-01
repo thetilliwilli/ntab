@@ -136,15 +136,15 @@ async function screenshots(icons) {
 
   // all screenshots in the light theme, one consistent style (the user's choice)
 
-  // 1. notepad with tabs
+  // 1. home screen: the title screenshot, always first
+  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
+  await shot(1, { label: "home screen" });
+
+  // 2. notepad with tabs
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await openApp(P, "notes");
   await caret(P, "Prepare slides for Thursday's demo");
-  await shot(1, { label: "notepad" });
-
-  // 2. home screen
-  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await shot(2, { label: "home screen" });
+  await shot(2, { label: "notepad" });
 
   // 3. tracker with a running activity
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
