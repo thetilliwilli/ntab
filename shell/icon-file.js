@@ -1,4 +1,4 @@
-/* turning a user's image file into an uploaded icon (actions editor and the add-link dialog) */
+/* turning a user's image file into an uploaded icon (actions editor and the action form) */
 
 import { loadImg } from "./actions.js";
 

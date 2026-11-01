@@ -10,6 +10,11 @@ HOME SCREEN
 • Hover a sidebar icon to see its full name and address
 • Edit the list in a simple form or as raw JSON
 
+REQUEST TILES
+• A tile can send an HTTP request: URL, method, headers, body
+• One click shows the answer in a window: status, time, headers, the body as text or formatted JSON
+• Repeat, copy the answer; handy for health checks, your public IP, small APIs
+
 NOTEPAD
 • Tabs: double-click the empty tab bar for a new note, drag to reorder, double-click to rename
 • Any name: todo, todo.md, log.txt…
@@ -41,13 +46,14 @@ DATA
 • Light, dark or automatic theme
 
 PRIVACY
-• No account, no servers, no tracking, no network requests
+• No account, no servers, no tracking; no network requests except the request tiles you create
 • Your notes, events and tasks stay in your browser (and in the backups you export)
-• One permission: "favicon", to show site icons from Chrome's local cache
+• One permission: "favicon", to show site icons from Chrome's local cache. Access to a site is asked only when one of your request tiles needs it, for that site only
 
 WHAT'S NEW
 • Tracker: log events with one tap, time activities
 • Task board with New / Work / Hold / Done
+• Request tiles: send an HTTP request, see the answer
 • Everything is now kept in the browser, no folder to choose; backup export and import
 • Your old note files: Data → Import text files. The site list starts over from the defaults
 

@@ -87,8 +87,9 @@ cards it shifts.
 ## Actions
 
 One list drives both the home tiles and the sidebar, in the same order. The dashed **+ Add** tile at the end
-opens a small dialog for one new link (URL, name — defaults to the host name —, icon upload, new tab); it is
-added at the end of the list. Hovering a sidebar icon shows a flyout with its full name and address. Edit with
+opens the action form for a new action of any kind (URL, name — defaults to the host or app name —, icon upload,
+new tab or the request's method, headers as `Name: value` lines and body); it is added at the end of the list.
+In the editor, ⚙ (or the method button) on a row opens the same form for that row. Hovering a sidebar icon shows a flyout with its full name and address. Edit with
 ✎ at the bottom of the sidebar (above it: **Data** and the theme switch auto / light / dark) — a form or raw JSON:
 
 ```json
@@ -98,9 +99,21 @@ added at the end of the list. Hovering a sidebar icon shows a flyout with its fu
 ]
 ```
 
-An action is a button of some `kind` with its `options`. The only kind so far is `open`: a route `#/<app id>`
-opens an app (`#/notes`, `#/tracker`, `#/board`), anything else is a web address. New kinds (a request with its
-response, …) are new values of `kind`. Actions of a kind or an app this version doesn't know (from a backup of a
+An action is a button of some `kind` with its `options`:
+
+- `open` `{ url, newTab }` — a route `#/<app id>` opens an app (`#/notes`, `#/tracker`, `#/board`), anything else
+  is a web address;
+- `request` `{ url, method, headers, body }` — sends an HTTP request and shows the response in a window: status,
+  time, type, size, the response headers (folded) and the body as text, JSON pretty-printed (binary bodies are
+  only described). **Repeat**, **Copy**, **Cancel**, a 30 s timeout. `headers` is `{ "Name": "value" }`, `body` a
+  string (not sent with GET and HEAD).
+
+  Without a host permission the browser applies CORS, so only services that allow it answer (e.g.
+  `https://api.ipify.org?format=json`). When a request fails that way, the window offers **Allow access to
+  <site>**: an optional host permission for that one site (`optional_host_permissions` in the manifest, so
+  nothing is asked at install), then sends it again.
+
+New features of this sort are new values of `kind`. Actions of a kind or an app this version doesn't know (from a backup of a
 newer version) are kept and not shown. The default list (made on the first start): Notes, Tracker, Board, Gmail,
 YouTube. The editor's **+ notepad / + tracker / + task board** buttons add an app that isn't in the list; without
 the notepad it shows **add it back** and asks before saving.
@@ -112,8 +125,10 @@ any image; it is scaled to a 128×128 PNG and kept in the action (`icon`, a data
 ## Permissions and privacy
 
 - `favicon` — reads action icons from Chrome's local favicon cache.
+- optional host permissions — asked for one site at a time, only when a request action of yours needs it.
 
-No host permissions, no network requests, nothing leaves the browser except the backups you export.
+No network requests except the request actions you create; nothing else leaves the browser except the backups
+you export.
 
 ## Publishing
 
@@ -124,7 +139,7 @@ No host permissions, no network requests, nothing leaves the browser except the 
 
 Sources are plain ES modules, split by role:
 
-- `manifest.json` — MV3; `chrome_url_overrides.newtab`, permission `favicon`
+- `manifest.json` — MV3; `chrome_url_overrides.newtab`, permission `favicon`, optional host permissions
 - `newtab.html` — the page: shell, the screens of all apps, dialogs
 - `icons/` — `icon.svg` (source, also the page favicon) and the PNG sizes for the manifest
 - `platform/` — the only place that calls `chrome.*` (the favicon cache); `index.js` picks the platform
@@ -138,7 +153,8 @@ Sources are plain ES modules, split by role:
   - `apps.js` — the app registry and the app contract
   - `view.js` — current screen (home / an app id) and its route
   - `actions.js`, `sidebar.js`, `home.js` — the actions and their icons, the sidebar with its flyout, home tiles
-  - `actions-dialog.js`, `add-link.js`, `icon-file.js` — the actions editor, the + Add dialog, icon upload
+  - `actions-dialog.js`, `action-form.js`, `icon-file.js` — the actions editor, the form for one action (+ Add, ⚙), icon upload
+  - `request.js` — runs request actions and shows the response
   - `data.js` — the Data dialog (backup export / import, text files) and the backup reminder
   - `theme.js` — applies the saved theme before the first paint
 - `apps/notes/` — `index.js` (the app), `notes.js` (open notes, autosave, session, cross-page sync),
@@ -146,5 +162,5 @@ Sources are plain ES modules, split by role:
 - `apps/tracker/` — `index.js` (UI), `model.js` (types, entries, activities)
 - `apps/board/` — `index.js` (UI, drag and drop), `model.js` (tasks)
 - `store/`, `scripts/release.mjs` — store listing sources and the release builder
-- `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board and data tests);
+- `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board, data and request tests);
   not part of the package

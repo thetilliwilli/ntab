@@ -1,7 +1,7 @@
 /* actions editor (✎ in the sidebar): form mode and raw JSON mode (like VS Code settings) */
 
-import { getActions, iconEl, saveActions, newAction, appOf, isRoute } from "./actions.js";
-import { pickFile, iconFromFile } from "./icon-file.js";
+import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor } from "./actions.js";
+import { openActionForm } from "./action-form.js";
 import { apps, appById } from "./apps.js";
 import { $, el, hostOf, fixUrl, routeOf, sortable } from "../shared/util.js";
 
@@ -21,6 +21,9 @@ export function initActionsDialog() {
   $("sc-mode-form").addEventListener("click", () => setMode("form"));
   $("sc-mode-json").addEventListener("click", () => setMode("json"));
   $("sc-add").addEventListener("click", () => addRow(newAction("", ""), false));
+  $("sc-add-request").addEventListener("click", () =>
+    openActionForm({ edit: { ...newAction("", ""), kind: "request", options: optionsFor("request") }, onDone: (a) => addRow(a, false) }),
+  );
   $("sc-notes-back").addEventListener("click", () => addRow(appAction(appById("notes")), true));
   // "+ notepad", "+ tracker"…: one button per app, shown while no action opens it
   for (const app of apps) {
@@ -78,19 +81,35 @@ function setMode(m, force = false) {
 
 /* ---------- data ---------- */
 
+const known = (a) => a.kind in KINDS;
+
 function normalize(a) {
-  if (a.kind !== "open") return a; // a kind of a newer version: kept as it is
-  const url = fixUrl(String(a.options?.url ?? "").trim());
-  return { ...a, name: String(a.name ?? "").trim(), options: { url, newTab: !!a.options?.newTab } };
+  if (!known(a)) return a; // a kind of a newer version: kept as it is
+  const o = a.options ?? {};
+  const url = fixUrl(String(o.url ?? "").trim());
+  const options =
+    a.kind === "open"
+      ? { url, newTab: !!o.newTab }
+      : {
+          url,
+          method: String(o.method || "GET").toUpperCase(),
+          headers: Object.fromEntries(Object.entries(o.headers && typeof o.headers === "object" ? o.headers : {}).map(([k, v]) => [k, String(v)])),
+          body: String(o.body ?? ""),
+        };
+  return { ...a, name: String(a.name ?? "").trim(), options };
 }
 
 /* drops untouched empty rows, normalizes the rest */
-const cleanList = (list) => list.filter((a) => a.kind !== "open" || String(a.name ?? "").trim() || String(a.options?.url ?? "").trim()).map(normalize);
+const cleanList = (list) => list.filter((a) => !known(a) || String(a.name ?? "").trim() || String(a.options?.url ?? "").trim()).map(normalize);
 
 /* what is wrong with an action, or "" */
 function problem(a) {
-  if (a.kind !== "open") return getActions().some((x) => x.id === a.id && x.kind === a.kind) ? "" : `"kind" can only be "open"`;
+  if (!known(a)) return getActions().some((x) => x.id === a.id && x.kind === a.kind) ? "" : `"kind" can only be ${Object.keys(KINDS).map((k) => `"${k}"`).join(" or ")}`;
   if (!a.name) return "a name is required";
+  if (a.kind === "request") {
+    if (!METHODS.includes(a.options.method)) return `"method" can only be ${METHODS.join(", ")}`;
+    return /^https?:/i.test(a.options.url) && hostOf(a.options.url) ? "" : "a request needs an http:// or https:// URL";
+  }
   const route = routeOf(a.options.url);
   if (route != null) return appById(route) ? "" : `"${a.options.url}" is not an app; apps: ${apps.map((x) => `#/${x.id}`).join(", ")}`;
   return hostOf(a.options.url) ? "" : "a valid URL is required";
@@ -100,12 +119,14 @@ function parseJson() {
   try {
     const data = JSON.parse(jsonText.value);
     if (!Array.isArray(data)) throw new Error("top level must be an array");
-    const known = new Map(draft.map((a) => [a.id, a]));
+    const before = new Map(draft.map((a) => [a.id, a]));
     const list = data.map((a, i) => {
       if (!a || typeof a !== "object") throw new Error(`item ${i + 1}: must be an object`);
       if (typeof a.name !== "string") throw new Error(`item ${i + 1}: "name" must be a string`);
-      if (a.kind === "open" && typeof a.options?.url !== "string") throw new Error(`item ${i + 1}: "options.url" must be a string`);
-      const was = known.get(a.id);
+      if (known(a) && typeof a.options?.url !== "string") throw new Error(`item ${i + 1}: "options.url" must be a string`);
+      if (a.kind === "request" && a.options.headers != null && (typeof a.options.headers !== "object" || Array.isArray(a.options.headers)))
+        throw new Error(`item ${i + 1}: "options.headers" must be an object { "Name": "value" }`);
+      const was = before.get(a.id);
       return normalize({ ...newAction("", ""), icon: was?.icon ?? null, ...a, id: was ? a.id : newAction().id });
     });
     const bad = list.findIndex((a) => problem(a));
@@ -180,54 +201,54 @@ function row(a, i) {
   });
 
   r.append(handle, iconEl(normalize({ ...a, name: a.name || "?" })), name);
-  if (a.kind !== "open") {
-    r.append(el("span", "sc-what", `“${a.kind}” action from a newer version: kept, not shown`), el("span"), el("span"), del);
+  if (!known(a)) {
+    r.append(el("span", "sc-what", `“${a.kind}” action from a newer version: kept, not shown`), el("span"), del);
     return r;
   }
 
+  // everything about the action, icon included, in the action form
+  const more = el("button", "sc-more", "⚙");
+  more.title = "Edit all of it: kind, icon, request headers and body";
+  more.addEventListener("click", () =>
+    openActionForm({
+      edit: normalize(structuredClone(a)),
+      onDone: (next) => {
+        draft[i] = next;
+        renderRows();
+      },
+    }),
+  );
+
   const url = el("input", "url");
   url.type = "text";
-  url.placeholder = "https://…  or  #/notes";
+  url.placeholder = a.kind === "open" ? "https://…  or  #/notes" : "https://api.example.com/…";
   url.setAttribute("aria-label", "Address");
   url.value = a.options.url;
   url.spellcheck = false;
 
-  const check = el("label", "check");
-  const box = el("input");
-  box.type = "checkbox";
-  box.checked = !!a.options.newTab;
-  check.title = "Open in a new browser tab";
-  check.append(box, "new tab");
-  box.addEventListener("change", () => (a.options.newTab = box.checked));
-  const syncCheck = () => (check.style.visibility = isRoute(normalize(a)) ? "hidden" : "");
-  syncCheck();
+  let extra;
+  if (a.kind === "request") {
+    extra = el("button", "sc-method", a.options.method);
+    extra.title = "A request: method, headers and body are in ⚙";
+    extra.addEventListener("click", () => more.click());
+  } else {
+    extra = el("label", "check");
+    const box = el("input");
+    box.type = "checkbox";
+    box.checked = !!a.options.newTab;
+    extra.title = "Open in a new browser tab";
+    extra.append(box, "new tab");
+    box.addEventListener("change", () => (a.options.newTab = box.checked));
+  }
+  const syncExtra = () => (extra.style.visibility = isRoute(normalize(a)) ? "hidden" : "");
+  syncExtra();
 
   url.addEventListener("input", () => {
     a.options.url = url.value;
-    syncCheck();
+    syncExtra();
   });
   url.addEventListener("change", refreshIcon);
 
-  const uploadBtn = el("button", "", "⤒");
-  uploadBtn.title = "Upload your own icon";
-  uploadBtn.addEventListener("click", async () => {
-    const file = await pickFile();
-    if (!file) return;
-    try {
-      a.icon = await iconFromFile(file);
-      refreshIcon();
-      msg("icon set — Save to apply", "ok");
-    } catch {
-      msg(`${file.name}: not an image the browser can read`, "err");
-    }
-  });
-  const resetBtn = el("button", "", "↺");
-  resetBtn.title = "Back to the automatic icon";
-  resetBtn.addEventListener("click", () => {
-    a.icon = null;
-    refreshIcon();
-  });
-
-  r.append(url, check, uploadBtn, resetBtn, del);
+  r.append(url, extra, more, del);
   return r;
 }

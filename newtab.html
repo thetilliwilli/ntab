@@ -152,11 +152,14 @@
         </div>
         <div class="sc-adds" id="sc-adds">
           <button id="sc-add" class="add">+ link</button>
+          <button id="sc-add-request" class="add">+ request</button>
         </div>
       </div>
       <div id="sc-json" hidden>
         <p class="muted hint">Array of actions <code>{ "id": "…", "name": "…", "kind": "open", "options": { "url": "…", "newTab": false } }</code>.
-          <code>url</code> is a web address or an app: <span id="sc-routes"></span>. Leave out <code>id</code> for a new action; icons stay with the id.</p>
+          <code>url</code> is a web address or an app: <span id="sc-routes"></span>.
+          A request: <code>{ "kind": "request", "options": { "url": "…", "method": "POST", "headers": { "Accept": "application/json" }, "body": "…" } }</code>.
+          Leave out <code>id</code> for a new action; icons stay with the id.</p>
         <textarea id="sc-json-text" spellcheck="false" aria-label="Actions JSON"></textarea>
         <p id="sc-json-err" class="err"></p>
       </div>
@@ -171,12 +174,20 @@
   <dialog id="add" class="dlg dlg-narrow">
     <form method="dialog" id="add-form">
       <div class="dlg-head">
-        <h2>Add link</h2>
+        <h2 id="add-title">Add action</h2>
         <button type="button" id="add-x" class="dlg-x" title="Close">×</button>
       </div>
       <div class="dlg-body add-body">
+        <span>Does</span>
+        <div class="seg add-kind" id="add-kind" role="group" aria-label="Kind of action"></div>
         <label for="add-url">URL</label>
-        <input id="add-url" type="text" class="url" placeholder="https://…" spellcheck="false" autocomplete="off">
+        <input id="add-url" type="text" class="url" spellcheck="false" autocomplete="off">
+        <label for="add-method" data-for="request">Method</label>
+        <select id="add-method" data-for="request"></select>
+        <label for="add-headers" data-for="request">Headers</label>
+        <textarea id="add-headers" class="url" data-for="request" rows="3" spellcheck="false" placeholder="Accept: application/json&#10;Authorization: Bearer …"></textarea>
+        <label for="add-body" data-for="request">Body</label>
+        <textarea id="add-body" class="url" data-for="request" rows="4" spellcheck="false" placeholder="not sent with GET and HEAD"></textarea>
         <label for="add-name">Name</label>
         <input id="add-name" type="text" spellcheck="false" autocomplete="off">
         <span>Icon</span>
@@ -184,10 +195,10 @@
           <span class="ico" id="add-ico"></span>
           <button type="button" id="add-upload">upload…</button>
           <button type="button" id="add-reset" hidden>reset</button>
-          <span class="muted" id="add-ico-note">from Chrome's cache of the site</span>
+          <span class="muted" id="add-ico-note"></span>
         </div>
-        <span></span>
-        <label class="check"><input id="add-blank" type="checkbox"> open in a new browser tab</label>
+        <span data-for="open"></span>
+        <label class="check" data-for="open"><input id="add-blank" type="checkbox"> open in a new browser tab</label>
       </div>
       <div class="dlg-foot">
         <span id="add-msg" class="msg"></span>
@@ -195,6 +206,31 @@
         <button id="add-save" class="primary">Add</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="req" class="dlg dlg-wide req-dlg">
+    <div class="dlg-head">
+      <h2 id="req-title"></h2>
+      <button id="req-x" class="dlg-x" title="Close">×</button>
+    </div>
+    <div class="dlg-body req-body">
+      <div class="req-line">
+        <span id="req-status" class="req-status"></span>
+        <span id="req-meta" class="req-meta"></span>
+      </div>
+      <details id="req-headers" class="req-headers" hidden>
+        <summary>Response headers</summary>
+        <pre id="req-head-text"></pre>
+      </details>
+      <pre id="req-body" class="req-text"></pre>
+    </div>
+    <div class="dlg-foot">
+      <span id="req-note" class="msg"></span>
+      <button id="req-allow" class="primary" hidden></button>
+      <button id="req-cancel" hidden>Cancel</button>
+      <button id="req-copy" hidden>Copy</button>
+      <button id="req-repeat">Repeat</button>
+    </div>
   </dialog>
 
   <dialog id="data" class="dlg dlg-narrow">

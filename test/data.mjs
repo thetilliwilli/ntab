@@ -109,7 +109,7 @@ ok("JSON: id, name, kind, options", json.length === 4 && Object.keys(json[0]).jo
 const setJson = (v) => P.ev(`document.getElementById('sc-json-text').value = ${JSON.stringify(JSON.stringify(v))}; document.getElementById('sc-save').click()`);
 await setJson([...json, { name: "Bad", kind: "open", options: { url: "#/nope" } }]);
 await sleep(200);
-ok("unknown route refused", /item 5: "#\/nope" is not an app/.test(await P.ev(`document.getElementById('sc-json-err').textContent`)));
+ok("unknown route refused", /item 5: "#\/nope" is not an app/.test(await P.ev(`document.getElementById("sc-json-err").textContent`)), await P.ev(`document.getElementById("sc-json-err").textContent + " / " + document.getElementById("sc-msg").textContent`));
 await setJson([json[3], { ...json[0], name: "Notepad" }, { name: "Wiki", kind: "open", options: { url: "en.wikipedia.org" } }]);
 await sleep(400);
 actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);

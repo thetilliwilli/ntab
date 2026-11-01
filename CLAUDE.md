@@ -56,10 +56,14 @@ save/session model, and `shell/apps.js` for the app contract.
 - Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
   (screen sharing). Screens are hash routes (`#/notes`), replaced, never added to history; a route in the address
   on load is dropped. An app loads its data when first opened on the page.
-- Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. The only kind is
-  `open` `{url, newTab}`: `#/<app id>` opens an app, anything else is a web address. Future features are new
-  kinds (e.g. a request that shows its response). One list in `rank` order drives home and the sidebar, no
-  groups. The "+ Add" tile (last) opens the one-link dialog (`#add`), not the full editor (✎). Unknown kinds or
+- Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. Kinds: `open`
+  `{url, newTab}` (`#/<app id>` opens an app, anything else is a web address) and `request`
+  `{url, method, headers, body}` (shows the response as text, JSON pretty-printed; no images or other binary
+  rendering, the user wants text answers). Future features are new kinds. One list in `rank` order drives home
+  and the sidebar, no groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full
+  editor (✎); the editor's ⚙ opens the same form for a row.
+- Requests and CORS: `optional_host_permissions` for all sites, granted one site at a time from the result window
+  ("Allow access to <site>") after a failed request; never `host_permissions` (install warning, review). Unknown kinds or
   apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`.
 - Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows at the top/bottom edge when
   icons are cut off. Home button on top; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.

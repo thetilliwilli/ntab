@@ -1,11 +1,14 @@
 /* actions (the "actions" store, see shared/db.js): loaded once, kept in sync, drawn by the sidebar and home.
-   an action is a button of some kind with its options; the only kind so far is "open" { url, newTab }:
-   "#/<app id>" opens an app on this page, anything else is a web address */
+   an action is a button of some kind with its options:
+     "open"     { url, newTab }                 "#/<app id>" opens an app on this page, anything else a web address
+     "request"  { url, method, headers, body }  sends an HTTP request and shows the response (shell/request.js)
+   headers is an object { name: value }; body is a string, not sent with GET and HEAD */
 
 import * as db from "../shared/db.js";
 import * as platform from "../platform/index.js";
 import { appById } from "./apps.js";
 import { setView } from "./view.js";
+import { runRequest } from "./request.js";
 import { el, routeOf } from "../shared/util.js";
 
 let actions = [];
@@ -15,15 +18,28 @@ const notify = () => subs.forEach((fn) => fn());
 export const getActions = () => actions;
 export const subscribeActions = (fn) => subs.add(fn);
 
+export const KINDS = { open: "open", request: "request" }; // kind -> its name in the editor
+export const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"];
+
 export const newAction = (name, url, newTab = false) => ({ id: db.uuid(), name, icon: null, rank: 0, kind: "open", options: { url, newTab } });
+
+/* the options a kind starts with, keeping the url */
+export function optionsFor(kind, url = "") {
+  if (kind === "request") return { url, method: "GET", headers: {}, body: "" };
+  return { url, newTab: false };
+}
 
 /* the app an action opens, if it opens one of this version's apps */
 export const appOf = (action) => (action.kind === "open" ? appById(routeOf(action.options?.url)) : undefined) ?? null;
 export const isRoute = (action) => action.kind === "open" && routeOf(action.options?.url) != null;
 
-/* what this version can show: "open" actions of web addresses and of its own apps (a backup from a newer version
-   may have other kinds or apps; they are kept, not shown) */
-export const shownActions = () => actions.filter((a) => a.kind === "open" && (!isRoute(a) || appOf(a)));
+/* what this version can show: requests, "open" actions of web addresses and of its own apps (a backup from a newer
+   version may have other kinds or apps; they are kept, not shown) */
+export const shownActions = () => actions.filter((a) => a.kind === "request" || (a.kind === "open" && (!isRoute(a) || appOf(a))));
+
+/* one line about what it does: the app, "POST https://…", or the address */
+export const describe = (action) =>
+  appOf(action)?.what ?? (action.kind === "request" ? `${action.options.method} ${action.options.url}` : action.options?.url ?? action.kind);
 
 async function load() {
   actions = (await db.all("actions")).sort((a, b) => a.rank - b.rank);
@@ -40,8 +56,15 @@ export const saveActions = (list) => db.replace("actions", list.map((a, rank) =>
 
 export const addAction = (action) => db.put("actions", { ...action, rank: Math.max(-1, ...actions.map((a) => a.rank)) + 1 });
 
-/* a web address is a real <a>; an app is a button that switches the screen (class "app <app id>") */
+/* a web address is a real <a>; an app is a button that switches the screen (class "app <app id>"); a request is a
+   button that runs it (class "request") */
 export function actionEl(action, cls) {
+  if (action.kind === "request") {
+    const b = el("button", `${cls} request`);
+    b.type = "button";
+    b.addEventListener("click", () => runRequest(action));
+    return b;
+  }
   const app = appOf(action);
   if (!app) {
     const a = el("a", cls);

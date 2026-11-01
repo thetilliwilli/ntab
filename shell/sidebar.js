@@ -1,6 +1,6 @@
 /* sidebar: home button, action icons (with a hover flyout and edge arrows), theme and edit buttons */
 
-import { shownActions, subscribeActions, actionEl, iconEl, appOf } from "./actions.js";
+import { shownActions, subscribeActions, actionEl, iconEl, appOf, describe } from "./actions.js";
 import { getView, setView, onView } from "./view.js";
 import { $, el } from "../shared/util.js";
 
@@ -14,9 +14,10 @@ document.body.append(fly);
 fly.addEventListener("mouseleave", () => (fly.hidden = true));
 fly.addEventListener("click", (e) => {
   const app = flyAction && appOf(flyAction);
-  if (app) {
+  if (app || flyAction?.kind === "request") {
     e.preventDefault();
-    setView(app.id);
+    if (app) setView(app.id);
+    else side.querySelector(`[data-id="${flyAction.id}"]`)?.click(); // the icon runs the request
   }
   fly.hidden = true;
 });
@@ -49,13 +50,13 @@ window.addEventListener("blur", () => (fly.hidden = true));
 
 function showFlyout(a, action) {
   flyAction = action;
-  const app = appOf(action);
-  if (app) fly.removeAttribute("href");
-  else fly.href = action.options.url;
-  if (!app && action.options.newTab) fly.target = "_blank";
+  const link = action.kind === "open" && !appOf(action);
+  if (link) fly.href = action.options.url;
+  else fly.removeAttribute("href");
+  if (link && action.options.newTab) fly.target = "_blank";
   else fly.removeAttribute("target");
   fly.textContent = "";
-  fly.append(a.querySelector(".ico").cloneNode(true), el("span", "fly-name", action.name), el("span", "fly-url", app ? app.what : action.options.url));
+  fly.append(a.querySelector(".ico").cloneNode(true), el("span", "fly-name", action.name), el("span", "fly-url", describe(action)));
   const r = a.getBoundingClientRect();
   fly.style.top = `${r.top}px`;
   fly.style.left = `${r.left}px`;
@@ -69,6 +70,7 @@ function render() {
   for (const action of shownActions()) {
     const item = actionEl(action, "link");
     item.setAttribute("aria-label", action.name);
+    item.dataset.id = action.id;
     item.append(iconEl(action));
     item.addEventListener("mouseenter", () => showFlyout(item, action));
     side.append(item);

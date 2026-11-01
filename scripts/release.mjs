@@ -38,9 +38,11 @@ const cmpVer = (a, b) => {
 const manifest = readJson("manifest.json");
 const published = readJson("store/published.json");
 const perms = manifest.permissions || [];
+const optionalHosts = manifest.optional_host_permissions || [];
 
 if (process.argv.includes("done")) {
   const record = { version: manifest.version, permissions: perms, commit: git("rev-parse", "--short", "HEAD") };
+  if (optionalHosts.length) record.optionalHosts = optionalHosts;
   fs.writeFileSync(rel("store/published.json"), JSON.stringify(record, null, 2) + "\n");
   git("commit", "-m", `Published ${manifest.version} to the Chrome Web Store`, "--", "store/published.json");
   console.log(`store/published.json: ${manifest.version} @ ${record.commit}, committed`);
@@ -54,7 +56,7 @@ const draft = process.argv.includes("--draft");
 const problems = [];
 const notes = []; // things to point out in the README
 const privacy = Object.fromEntries(
-  ["single-purpose", ...perms].map((k) => [k, fs.existsSync(rel(`store/privacy/${k}.txt`)) ? read(`store/privacy/${k}.txt`).trim() : null]),
+  ["single-purpose", ...perms, ...(optionalHosts.length ? ["host-permissions"] : [])].map((k) => [k, fs.existsSync(rel(`store/privacy/${k}.txt`)) ? read(`store/privacy/${k}.txt`).trim() : null]),
 );
 const description = read("store/description.txt").trim();
 
@@ -76,6 +78,9 @@ if (added.length)
   notes.push(`NEW PERMISSIONS: ${added.join(", ")}. Add their justification on the Privacy tab. If Chrome shows a warning ` +
     `for them, existing users get the extension disabled until they accept.`);
 if (removed.length) notes.push(`Removed permissions: ${removed.join(", ")}. Their justification fields disappear by themselves.`);
+if (optionalHosts.length && !published.optionalHosts)
+  notes.push(`NEW optional host permissions (${optionalHosts.join(", ")}): nothing is asked at install, but the Privacy tab ` +
+    `wants a "host permission justification" (privacy/host-permissions.txt) and the review may take longer.`);
 if (manifest.host_permissions?.length || manifest.content_scripts?.length)
   notes.push("The manifest has host permissions or content scripts: expect a longer review.");
 
@@ -324,7 +329,7 @@ ${shots.map((s) => `  - ${f(s)}`).join("\n")}
 ## 3. Privacy
 
 - **Single purpose** ← ${f("privacy/single-purpose.txt")}
-${perms.map((p) => `- **${p} justification** ← ${f(`privacy/${p}.txt`)}${added.includes(p) ? " — NEW" : ""}`).join("\n")}
+${perms.map((p) => `- **${p} justification** ← ${f(`privacy/${p}.txt`)}${added.includes(p) ? " — NEW" : ""}`).join("\n")}${optionalHosts.length ? `\n- **Host permission justification** ← ${f("privacy/host-permissions.txt")}` : ""}
 - Remote code: **No**. Data usage: tick nothing, tick the three certifications.
 - **Save draft.**
 

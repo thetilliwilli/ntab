@@ -84,10 +84,10 @@ ok("restored", (await entries(P)).length === 5);
 // edit time of the newest row: one hour earlier
 await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
 await sleep(100);
-await P.ev(`(() => { const i = document.querySelector('.tr-row input'); const d = new Date(new Date(i.value).getTime() - 3600e3); const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
+await P.ev(`(() => { const i = document.querySelector('.tr-row input'); const d = new Date(Math.max(new Date(i.value).getTime() - 3600e3, new Date().setHours(0, 0, 1, 0))); /* back, but still today */ const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
 await sleep(400);
 ev = await entries(P);
-ok("time changed: one entry an hour back", ev.length === 5 && Date.now() - ev[0].at > 3500e3, JSON.stringify(ev[0]));
+ok("time changed: one entry moved back", ev.length === 5 && Date.now() - ev[0].at > 30e3, JSON.stringify(ev[0]));
 
 // the activity: its end time is editable too, and it can't end before it starts
 const act = ev.find((e) => e.endAt);

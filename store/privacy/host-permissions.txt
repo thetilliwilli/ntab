@@ -1,0 +1,1 @@
+Optional only, nothing is requested at install. The user can create "request" tiles that send an HTTP request to a URL they enter and show the response. If the user's server does not allow cross-origin requests, the extension offers a button that asks for access to that one site (chrome.permissions.request), and only then. No data is sent anywhere else.
