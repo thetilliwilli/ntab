@@ -1,8 +1,8 @@
 /* notes folder listing ([+] dialog and no-open-tabs screen), and the non-modal "close tab as…" panel */
 
 import * as notes from "./notes.js";
-import * as fs from "./fs.js";
-import { $, el, extStart, fmtTime, fmtSize } from "./util.js";
+import * as noteFiles from "./files.js";
+import { $, el, extStart, fmtTime, fmtSize } from "../../shared/util.js";
 
 /* ---------- file browser: [+] dialog and the no-open-tabs screen ---------- */
 
@@ -62,7 +62,7 @@ function fileBrowser({ list, filter, onPick }) {
       list.textContent = "";
       list.append(el("div", "empty", "loading…"));
       try {
-        files = (await fs.listNotes()).sort((a, b) => b.lastModified - a.lastModified);
+        files = (await noteFiles.listNotes()).sort((a, b) => b.lastModified - a.lastModified);
         render();
       } catch (e) {
         list.textContent = "";
@@ -95,7 +95,7 @@ export function initFilesDialog({ onChangeFolder }) {
 }
 
 function openFiles() {
-  $("files-dir").textContent = fs.getDir()?.name || "";
+  $("files-dir").textContent = noteFiles.dirLabel();
   dlg.showModal();
   $("files-filter").focus();
   return dialogFiles.load();
@@ -103,7 +103,7 @@ function openFiles() {
 
 /* fills the no-open-tabs screen */
 export function showInlineFiles() {
-  $("nothing-dir").textContent = fs.getDir()?.name || "";
+  $("nothing-dir").textContent = noteFiles.dirLabel();
   $("nothing-filter").focus();
   return inlineFiles.load();
 }

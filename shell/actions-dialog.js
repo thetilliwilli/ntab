@@ -1,15 +1,16 @@
-/* actions editor: form mode and raw JSON mode (like VS Code settings); "add link" dialog for one new link */
+/* actions editor (✎ in the sidebar): form mode and raw JSON mode (like VS Code settings) */
 
-import { getLinks, getIconMap, iconEl, loadImg } from "./sidebar.js";
-import { saveLinks, setIcons } from "./settings.js";
-import { $, el, hostOf, isNotes, iconKey, sortable } from "./util.js";
+import { getLinks, getIconMap, iconEl } from "./actions.js";
+import { pickFile, iconFromFile } from "./icon-file.js";
+import { saveLinks, setIcons } from "../shared/settings.js";
+import { $, el, hostOf, fixUrl, iconKey, sortable } from "../shared/util.js";
+
+const isNotes = (action) => action.type === "notes";
 
 const dlg = $("sc");
 const rows = $("sc-rows");
 const jsonText = $("sc-json-text");
 const jsonErr = $("sc-json-err");
-
-const ICON_SIZE = 128; // uploaded icons are drawn up to 56px on the home tiles
 
 let draft = []; // [{ name, url, target? } | { type: "notes", name }] being edited
 let pendingIcons = {}; // icon key -> dataURL, or null = reset
@@ -17,7 +18,7 @@ let mode = "form";
 
 const newNotes = () => ({ type: "notes", name: "Notes" });
 
-export function initShortcutsDialog() {
+export function initActionsDialog() {
   $("links-edit").addEventListener("click", openDialog);
   $("sc-mode-form").addEventListener("click", () => setMode("form"));
   $("sc-mode-json").addEventListener("click", () => setMode("json"));
@@ -27,7 +28,6 @@ export function initShortcutsDialog() {
   $("sc-save").addEventListener("click", save);
   $("sc-cancel").addEventListener("click", () => dlg.close());
   $("sc-x").addEventListener("click", () => dlg.close());
-  initAddDialog();
 }
 
 function openDialog() {
@@ -72,8 +72,6 @@ function setMode(m, force = false) {
 }
 
 /* ---------- data ---------- */
-
-const fixUrl = (u) => (/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`);
 
 function normalize(l) {
   const name = String(l.name ?? "").trim();
@@ -231,34 +229,6 @@ function row(link, i) {
   return r;
 }
 
-/* ---------- custom icon upload ---------- */
-
-const picker = Object.assign(document.createElement("input"), { type: "file", accept: "image/*" });
-
-function pickFile() {
-  return new Promise((resolve) => {
-    picker.value = "";
-    picker.onchange = () => resolve(picker.files[0] || null);
-    picker.click();
-  });
-}
-
-/* any image the browser can decode (png, ico, svg, jpg…) -> ICON_SIZE square PNG data URL; throws if unreadable */
-async function iconFromFile(file) {
-  const obj = URL.createObjectURL(file);
-  try {
-    const img = await loadImg(obj);
-    const c = document.createElement("canvas");
-    c.width = c.height = ICON_SIZE;
-    const ctx = c.getContext("2d");
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, 0, 0, ICON_SIZE, ICON_SIZE);
-    return c.toDataURL("image/png");
-  } finally {
-    URL.revokeObjectURL(obj);
-  }
-}
-
 async function uploadFor(link, refreshIcon) {
   const key = iconKey(normalize(link));
   if (!key) return msg("enter a valid URL first", "err");
@@ -271,88 +241,4 @@ async function uploadFor(link, refreshIcon) {
   } catch {
     msg(`${file.name}: not an image the browser can read`, "err");
   }
-}
-
-/* ---------- add link dialog (the "+" tile on the home screen) ---------- */
-
-const addDlg = $("add");
-const addUrl = $("add-url");
-const addName = $("add-name");
-let addIcon = null; // uploaded icon for the new link, data URL
-
-/* default name from the URL: "https://www.github.com/x" -> "github.com" */
-const nameFromUrl = (url) => (hostOf(fixUrl(url)) || "").replace(/^www\./, "");
-
-function addLink() {
-  const url = addUrl.value.trim();
-  const link = { name: addName.value.trim() || nameFromUrl(url), url: url && fixUrl(url) };
-  if ($("add-blank").checked) link.target = "_blank";
-  return link;
-}
-
-function addMsg(text, kind = "") {
-  const m = $("add-msg");
-  m.textContent = text;
-  m.className = `msg ${kind}`;
-}
-
-function refreshAddIcon() {
-  const link = addLink();
-  const key = hostOf(link.url);
-  const icons = key && addIcon ? { ...getIconMap(), [key]: addIcon } : getIconMap();
-  const ico = iconEl({ ...link, name: link.name || "?" }, icons);
-  ico.id = "add-ico";
-  $("add-ico").replaceWith(ico);
-  addName.placeholder = nameFromUrl(addUrl.value) || "Name";
-  $("add-reset").hidden = !addIcon;
-  $("add-ico-note").textContent = addIcon ? "your upload" : !key ? "" : getIconMap()[key] ? "uploaded earlier" : "from Chrome's cache of the site";
-}
-
-export function openAddDialog() {
-  addUrl.value = addName.value = "";
-  $("add-blank").checked = false;
-  addIcon = null;
-  addMsg("");
-  refreshAddIcon();
-  addDlg.showModal();
-  addUrl.focus();
-}
-
-function initAddDialog() {
-  addUrl.addEventListener("input", () => (addName.placeholder = nameFromUrl(addUrl.value) || "Name"));
-  addUrl.addEventListener("change", refreshAddIcon);
-  addName.addEventListener("change", refreshAddIcon);
-  $("add-x").addEventListener("click", () => addDlg.close());
-  $("add-cancel").addEventListener("click", () => addDlg.close());
-  $("add-reset").addEventListener("click", () => {
-    addIcon = null;
-    refreshAddIcon();
-  });
-  $("add-upload").addEventListener("click", async () => {
-    const file = await pickFile();
-    if (!file) return;
-    try {
-      addIcon = await iconFromFile(file);
-      addMsg("");
-    } catch {
-      addMsg(`${file.name}: not an image the browser can read`, "err");
-    }
-    refreshAddIcon();
-  });
-  $("add-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const link = addLink();
-    const key = hostOf(link.url);
-    if (!key) {
-      addMsg("enter a valid URL", "err");
-      return addUrl.focus();
-    }
-    try {
-      await saveLinks([...getLinks(), link]);
-      if (addIcon) await setIcons({ ...getIconMap(), [key]: addIcon });
-      addDlg.close();
-    } catch (err) {
-      addMsg(err.message, "err");
-    }
-  });
 }

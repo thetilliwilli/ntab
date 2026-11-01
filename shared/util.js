@@ -13,9 +13,6 @@ export function extStart(name) {
   return i > 0 ? i : name.length;
 }
 
-/* false once the extension is reloaded/updated while this page stays open ("Extension context invalidated") */
-export const extensionAlive = () => !!globalThis.chrome?.runtime?.id;
-
 export function hostOf(url) {
   try {
     return new URL(url).hostname || null;
@@ -24,11 +21,14 @@ export function hostOf(url) {
   }
 }
 
-/* an action is a link ({ name, url, target? }) or the notepad ({ type: "notes", name }) */
-export const isNotes = (action) => action.type === "notes";
+/* "example.com" -> "https://example.com"; anything with a scheme stays as it is */
+export const fixUrl = (u) => (/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`);
 
-/* key of an action's uploaded icon: the hostname for links, "notes" for the notepad */
-export const iconKey = (action) => (isNotes(action) ? "notes" : hostOf(action.url));
+/* an action is a link ({ name, url, target? }) or an app ({ type: <app id>, name }) */
+export const isApp = (action) => typeof action.type === "string";
+
+/* key of an action's uploaded icon: the hostname for links, the app id for apps */
+export const iconKey = (action) => (isApp(action) ? action.type : hostOf(action.url));
 
 const pad = (n) => String(n).padStart(2, "0");
 

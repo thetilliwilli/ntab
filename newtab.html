@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <title>new</title>
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="newtab.css">
-  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="shell/shell.css">
+  <link rel="stylesheet" href="apps/notes/notes.css">
+  <script src="shell/theme.js"></script>
 </head>
 <body>
   <aside class="side">
@@ -27,18 +29,20 @@
     <div class="home-grid" id="home-grid"></div>
   </section>
 
-  <main class="main" id="notepad" hidden>
+  <!-- in place of an app that keeps data in the data folder while the folder isn't open -->
+  <section class="gate" id="gate" hidden>
+    <p id="gate-msg"></p>
+    <div class="gate-actions">
+      <button class="primary" id="gate-btn"></button>
+      <button id="gate-alt" hidden>choose another folder…</button>
+    </div>
+  </section>
+
+  <!-- ===== app: notes ===== -->
+  <main class="app" id="app-notes" hidden>
     <div class="tabbar">
       <button class="tb-add" id="tab-add" title="Open a saved note (double-click the free space for a new one)">+</button>
       <div class="tabs" id="tabs"></div>
-    </div>
-
-    <div class="gate" id="gate" hidden>
-      <p id="gate-msg"></p>
-      <div class="gate-actions">
-        <button class="primary" id="gate-btn"></button>
-        <button id="gate-alt" hidden>choose another folder…</button>
-      </div>
     </div>
 
     <div class="editor" id="editor" hidden>
@@ -157,6 +161,6 @@
     </form>
   </dialog>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="shell/main.js"></script>
 </body>
 </html>

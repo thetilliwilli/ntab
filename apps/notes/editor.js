@@ -4,7 +4,7 @@
  * text) and only the numbers in view are drawn.
  */
 
-import { $ } from "./util.js";
+import { $ } from "../../shared/util.js";
 
 const box = $("editor");
 const ta = $("text");

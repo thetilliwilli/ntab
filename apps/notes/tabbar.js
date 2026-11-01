@@ -1,6 +1,6 @@
 import * as notes from "./notes.js";
 import { askClose } from "./dialogs.js";
-import { $, el, extStart, sortable, isDragging } from "./util.js";
+import { $, el, extStart, sortable, isDragging } from "../../shared/util.js";
 
 const box = $("tabs");
 let renaming = false;

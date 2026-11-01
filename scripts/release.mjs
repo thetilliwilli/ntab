@@ -93,7 +93,7 @@ fs.mkdirSync(path.join(OUT, "screenshots"));
 const out = (p, data) => fs.writeFileSync(path.join(OUT, p), data);
 
 const zip = `ntab-${manifest.version}.zip`;
-git("archive", "-o", path.join(OUT, zip), "HEAD", "manifest.json", "newtab.html", "newtab.css", "js", "icons");
+git("archive", "-o", path.join(OUT, zip), "HEAD", "manifest.json", "newtab.html", "platform", "shared", "shell", "apps", "icons");
 out("name.txt", manifest.name);
 out("summary.txt", manifest.description);
 out("description.txt", description);
@@ -340,11 +340,11 @@ function serve() {
     const url = new URL(req.url, "http://x");
     let body, file;
     if (url.pathname === "/test.html")
-      body = read("newtab.html").replace('<script type="module" src="js/main.js">', '<script src="stub.js"></script>\n$&');
+      body = read("newtab.html").replace('<script type="module" src="shell/main.js">', '<script src="stub.js"></script>\n$&');
     else if (url.pathname === "/promo.html") body = promoHtml(...url.search.slice(1).split("x").map(Number));
     else if (url.pathname === "/stub.js") file = rel("test/stub.js");
     else if (url.pathname.startsWith("/out/")) file = path.join(OUT, url.pathname.slice(5));
-    else if (/^\/(js|icons)\/[\w.-]+$|^\/newtab\.css$/.test(url.pathname)) file = rel(url.pathname.slice(1));
+    else if (/^\/(platform|shared|shell|apps|icons)\/[\w./-]+$/.test(url.pathname) && !url.pathname.includes("..")) file = rel(url.pathname.slice(1));
     if (file && fs.existsSync(file)) body = fs.readFileSync(file);
     if (body == null) return res.writeHead(404).end();
     res.writeHead(200, { "content-type": types[path.extname(file || url.pathname)] || "text/html" }).end(body);

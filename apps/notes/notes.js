@@ -13,23 +13,25 @@
  *                         storage.local   session of the page worked in last, for brand new tabs
  */
 
-import * as fs from "./fs.js";
+import * as files from "./files.js";
 import * as editor from "./editor.js";
-import { fmtTime, extensionAlive } from "./util.js";
+import * as folder from "../../shared/folder.js";
+import * as platform from "../../platform/index.js";
+import { fmtTime } from "../../shared/util.js";
 
 const SAVE_DELAY = 300;
 const MAX_WAIT = 2000;
 const OLD_DRAFT = 60_000; // younger drafts may belong to a page that is still open
 const bc = new BroadcastChannel("newtab-notes");
-const draftKey = (name) => `draft:${fs.getDirId()}:${name}`;
-const post = (m) => bc.postMessage({ ...m, dir: fs.getDirId() });
+const draftKey = (name) => `draft:${folder.getDirId()}:${name}`;
+const post = (m) => bc.postMessage({ ...m, dir: folder.getDirId() });
 
 /* storage.local that turns into a no-op on a stale page and logs failures (quota) instead of throwing */
 const warn = (e) => console.warn("storage.local:", e?.message || e);
 const local = {
-  get: (key) => (extensionAlive() ? chrome.storage.local.get(key).catch((e) => (warn(e), {})) : Promise.resolve({})),
-  set: (items) => (extensionAlive() ? chrome.storage.local.set(items).catch(warn) : Promise.resolve()),
-  remove: (keys) => (extensionAlive() ? chrome.storage.local.remove(keys).catch(warn) : Promise.resolve()),
+  get: (key) => (platform.alive() ? platform.local.get(key).catch((e) => (warn(e), {})) : Promise.resolve({})),
+  set: (items) => (platform.alive() ? platform.local.set(items).catch(warn) : Promise.resolve()),
+  remove: (keys) => (platform.alive() ? platform.local.remove(keys).catch(warn) : Promise.resolve()),
 };
 
 const notes = new Map(); // name -> note
@@ -63,7 +65,7 @@ function makeNote(name, text, mtime) {
 
 async function readFile(name) {
   try {
-    return await fs.readNote(name);
+    return await files.readNote(name);
   } catch (e) {
     if (e.name === "NotFoundError") return null;
     throw e;
@@ -91,7 +93,7 @@ async function rescueDrafts() {
     const name = key.slice(prefix.length);
     try {
       const file = await readFile(name);
-      if (!file || (draft.ts > file.lastModified && draft.text !== file.text)) await fs.writeNote(name, draft.text);
+      if (!file || (draft.ts > file.lastModified && draft.text !== file.text)) await files.writeNote(name, draft.text);
       await local.remove(key);
     } catch (e) {
       console.warn("cannot restore draft of", name, e);
@@ -108,10 +110,13 @@ export async function start({ fresh = false } = {}) {
   active = null;
   started = false;
 
+  await files.openDir();
   if (fresh) {
+    // another folder: the open tabs of the old one mean nothing here
     try {
       sessionStorage.removeItem("session");
     } catch {}
+    await local.remove("session");
   }
   await rescueDrafts();
   const session = fresh ? null : ownSession() || (await local.get("session")).session;
@@ -135,8 +140,8 @@ export async function start({ fresh = false } = {}) {
 }
 
 export async function create() {
-  const name = await fs.nextNewName(new Set(order));
-  const n = makeNote(name, "", await fs.writeNote(name, ""));
+  const name = await files.nextNewName(new Set(order));
+  const n = makeNote(name, "", await files.writeNote(name, ""));
   n.created = true;
   notes.set(name, n);
   order.push(name);
@@ -189,7 +194,7 @@ export async function remove(name) {
 }
 
 async function deleteFile(name) {
-  await fs.removeNote(name);
+  await files.removeNote(name);
   await local.remove(draftKey(name));
   post({ t: "deleted", name });
 }
@@ -215,15 +220,15 @@ function detach(name) {
 export async function rename(name, wanted) {
   const n = notes.get(name);
   if (!n) return name;
-  let target = fs.sanitize(wanted);
+  let target = files.sanitize(wanted);
   if (target === name) return name;
-  target = await fs.freeName(target);
+  target = await files.freeName(target);
 
   clearTimeout(n.timer);
   const job = n.chain.then(async () => {
     const text = n.text;
-    const mtime = await fs.writeNote(target, text);
-    await fs.removeNote(name);
+    const mtime = await files.writeNote(target, text);
+    await files.removeNote(name);
     await local.remove(draftKey(name));
     n.drafted = false;
     renameLocal(name, target);
@@ -287,7 +292,7 @@ export function onEdit(text) {
     reportStatus();
     emit();
   }
-  if (!extensionAlive()) recoverStale();
+  if (!platform.alive()) recoverStale();
 }
 
 export const onScroll = () => saveSession(600);
@@ -313,7 +318,7 @@ function save(n) {
     n.saving = true;
     reportStatus();
     try {
-      n.mtime = await fs.writeNote(name, text);
+      n.mtime = await files.writeNote(name, text);
       n.error = null;
       post({ t: "saved", name, mtime: n.mtime, text });
       if (n.text === text && n.name === name) {
@@ -351,8 +356,8 @@ function reportStatus() {
 async function checkExternal(n) {
   if (!n || n.dirty || n.saving) return;
   try {
-    if ((await fs.statNote(n.name)) <= n.mtime) return;
-    const { text, lastModified } = await fs.readNote(n.name);
+    if ((await files.statNote(n.name)) <= n.mtime) return;
+    const { text, lastModified } = await files.readNote(n.name);
     if (n.dirty || !notes.has(n.name)) return;
     n.mtime = lastModified;
     if (text !== n.text) {
@@ -408,7 +413,7 @@ function showNothing() {
 /* ---------- events ---------- */
 
 bc.onmessage = ({ data: m }) => {
-  if (!started || m.dir !== fs.getDirId()) return;
+  if (!started || m.dir !== folder.getDirId()) return;
   const n = notes.get(m.name);
   switch (m.t) {
     case "saved":
@@ -440,7 +445,7 @@ function leaving() {
 }
 
 function returning() {
-  if (!extensionAlive()) return recoverStale();
+  if (!platform.alive()) return recoverStale();
   if (!started) return;
   saveSession(); // this page is in front now: new tabs should open with its set
   if (active) checkExternal(notes.get(active));

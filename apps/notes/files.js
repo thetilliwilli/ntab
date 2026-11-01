@@ -1,36 +1,16 @@
-/* notes folder access via the File System Access API; the directory handle is persisted in IndexedDB */
+/* note files: plain text files in the "notes" subfolder of the data folder (see shared/folder.js) */
 
-import { idbGet, idbSet } from "./idb.js";
+import * as folder from "../../shared/folder.js";
 
 let dir = null;
-let dirId = ""; // random id of the chosen folder: drafts and cross-page messages are scoped to it
 
-export const getDir = () => dir;
-export const getDirId = () => dirId;
-
-export async function restoreDir() {
-  [dir, dirId] = await Promise.all([idbGet("dir"), idbGet("dirId")]);
-  dir ||= null;
-  if (dir && !dirId) await idbSet("dirId", (dirId = crypto.randomUUID()));
-  return dir;
+/* called each time the app starts (the folder may have changed) */
+export async function openDir() {
+  dir = folder.getDir();
 }
 
-export async function pickDir() {
-  const handle = await window.showDirectoryPicker({ id: "newtab-notes", mode: "readwrite" });
-  if (!dir || !(await handle.isSameEntry(dir))) await idbSet("dirId", (dirId = crypto.randomUUID()));
-  dir = handle;
-  await idbSet("dir", handle);
-  return handle;
-}
-
-export async function hasPermission() {
-  return !!dir && (await dir.queryPermission({ mode: "readwrite" })) === "granted";
-}
-
-/* must run inside a user gesture */
-export async function requestPermission() {
-  return (await dir.requestPermission({ mode: "readwrite" })) === "granted";
-}
+/* "my-folder", for display */
+export const dirLabel = () => folder.getDir()?.name || "";
 
 export async function listNotes() {
   const out = [];
@@ -52,13 +32,7 @@ export async function statNote(name) {
 }
 
 /* returns the new lastModified */
-export async function writeNote(name, text) {
-  const h = await dir.getFileHandle(name, { create: true });
-  const w = await h.createWritable();
-  await w.write(text);
-  await w.close();
-  return (await h.getFile()).lastModified;
-}
+export const writeNote = (name, text) => folder.writeText(dir, name, text);
 
 export async function removeNote(name) {
   try {

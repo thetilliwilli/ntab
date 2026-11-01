@@ -4,8 +4,8 @@ set -e
 cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/newtab-test}
 mkdir -p "$OUT"
-cp -r js icons newtab.css test/stub.js "$OUT"/
-sed 's#<script type="module" src="js/main.js">#<script src="stub.js"></script>\n&#' newtab.html > "$OUT/test.html"
+cp -r platform shared shell apps icons test/stub.js "$OUT"/
+sed 's#<script type="module" src="shell/main.js">#<script src="stub.js"></script>\n&#' newtab.html > "$OUT/test.html"
 (cd "$OUT" && python3 -m http.server 8765 >/dev/null 2>&1 &)
 google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir="$OUT/profile" --no-first-run about:blank >/dev/null 2>&1 &
 sleep 2
