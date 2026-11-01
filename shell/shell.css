@@ -193,7 +193,7 @@
 
 .sc-row {
   display: grid;
-  grid-template-columns: 16px 20px 86px minmax(100px, 1fr) minmax(160px, 2.2fr) auto 28px 28px 28px;
+  grid-template-columns: 16px 20px 100px minmax(100px, 1fr) minmax(160px, 2.2fr) auto 28px 28px 28px;
   gap: 6px;
   align-items: center;
   padding: 4px 0;

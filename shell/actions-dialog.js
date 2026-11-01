@@ -97,7 +97,8 @@ function parseJson() {
     if (!Array.isArray(data)) throw new Error("top level must be an array");
     data.forEach((l, i) => {
       if (!l || typeof l !== "object") throw new Error(`item ${i + 1}: must be an object`);
-      if (l.type != null && !appById(l.type))
+      // apps of this version, and of a newer one that were in the list already (synced from another machine)
+      if (l.type != null && !appById(l.type) && !getLinks().some((x) => x.type === l.type))
         throw new Error(`item ${i + 1}: "type" can only be ${apps.map((a) => `"${a.id}"`).join(", ")} (or left out for a link)`);
       if (typeof l.name !== "string") throw new Error(`item ${i + 1}: "name" must be a string`);
       if (isApp(l)) return;

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="shell/shell.css">
   <link rel="stylesheet" href="apps/notes/notes.css">
   <link rel="stylesheet" href="apps/tracker/tracker.css">
+  <link rel="stylesheet" href="apps/board/board.css">
   <script src="shell/theme.js"></script>
 </head>
 <body>
@@ -108,6 +109,19 @@
     <div class="tr-toast" id="tr-toast" hidden>
       <span id="tr-toast-text"></span>
       <button id="tr-toast-undo">Undo</button>
+    </div>
+  </main>
+
+  <!-- ===== app: board ===== -->
+  <main class="app" id="app-board" hidden>
+    <div class="bd-bar">
+      <span class="bd-title">Board · <span id="bd-dir"></span></span>
+      <button id="bd-new" class="primary">+ task</button>
+    </div>
+    <div class="bd-cols" id="bd-cols"></div>
+    <div class="bd-toast" id="bd-toast" hidden>
+      <span id="bd-toast-text"></span>
+      <button id="bd-toast-x" title="Close">×</button>
     </div>
   </main>
 
@@ -223,6 +237,27 @@
       <button id="tr-types-cancel">Cancel</button>
       <button id="tr-types-save" class="primary">Save</button>
     </div>
+  </dialog>
+
+  <!-- board dialog -->
+  <dialog id="bd-task" class="dlg dlg-narrow">
+    <form method="dialog" id="bd-task-form">
+      <div class="dlg-head">
+        <h2 id="bd-task-title">Task</h2>
+        <button type="button" id="bd-task-x" class="dlg-x" title="Close">×</button>
+      </div>
+      <div class="dlg-body bd-form">
+        <input id="bd-name" class="bd-name-in" placeholder="Name" aria-label="Task name" autocomplete="off" spellcheck="false">
+        <textarea id="bd-desc" class="bd-desc-in" placeholder="Description (Ctrl+Enter saves)" aria-label="Task description" spellcheck="false"></textarea>
+        <label class="check">Status <select id="bd-status" aria-label="Status"></select></label>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" id="bd-del" class="bd-del">Delete</button>
+        <span id="bd-task-msg" class="msg"></span>
+        <button type="button" id="bd-task-cancel">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
   </dialog>
 
   <script type="module" src="shell/main.js"></script>

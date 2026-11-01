@@ -17,6 +17,8 @@ export const DEFAULT_SETTINGS = {
 
 const DEFAULT_LINKS = [
   { type: "notes", name: "Notes" },
+  { type: "tracker", name: "Tracker" },
+  { type: "board", name: "Board" },
   { name: "Gmail", url: "https://mail.google.com" },
   { name: "YouTube", url: "https://youtube.com" },
 ];

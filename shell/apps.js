@@ -14,6 +14,7 @@
 
 import notes from "../apps/notes/index.js";
 import tracker from "../apps/tracker/index.js";
+import board from "../apps/board/index.js";
 
-export const apps = [notes, tracker];
+export const apps = [notes, tracker, board];
 export const appById = (id) => apps.find((a) => a.id === id);

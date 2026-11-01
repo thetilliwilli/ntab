@@ -1,0 +1,101 @@
+/* the Board app: four columns of task cards, drag and drop, task dialog */
+
+#app-board {
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--bar-h) minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+
+.bd-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.bd-title { flex: 1; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.bd-bar button { height: 24px; border-color: var(--border); }
+.bd-bar .primary { border-color: var(--accent); }
+
+.bd-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 12px;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto hidden;
+  background: var(--bg);
+}
+
+.bd-col { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border: 1px solid var(--border); }
+
+.bd-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 4px 0 10px;
+  border-bottom: 1px solid var(--border);
+  border-top: 3px solid var(--border-strong);
+}
+
+.bd-work .bd-head { border-top-color: var(--accent); }
+.bd-done .bd-head { border-top-color: var(--ok); }
+.bd-col-name { font-weight: 600; }
+.bd-count { flex: 1; color: var(--muted); font-size: 12px; }
+.bd-add { width: 26px; height: 24px; padding: 0; font-size: 16px; }
+
+.bd-list { flex: 1; min-height: 0; padding: 8px; overflow: hidden auto; }
+.bd-none { padding: 12px; color: var(--muted); text-align: center; }
+.bd-list.drop-end { box-shadow: inset 0 3px 0 var(--accent); }
+
+.bd-card {
+  position: relative;
+  margin-bottom: 8px;
+  padding: 8px 10px 6px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+}
+
+.bd-card:hover, .bd-card:focus-visible { border-color: var(--accent); outline: none; }
+.bd-card.dragging { opacity: 0.35; }
+.bd-card.drop-before { box-shadow: 0 -4px 0 -1px var(--accent); }
+.bd-card.drop-after { box-shadow: 0 4px 0 -1px var(--accent); }
+.bd-done .bd-card { opacity: 0.7; }
+.bd-handle { position: absolute; left: 0; top: 0; bottom: 0; width: 20px; display: grid; place-items: center; color: var(--muted); touch-action: none; }
+.bd-name { font-weight: 600; overflow-wrap: anywhere; }
+.bd-desc { margin-top: 3px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.bd-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
+
+.bd-ghost { position: fixed; z-index: 100; margin: 0; pointer-events: none; opacity: 0.9; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); border-color: var(--accent); }
+body.bd-dragging, body.bd-dragging * { cursor: grabbing !important; }
+
+.bd-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 14px;
+  transform: translateX(-50%);
+  background: var(--danger);
+  color: #fff;
+}
+
+.bd-toast button { height: 26px; border-color: currentColor; }
+
+.bd-form { display: flex; flex-direction: column; gap: 10px; }
+.bd-form .check { color: var(--fg); font-size: 13px; }
+.bd-form select { height: 28px; }
+.bd-name-in { height: 32px; padding: 0 8px; font-weight: 600; }
+.bd-desc-in { min-height: 140px; padding: 8px; resize: vertical; background: var(--surface); border: 1px solid var(--border); }
+.bd-del { color: var(--danger); }
+.bd-del:hover { background: var(--danger); color: #fff; }
