@@ -1,17 +1,16 @@
-/* board scenario: create, edit, move by status select and by dragging, delete, sync, file. run: node test/board.mjs (SHOTS=dir for screenshots) */
-import { newPage, sleep, ok, dataDir, clearData, setActions, openApp } from "./cdp.mjs";
+/* board scenario: create, edit, move by status select and by dragging, delete, sync, records. run: node test/board.mjs (SHOTS=dir for screenshots) */
+import { newPage, sleep, ok, resetData, dbAll, openApp } from "./cdp.mjs";
 
 const SHOTS = process.env.SHOTS; // folder for screenshots, optional
-const tasks = (P) => P.ev(`(async () => { const d = await ${dataDir}.getDirectoryHandle('board', { create: true });
-  try { return JSON.parse(await (await (await d.getFileHandle('tasks.json')).getFile()).text()).tasks; } catch { return []; } })()`);
+const tasks = async (P) => (await P.ev(dbAll("tasks"))).sort((a, b) => a.rank - b.rank);
 const col = (P, s) => P.ev(`[...document.querySelectorAll('.bd-${s} .bd-name')].map((n) => n.textContent)`);
 const rect = (P, sel) => P.ev(`(() => { const r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, t: r.top, b: r.bottom, l: r.left }; })()`);
 
 const P = await newPage();
 await P.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 700, deviceScaleFactor: 1, mobile: false });
+await sleep(800);
 await P.ev(`localStorage.clear(); sessionStorage.clear()`);
-await P.ev(clearData);
-await P.ev(setActions([{ type: "notes", name: "Notes" }, { type: "board", name: "Board" }]));
+await P.ev(resetData());
 await P.send("Page.reload");
 await sleep(1000);
 await openApp(P, "board");
@@ -28,7 +27,7 @@ await create("Call bank", "");
 await create("Fix bug #12", "crash on start", "work");
 ok("columns", JSON.stringify([await col(P, "new"), await col(P, "work")]) === '[["Write report","Call bank"],["Fix bug #12"]]');
 let f = await tasks(P);
-ok("file has 3 tasks with fields", f.length === 3 && f[0].id && f[0].created && f[0].description === "quarterly numbers" && f[2].status === "work");
+ok("3 task records with fields", f.length === 3 && f[0].id && f[0].createdAt && f[0].updatedAt && f[0].description === "quarterly numbers" && f[2].status === "work" && f.map((t) => t.rank).join() === "0,1,2");
 
 // change status in the dialog
 await P.ev(`document.querySelector('.bd-new .bd-card').click()`);
@@ -51,7 +50,7 @@ await sleep(400);
 ok("dragged into work, before the other card", JSON.stringify(await col(P, "work")) === '["Call bank","Fix bug #12"]', JSON.stringify(await col(P, "work")));
 ok("dialog did not open after the drag", await P.ev(`!document.getElementById('bd-task').open`));
 f = await tasks(P);
-ok("file order follows", f.map((t) => t.name).join() === "Call bank,Fix bug #12,Write report" && f[0].status === "work");
+ok("ranks follow", f.map((t) => t.name).join() === "Call bank,Fix bug #12,Write report" && f[0].status === "work", JSON.stringify(f.map((t) => [t.name, t.rank])));
 
 // drop at the end of an empty column
 const a = await rect(P, ".bd-work .bd-card");

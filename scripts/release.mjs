@@ -136,10 +136,6 @@ async function screenshots(icons) {
 
   // all screenshots in the light theme, one consistent style (the user's choice)
 
-  // first visit: grant the folder (the stub's picker), later loads restore the open tabs from the session
-  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await openApp(P, "notes");
-
   // 1. notepad with tabs
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await openApp(P, "notes");
@@ -168,50 +164,46 @@ async function screenshots(icons) {
   await closePage(P);
 }
 
-/* fills storage + the notes folder, then swaps the page for a new tab that starts from them
+/* fills the database (shared/db.js) with the demo, then swaps the page for a new tab that starts from it
    (a new tab, not a reload: a page with the notepad open saves its session into sessionStorage on the way out) */
 async function prepare(P, icons, { theme, active, wrap = false }) {
-  const sync = { "links.n": demo.actions.length, settings: { fontSize: 14, wrap, tabSize: 2, theme } };
-  demo.actions.forEach((a, i) => (sync[`links.${i}`] = a));
-  const local = { icons, session: { tabs: demo.openTabs, active, views: {} } };
+  const now = Date.now();
+  const at = (ago) => now - ago * 60000;
+  const noteId = (name) => `note-${name}`;
+  const typeId = (key) => `type-${key}`;
+  const data = {
+    settings: { theme, fontSize: 14, wrap, tabSize: 2 },
+    actions: demo.actions.map(({ name, url }, rank) => ({
+      id: `action-${rank}`, name, icon: icons[url] ?? null, rank, kind: "open", options: { url, newTab: false },
+    })),
+    notes: Object.entries(demo.notes).map(([name, text], i) => ({ id: noteId(name), name, text, createdAt: at(9000 + i), updatedAt: at(60 + i * 90) })),
+    trackerTypes: demo.trackerTypes.map(({ key, name, icon, kind }, rank) => ({
+      id: typeId(key), name, icon, kind, rank, archivedAt: null, createdAt: at(20000), updatedAt: at(20000),
+    })),
+    trackerEntries: demo.trackerEntries.map(({ type, ago, minutes }, i) => {
+      const e = { id: `entry-${i}`, typeId: typeId(type), at: at(ago) };
+      if (minutes !== undefined) e.endAt = minutes === null ? null : at(ago - minutes);
+      return e;
+    }),
+    tasks: demo.tasks.map((t, rank) => ({ id: `task-${rank}`, ...t, rank, createdAt: now - (rank + 2) * 864e5, updatedAt: now - (rank + 1) * 36e5 })),
+  };
+  const session = { tabs: demo.openTabs.map(noteId), active: noteId(active), views: {}, edited: [], created: [] };
   await P.ev(`(async () => {
-    chrome.storage.local.set = chrome.storage.sync.set = async () => {}; // this page's pending session writes must not land
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem("stub:sync", ${JSON.stringify(JSON.stringify(sync))});
-    localStorage.setItem("stub:local", ${JSON.stringify(JSON.stringify(local))});
     localStorage.setItem("theme", ${JSON.stringify(theme)});
-    const root = await (await navigator.storage.getDirectory()).getDirectoryHandle("notes", { create: true }); // the data folder
-    for await (const name of root.keys()) await root.removeEntry(name, { recursive: true });
-    const marker = await (await root.getFileHandle("ntab.json", { create: true })).createWritable();
-    await marker.write('{ "format": 1 }\\n');
-    await marker.close();
-    const put = async (dir, name, text) => {
-      const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
-      await w.write(text);
-      await w.close();
-    };
-    const dir = await root.getDirectoryHandle("notes", { create: true });
-    for (const [name, text] of Object.entries(${JSON.stringify(demo.notes)})) await put(dir, name, text);
-
-    const now = Date.now(), pad = (n) => String(n).padStart(2, "0");
-    const events = ${JSON.stringify(demo.trackerEvents)}.map((e, i) => {
-      const out = { id: "demo-" + i, type: e.type, time: now - e.ago * 60000 };
-      if (e.activity) Object.assign(out, { activity: e.activity, phase: e.phase });
-      return out;
-    });
-    const byMonth = {};
-    for (const e of events) {
-      const d = new Date(e.time), f = "events-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + ".jsonl";
-      byMonth[f] = (byMonth[f] || "") + JSON.stringify(e) + "\\n";
-    }
-    const tracker = await root.getDirectoryHandle("tracker", { create: true });
-    await put(tracker, "types.json", JSON.stringify({ types: ${JSON.stringify(demo.trackerTypes)} }, null, 2));
-    for (const [f, text] of Object.entries(byMonth)) await put(tracker, f, text);
-
-    const tasks = ${JSON.stringify(demo.tasks)}.map((t, i) =>
-      ({ id: "task-" + i, ...t, created: now - (i + 2) * 86400000, updated: now - (i + 1) * 3600000 }));
-    await put(await root.getDirectoryHandle("board", { create: true }), "tasks.json", JSON.stringify({ tasks }, null, 2));
+    const data = ${JSON.stringify(data)};
+    const req = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+    const db = await req(indexedDB.open("ntab"));
+    const t = db.transaction([...db.objectStoreNames], "readwrite");
+    for (const name of db.objectStoreNames) t.objectStore(name).clear();
+    for (const [name, records] of Object.entries(data)) if (name !== "settings") records.forEach((r) => t.objectStore(name).put(r));
+    const meta = t.objectStore("meta");
+    meta.put(data.settings, "settings");
+    meta.put(${JSON.stringify(session)}, "session");
+    meta.put({ lastExportAt: Date.now(), remindAt: Date.now() + 864e6 }, "backup"); // no reminder on the screenshots
+    await new Promise((ok) => (t.oncomplete = ok));
+    db.close();
   })()`);
   await closePage(P);
   P = await openPage("/test.html");
@@ -224,10 +216,6 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
 async function openApp(P, id) {
   await P.ev(`document.querySelector('#links .${id}').click()`);
   await sleep(500);
-  if (await P.ev(`!document.getElementById('gate').hidden`)) {
-    await P.ev(`document.getElementById('gate-btn').click()`); // the stub's picker hands out the OPFS folder
-    await sleep(700);
-  }
 }
 
 /* puts the cursor at the end of the line containing `text` */
@@ -247,20 +235,20 @@ async function hover(P, selector) {
   await P.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: r[0], y: r[1] });
 }
 
-/* site icons as uploaded-icon data URLs keyed by hostname (what the extension stores for uploads) */
+/* site icons as uploaded-icon data URLs (what an action's "icon" holds), keyed by the action's URL */
 async function fetchIcons() {
   const icons = {};
   const missing = [];
-  for (const a of demo.actions.filter((a) => a.url)) {
+  for (const a of demo.actions.filter((a) => /^https?:/.test(a.url))) {
     // one at a time with retries: this service stalls on parallel requests and sometimes on single ones
     const host = new URL(a.url).hostname;
-    for (let attempt = 0; attempt < 3 && !icons[host]; attempt++) {
+    for (let attempt = 0; attempt < 3 && !icons[a.url]; attempt++) {
       try {
         const res = await fetch(`https://www.google.com/s2/favicons?domain=${host}&sz=128`, { signal: AbortSignal.timeout(8000) });
-        if (res.ok) icons[host] = `data:${res.headers.get("content-type") || "image/png"};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+        if (res.ok) icons[a.url] = `data:${res.headers.get("content-type") || "image/png"};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
       } catch {}
     }
-    if (!icons[host]) missing.push(host);
+    if (!icons[a.url]) missing.push(host);
   }
   if (missing.length) {
     const msg = `Site icons not fetched for ${missing.join(", ")} (offline?): those show letters on the screenshots. Run again.`;

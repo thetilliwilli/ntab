@@ -38,5 +38,6 @@ Site icons are fetched from Google's favicon service; offline, the tiles show le
 ## Before changing storage or permissions
 
 - A new permission with a warning disables the extension for existing users until they accept it.
-- Users keep the data of the previous version: if a storage key or format changes, the new version has to
-  read the old one (migrate), or their actions/settings are lost.
+- Users keep the data of the previous version: if a store or a record format changes, the new version has to
+  convert it (raise `VERSION` in `shared/db.js`, convert in `onupgradeneeded`) and accept older backup formats
+  in `shell/data.js`, or their data is lost.

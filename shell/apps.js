@@ -1,15 +1,13 @@
 /*
  * the registry of apps. an app is a module's default export:
- *   id           also the action type ({ type: <id>, name }), the key of its uploaded icon and the view name;
- *                its screen is the element #app-<id>
- *   name         default action name and the page title while it is open
- *   what         what it is, in a few words (the sidebar flyout shows it instead of a URL)
- *   icon         svg markup of the built-in icon
- *   needsFolder  keeps data in the data folder: the shell opens the folder (or shows the gate) first
- *   init(ctx)    once per page: wire its DOM; ctx = { changeFolder() }
- *   start(opts)  each time the data folder is (re)opened: load data; opts.fresh = another folder was picked
- *   show()       each time its screen comes to the front
- *   flush()      optional: write pending changes (before the folder changes)
+ *   id        its route ("#/<id>", what an "open" action points at) and the view name; its screen is #app-<id>
+ *   name      default action name and the page title while it is open
+ *   what      what it is, in a few words (the sidebar flyout and the actions editor show it)
+ *   icon      svg markup of the built-in icon
+ *   init()    once per page: wire its DOM
+ *   start()   once per page, when it is first opened: load its data
+ *   show()    each time its screen comes to the front
+ *   flush()   optional: write pending changes now (before a backup is restored)
  */
 
 import notes from "../apps/notes/index.js";

@@ -1,36 +1,42 @@
 import * as notes from "./notes.js";
 import { askClose } from "./dialogs.js";
-import { $, el, extStart, sortable, isDragging } from "../../shared/util.js";
+import { $, el, extStart, sortable, isDragging, download } from "../../shared/util.js";
 
 const box = $("tabs");
 let renaming = false;
 let shown = null; // tab order the strip was built for; saves only flip classes, they don't rebuild it
 let shownActive = null;
 
-/* right-click menu on a tab; picking "Delete file" is the confirmation */
+/* right-click menu on a tab: download the note as a file named after it, delete it (picking it is the confirmation) */
 const menu = el("div", "ctx-menu");
-const menuDel = el("button", "ctx-item danger", "Delete file");
+const menuDown = el("button", "ctx-item", "Download");
+const menuDel = el("button", "ctx-item danger", "Delete note");
 let menuFor = null;
 menu.hidden = true;
 menu.setAttribute("role", "menu");
-menuDel.setAttribute("role", "menuitem");
-menu.append(menuDel);
+for (const item of [menuDown, menuDel]) item.setAttribute("role", "menuitem");
+menu.append(menuDown, menuDel);
 document.body.append(menu);
 
-function openMenu(e, name) {
+function openMenu(e, id) {
   e.preventDefault();
-  menuFor = name;
+  menuFor = id;
   menu.hidden = false;
   // keep it inside the window
   const x = Math.min(e.clientX, innerWidth - menu.offsetWidth - 4);
   const y = Math.min(e.clientY, innerHeight - menu.offsetHeight - 4);
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
-  menuDel.focus();
+  menuDown.focus();
 }
 
 const closeMenu = () => (menu.hidden = true);
 
+menuDown.addEventListener("click", () => {
+  closeMenu();
+  const n = notes.getNote(menuFor);
+  if (n) download(n.name, n.text, "application/octet-stream"); // a text type would make Chrome add ".txt" to "todo"
+});
 menuDel.addEventListener("click", () => {
   closeMenu();
   notes.close(menuFor, true).catch((err) => notes.report(`delete failed: ${err.message}`));
@@ -71,8 +77,12 @@ function render() {
     shownActive = null;
   }
   for (const tab of box.children) {
-    const n = notes.getNote(tab.dataset.name);
-    tab.classList.toggle("active", tab.dataset.name === active);
+    const n = notes.getNote(tab.dataset.id);
+    if (n && tab.title !== n.name) {
+      tab.title = n.name; // renamed (here or on another page)
+      tab.querySelector(".tab-name").textContent = n.name;
+    }
+    tab.classList.toggle("active", tab.dataset.id === active);
     tab.classList.toggle("dirty", !!n?.dirty);
     tab.classList.toggle("err", !!n?.error);
   }
@@ -82,9 +92,10 @@ function render() {
   }
 }
 
-function tabEl(name) {
+function tabEl(id) {
+  const name = notes.getNote(id).name;
   const tab = el("div", "tab");
-  tab.dataset.name = name;
+  tab.dataset.id = id;
   tab.title = name;
   tab.draggable = true;
 
@@ -93,17 +104,17 @@ function tabEl(name) {
   x.title = "Close";
   tab.append(label, x);
 
-  tab.addEventListener("click", () => name !== notes.getActive() && notes.activate(name));
-  tab.addEventListener("auxclick", (e) => e.button === 1 && askClose(name));
-  tab.addEventListener("contextmenu", (e) => openMenu(e, name));
-  label.addEventListener("dblclick", () => startRename(tab, label, name));
+  tab.addEventListener("click", () => id !== notes.getActive() && notes.activate(id));
+  tab.addEventListener("auxclick", (e) => e.button === 1 && askClose(id));
+  tab.addEventListener("contextmenu", (e) => openMenu(e, id));
+  label.addEventListener("dblclick", () => startRename(tab, label, id));
   x.addEventListener("click", (e) => {
     e.stopPropagation();
-    askClose(name);
+    askClose(id);
   });
   sortable(tab, {
     group: "tabs",
-    key: name,
+    key: id,
     onDrop(from, to, after) {
       const order = notes.getOrder();
       notes.move(from, after ? (order[order.indexOf(to) + 1] ?? null) : to);
@@ -113,7 +124,8 @@ function tabEl(name) {
   return tab;
 }
 
-function startRename(tab, label, name) {
+function startRename(tab, label, id) {
+  const name = notes.getNote(id)?.name ?? "";
   renaming = true;
   tab.draggable = false;
   const input = el("input", "tab-rename");
@@ -132,7 +144,7 @@ function startRename(tab, label, name) {
     shown = null; // the label was swapped for the input: rebuild
     if (commit && value && value !== name) {
       try {
-        await notes.rename(name, value);
+        await notes.rename(id, value);
       } catch (e) {
         notes.report(`rename failed: ${e.message}`);
       }

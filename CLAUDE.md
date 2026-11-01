@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 Notes for Claude Code sessions on this repo. Read README.md for features and the file map, PUBLISHING.md for
-store releases, the header comment of `apps/notes/notes.js` for the save/draft/session model, and
-`shell/apps.js` for the app contract.
+store releases, the header of `shared/db.js` for the data model, the header of `apps/notes/notes.js` for the
+save/session model, and `shell/apps.js` for the app contract.
 
 ## The user
 
@@ -30,17 +30,22 @@ store releases, the header comment of `apps/notes/notes.js` for the save/draft/s
   screen, the app's name in an app (`shell/main.js`).
 - Favicon and extension icon: blue "N" in a square frame, `icons/icon.svg` (source) → `icon-16/32/48/128.png` (rendered with
   `magick -background none -density 1152 icons/icon.svg -resize NxN PNG32:icons/icon-N.png`).
-- No migrations of settings: the v1 shortcuts migration was removed on purpose; existing users' saved lists don't
-  get new actions automatically (only `DEFAULT_LINKS` starts with Notes, Tracker, Board; the editor has
-  "+ <app>" buttons, "add it back" for the notepad and warns when saving without it). The user explicitly
-  declined these migrations.
-- The one exception, chosen by the user for 2.2.0: a data folder from 2.1 or older (files in its root, no
-  `ntab.json`) gets a gate that moves the files into `notes/` on a click (`shared/folder.js`).
+- Storage (2.2.0, the user's choice): everything in IndexedDB (`shared/db.js`), works the same in the extension
+  and a future PWA. No File System Access API, no OPFS, no files, no `localStorage`/`chrome.storage` for data
+  (only the theme is cached in `localStorage` for the first paint). One strict model for all entities (uuid `id`,
+  `name`, `…At` times in ms, numeric `rank`, `kind` for the sort of a record); keep it consistent when adding fields.
+- Backups: one JSON file (`shell/data.js`), import replaces everything after a confirm; "Import text files" adds
+  notes; a note downloads as a file named exactly like the note (never append `.txt`). Backup reminder on home
+  every 7 days, "Later" = 3 days. Per-entity exports other than a single note were declined for now.
+- No migrations: 2.2.0 started over (the 2.1 folder and `chrome.storage.sync` actions are not read; old notes come
+  back through "Import text files"). The v1 shortcuts migration was removed on purpose too. Existing lists don't get
+  new actions automatically (the editor has "+ <app>" buttons, "add it back" for the notepad and warns when saving
+  without it). The user explicitly declined these migrations.
 - Apps: notes, tracker, board (`apps/<id>/`, registered in `shell/apps.js`). The extension name stays
-  "NTab: Notepad New Tab". Data folder layout: the root has only `ntab.json`; every app has its own subfolder.
-- Tracker decisions: event = `{id, type, time}`, activities add `activity` (uuid) and `phase: "start"|"end"`;
-  types have an immutable slug id and an emoji icon; types are archived (`archived: true`), never deleted;
-  undo toast, day log with time edit.
+  "NTab: Notepad New Tab".
+- Tracker decisions: an entry is one record `{id, typeId, at, endAt?}` (event: no `endAt`; activity: `endAt` null
+  while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
+  never deleted; undo toast, day log with start and finish time edit.
 - Board: fixed columns new / work / hold / done; drag on pointer events (works with touch), status also in the
   task dialog.
 - No keyboard shortcuts (hotkeys) for now.
@@ -48,65 +53,60 @@ store releases, the header comment of `apps/notes/notes.js` for the save/draft/s
 - Theme colors stay our own tokens: Chrome has no API to read its theme colors (only light/dark is known);
   matching the default Chrome palette was offered and declined.
 - Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
-  (screen sharing). Switching screens adds no history entries and isn't stored. The data folder is only
-  touched when an app that needs it is first opened on the page.
-- One action list drives both the home tiles and the sidebar. Home groups it into "Apps" and "Links";
-  the sidebar keeps the list order. The "+ Add" tile (last in Links) opens the one-link dialog (`#add`), not
-  the full editor (✎). Action = link `{name, url, target?}` or app `{type: <app id>, name}`; unknown app ids
-  (a newer version on another machine) are hidden and kept. Uploaded icons are 128×128 PNG, keyed by hostname
-  or app id.
+  (screen sharing). Screens are hash routes (`#/notes`), replaced, never added to history; a route in the address
+  on load is dropped. An app loads its data when first opened on the page.
+- Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. The only kind is
+  `open` `{url, newTab}`: `#/<app id>` opens an app, anything else is a web address. Future features are new
+  kinds (e.g. a request that shows its response). One list in `rank` order drives home and the sidebar, no
+  groups. The "+ Add" tile (last) opens the one-link dialog (`#add`), not the full editor (✎). Unknown kinds or
+  apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`.
 - Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows at the top/bottom edge when
-  icons are cut off. Home button on top; theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
-- Tab right-click menu has one item, "Delete file": deletes file + tab immediately, no confirmation (choosing it
-  is the confirmation). The × in the `[+]` file list keeps its `confirm()` (small target, easy to misclick).
-  Deletion is permanent; a `.trash/` folder was offered and not requested.
+  icons are cut off. Home button on top; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
+- Tab right-click menu: "Download" and "Delete note"; delete removes note + tab immediately, no confirmation
+  (choosing it is the confirmation). The × in the `[+]` note list keeps its `confirm()` (small target, easy to
+  misclick). Deletion is permanent; a trash was offered and not requested.
+- Note names: any string, the field is `name` (a "virtual file name"); duplicates are allowed.
 - Closing a tab: untouched or empty → just closes; edited → close panel asks for a name; an empty note created
-  here (`created` flag) also has its file deleted. Files opened from the folder are never deleted by closing.
+  here (`created` flag) is deleted. Notes opened from the list are never deleted by closing.
 
 ## Code notes
 
 - Structure: `platform/` is the only place with `chrome.*`; `shared/` is used by everything; `shell/` is the frame
-  (gate, screens, sidebar, home, actions editor); `apps/<id>/` holds an app with its own CSS. An app's screen is
+  (screens, sidebar, home, actions editor, data dialog); `apps/<id>/` holds an app with its own CSS. An app's screen is
   `#app-<id>` in `newtab.html`; ids of its elements share a prefix (`tr-`, `bd-`).
 - MV3 CSP forbids inline scripts → `shell/theme.js` is a classic script in `<head>` that applies the saved theme
   from `localStorage` before first paint.
 - `[hidden] { display: none !important; }` is global, and `border-radius: 0 !important` on everything.
-- Storage layout is documented at the top of `shared/settings.js`, the data folder at the top of
-  `shared/folder.js`; `chrome.storage.sync` keys `links.n`/`links.<i>` and `settings` must stay readable (users
-  keep their data across updates).
-- Folder handle and a random folder id (`dirId`) live in IndexedDB (`shared/idb.js`). Drafts are
-  `draft:<dirId>:<name>` in `storage.local`; BroadcastChannel `newtab-notes` messages carry `dir` and foreign
-  ones are ignored.
+- The data model is documented at the top of `shared/db.js`; users keep their data across updates, so a change
+  of stores or records needs a database `VERSION` bump with conversion (see PUBLISHING.md).
+- `db.js` is the only code that touches IndexedDB. Writes are transactions (no Web Locks needed); after a commit
+  `onChange` listeners on this page (`local: true`) and on other pages (BroadcastChannel `ntab-db`) hear
+  `{store, ids}`. Tracker and board simply reload their store on a change; notes update the open tabs only.
+  A restored backup posts `reset`: every page stops writing and reloads.
 - Editor performance: the textarea value is cached in `editor.js`; in wrap mode line heights are measured on a
   hidden mirror, cached per line text, and only visible gutter numbers are drawn. Keep typing cost low on big
   files (about 16 ms per keystroke on a large file was the last measurement).
 - The tab bar updates in place (rebuilds only when the order changes). Drag-reorder uses `sortable()` in `util.js`.
 - `views` in notes.js = per-tab cursor/scroll; `onScroll` saves it. `shell/view.js` is the screen state (home / app id).
-- Tracker and board write their files under Web Locks (`ntab-tracker`, `ntab-board`) and tell other pages over
-  BroadcastChannel (`newtab-tracker`, `newtab-board`, scoped by `dir` like notes).
 
 ## Testing
 
 No test framework. `test/` holds a headless-Chrome harness driven over the DevTools protocol (raw CDP; Playwright/Puppeteer/browser MCP
 were considered and declined, keep it dependency-free):
 
-- `test/stub.js` mocks `chrome.storage` (backed by `localStorage` keys `stub:local` / `stub:sync`),
-  `chrome.runtime`, and maps `showDirectoryPicker()` to the OPFS folder `notes` (= the data folder; notes are in
-  its `notes/` subfolder).
+- `test/stub.js` mocks `chrome.runtime` (the favicon URL); the data is the test page's own IndexedDB.
 - `test/run.sh [dir]` copies the sources into `dir` (default `/tmp/newtab-test`), makes `test.html` (newtab.html
   with `stub.js` injected before `main.js`), serves it on `localhost:8765` and starts headless Chrome with CDP on
   port 9333. Re-run the copy after editing sources (or kill the server/Chrome and run it again).
-- `test/cdp.mjs` has helpers (`newPage`, `ev`, `type`, `click`, `shot`, `ok`, `dataDir`, `notesDir`, `clearData`,
-  `setActions`, `openApp`); `test/example.mjs` is a smoke test, `test/tracker.mjs` and `test/board.mjs` cover the
-  apps (`node test/<name>.mjs`, `SHOTS=dir` for screenshots; Node 22+ for the global WebSocket).
-- Pages start at home; click `#links .<app id>` (or `openApp(P, id)`, which also passes the gate) to open an
-  app. Use two pages for cross-tab sync tests. Favicons from `_favicon/` don't exist outside the extension, so icons fall back to
+- `test/cdp.mjs` has helpers (`newPage`, `closeTab`, `ev`, `type`, `click`, `shot`, `ok`, `inDb`, `dbAll`,
+  `resetData`, `actionList`, `openApp`); `test/example.mjs` is a smoke test, `notes`, `tracker`, `board` and `data`
+  (backup, import, reminder, routes, actions editor) cover the rest (`node test/<name>.mjs`, `SHOTS=dir` for
+  screenshots; Node 22+ for the global WebSocket). A page must load once before `inDb` (it creates the database);
+  `resetData()` empties it and sets the actions, reload afterwards.
+- Pages start at home; click `#links .<app id>` (or `openApp(P, id)`) to open an app. File pickers: catch the
+  `<input type=file>` and feed it with `DOM.setFileInputFiles` (see `test/data.mjs`). Background pages run timers
+  about once a second, so allow 1.5 s for their saves. Use two pages for cross-tab sync tests. Favicons from `_favicon/` don't exist outside the extension, so icons fall back to
   letters in the harness.
-- Scenarios covered so far by throwaway scripts (rewrite as needed): autosave delay and max-wait, cross-page
-  `saved`/`rename`/`deleted` sync, drafts on failed writes and their rescue on start, foreign-folder messages
-  ignored, empty-note deletion rules, close panel, rename, drag reorder (tabs and actions), wrap gutter alignment
-  and typing speed, home screen (no folder access, no file names), flyout, theme cycle and persistence, actions
-  editor (type switch, add it back, save warning, JSON validation), sidebar wheel scroll under the flyout and
-  edge arrows, tab right-click delete (incl. right after typing, no resurrection after reload), data folder
-  upgrade (move and copy fallback, name clash in notes/), actions editor with apps (add buttons, unknown types).
-- Known flaky: a timing race in an old two-page sync test, not a product bug.
+- Scenarios covered earlier by throwaway scripts (before 2.2.0's storage, rewrite as needed): autosave max-wait,
+  drag reorder (tabs and actions), wrap gutter alignment and typing speed, flyout, theme cycle and persistence,
+  actions editor (add it back, save warning), sidebar wheel scroll under the flyout and edge arrows.

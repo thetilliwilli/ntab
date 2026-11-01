@@ -47,30 +47,48 @@ export async function connect(wsUrl) {
 }
 
 /* opens a new tab with the test page */
-export const newPage = async () => connect((await (await fetch(`${CDP}/json/new?${PAGE}`, { method: "PUT" })).json()).webSocketDebuggerUrl);
+export async function newPage() {
+  const target = await (await fetch(`${CDP}/json/new?${PAGE}`, { method: "PUT" })).json();
+  const P = await connect(target.webSocketDebuggerUrl);
+  P.id = target.id;
+  return P;
+}
+
+/* closes the browser tab, like the user does */
+export const closeTab = (P) => fetch(`${CDP}/json/close/${P.id}`);
 
 export const ok = (label, cond, extra = "") => console.log(cond ? "PASS" : "FAIL", label, extra);
 
-/* OPFS "notes" folder = the data folder the stub's showDirectoryPicker returns; notes are in its "notes" subfolder */
-export const dataDir = `(await (await navigator.storage.getDirectory()).getDirectoryHandle('notes', { create: true }))`;
-export const notesDir = `(await ${dataDir}.getDirectoryHandle('notes', { create: true }))`;
+/* expression: runs fn(stores) (source of an async function) over the app's IndexedDB in one transaction; the page
+   must have loaded once (it creates the database). req(r) turns an IDBRequest into a promise */
+export const inDb = (fn, mode = "readwrite") => `(async () => {
+  const req = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+  const db = await req(indexedDB.open("ntab"));
+  const t = db.transaction([...db.objectStoreNames], ${JSON.stringify(mode)});
+  const s = Object.fromEntries([...db.objectStoreNames].map((n) => [n, t.objectStore(n)]));
+  const out = await (${fn})(s, req);
+  await new Promise((ok) => (t.oncomplete = ok));
+  db.close();
+  return out;
+})()`;
 
-/* expression that empties the data folder */
-export const clearData = `(async () => { const d = ${dataDir}; for await (const k of d.keys()) await d.removeEntry(k, { recursive: true }); })()`;
+/* expression: the records of a store */
+export const dbAll = (store) => inDb(`async (s, req) => req(s.${store}.getAll())`, "readonly");
 
-/* expression that sets the action list in the stub's sync storage (takes effect on the next load) */
-export const setActions = (list) => {
-  const sync = { "links.n": list.length };
-  list.forEach((a, i) => (sync[`links.${i}`] = a));
-  return `localStorage.setItem("stub:sync", ${JSON.stringify(JSON.stringify(sync))})`;
-};
+/* action records for [{ name, url, newTab? }] */
+export const actionList = (list) =>
+  list.map(({ name, url, newTab = false }, rank) => ({ id: `a${rank}`, name, icon: null, rank, kind: "open", options: { url, newTab } }));
 
-/* opens an app from the sidebar; grants the data folder through the stub's picker if the gate asks for it */
+/* expression that empties every store and sets the actions (default: Notes, Tracker, Board); reload afterwards */
+export const resetData = (actions = [{ name: "Notes", url: "#/notes" }, { name: "Tracker", url: "#/tracker" }, { name: "Board", url: "#/board" }]) =>
+  inDb(`async (s) => {
+    for (const store of Object.values(s)) store.clear();
+    for (const a of ${JSON.stringify(actionList(actions))}) s.actions.put(a);
+    s.meta.put({ lastExportAt: null, remindAt: Date.now() + 864e6 }, "backup");
+  }`);
+
+/* opens an app from the sidebar */
 export async function openApp(P, id) {
   await P.ev(`document.querySelector('#links .${id}').click()`);
-  await sleep(600);
-  if (await P.ev(`!document.getElementById('gate').hidden`)) {
-    await P.ev(`document.getElementById('gate-btn').click()`);
-    await sleep(800);
-  }
+  await sleep(500);
 }

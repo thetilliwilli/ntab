@@ -1,1 +1,0 @@
-Saves settings, the user's list of sites and apps, open notepad tabs, unsaved drafts and uploaded icons. Notes, tracker events and tasks are files in a folder the user picks, not in extension storage.

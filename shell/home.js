@@ -1,16 +1,15 @@
-/* the home screen: the action list as tiles, apps under "Apps", links under "Links" (the sidebar keeps the
-   list order); the last "Links" tile adds one link */
+/* the home screen: the backup reminder, and the actions as tiles in their order; the last tile adds a link */
 
-import { getIconMap, shownActions, subscribeActions, actionEl, iconEl } from "./actions.js";
+import { shownActions, subscribeActions, actionEl, iconEl, appOf } from "./actions.js";
 import { openAddDialog } from "./add-link.js";
-import { $, el, isApp } from "../shared/util.js";
+import { $, el } from "../shared/util.js";
 
 const grid = $("home-grid");
 
-function tile(link) {
-  const t = actionEl(link, "tile");
-  t.title = isApp(link) ? link.name : link.url;
-  t.append(iconEl(link, getIconMap()), el("span", "tile-name", link.name));
+function tile(action) {
+  const t = actionEl(action, "tile");
+  t.title = appOf(action)?.name ?? action.options.url;
+  t.append(iconEl(action), el("span", "tile-name", action.name));
   return t;
 }
 
@@ -23,12 +22,6 @@ function addTile() {
   return b;
 }
 
-function render() {
-  const list = shownActions();
-  const apps = list.filter(isApp);
-  grid.textContent = "";
-  if (apps.length) grid.append(el("h2", "home-head", "Apps"), ...apps.map(tile));
-  grid.append(el("h2", "home-head", "Links"), ...list.filter((l) => !isApp(l)).map(tile), addTile());
-}
+const render = () => grid.replaceChildren(...shownActions().map(tile), addTile());
 
 export const initHome = () => subscribeActions(render);

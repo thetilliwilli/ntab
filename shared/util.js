@@ -21,14 +21,19 @@ export function hostOf(url) {
   }
 }
 
-/* "example.com" -> "https://example.com"; anything with a scheme stays as it is */
-export const fixUrl = (u) => (/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`);
+/* "example.com" -> "https://example.com"; anything with a scheme and routes ("#/notes") stay as they are */
+export const fixUrl = (u) => (/^([a-z][a-z0-9+.-]*:|#)/i.test(u) ? u : `https://${u}`);
 
-/* an action is a link ({ name, url, target? }) or an app ({ type: <app id>, name }) */
-export const isApp = (action) => typeof action.type === "string";
+/* "#/notes" -> "notes": the app a route opens; null for anything else */
+export const routeOf = (url) => /^#\/([\w-]+)$/.exec(url ?? "")?.[1] ?? null;
 
-/* key of an action's uploaded icon: the hostname for links, the app id for apps */
-export const iconKey = (action) => (isApp(action) ? action.type : hostOf(action.url));
+/* hands the browser a file to save */
+export function download(name, text, type = "text/plain") {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const pad = (n) => String(n).padStart(2, "0");
 

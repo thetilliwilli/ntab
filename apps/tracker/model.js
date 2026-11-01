@@ -1,67 +1,39 @@
-/* tracker state and rules: event types, the event log, running activities; saved through store.js */
+/* tracker state and rules over the stores "trackerTypes" and "trackerEntries" (see shared/db.js). the state is
+   read again whenever they change, here or on another page */
 
-import * as store from "./store.js";
-import * as folder from "../../shared/folder.js";
+import * as db from "../../shared/db.js";
 
-const bc = new BroadcastChannel("newtab-tracker");
 const subs = new Set();
-let types = [];
-let events = []; // sorted by time
+let types = []; // by rank
+let entries = []; // by start time
 let started = false;
 
 export const getTypes = () => types;
-export const activeTypes = () => types.filter((t) => !t.archived);
-export const getEvents = () => events;
+export const activeTypes = () => types.filter((t) => t.archivedAt == null);
 export const typeById = (id) => types.find((t) => t.id === id);
 export const subscribe = (fn) => subs.add(fn);
 
 const emit = () => subs.forEach((fn) => fn());
-const uuid = () => crypto.randomUUID();
-const insert = (e) => {
-  events.push(e);
-  events.sort((a, b) => a.time - b.time);
-};
 
 export async function start() {
-  started = false;
-  await store.openDir();
   await reload();
   started = true;
 }
 
 async function reload() {
-  ({ types, events } = await store.load());
+  const [t, e] = await Promise.all([db.all("trackerTypes"), db.all("trackerEntries")]);
+  types = t.sort((a, b) => a.rank - b.rank);
+  entries = e.sort((a, b) => a.at - b.at);
   emit();
 }
 
-/* other pages and programs (a sync tool) change the files too */
-export const refresh = () => started && reload().catch((e) => console.warn("tracker:", e));
-bc.onmessage = ({ data }) => data.dir === folder.getDirId() && refresh();
-const announce = () => bc.postMessage({ dir: folder.getDirId() });
-
-/* applies a change to the state, then to the files; a failed write puts the state back and rethrows */
-async function change(apply, write) {
-  const before = [types, events.slice()];
-  apply();
-  emit();
-  try {
-    await write();
-    announce();
-  } catch (e) {
-    [types, events] = before;
-    emit();
-    throw e;
-  }
-}
+db.onChange(({ store }) => started && (store === "trackerTypes" || store === "trackerEntries") && reload().catch(console.error));
 
 /* ---------- derived ---------- */
 
-const isEnd = (e) => e.phase === "end";
-const endOf = (activity) => events.find((e) => e.activity === activity && isEnd(e));
-
-/* [{ start, type }] of activities that are not finished, oldest first */
-export const runningSpans = () => events.filter((e) => e.phase === "start" && !endOf(e.activity));
-export const isRunning = (typeId) => runningSpans().some((e) => e.type === typeId);
+/* activities that run now, oldest first */
+export const running = () => entries.filter((e) => e.endAt === null);
+export const isRunning = (typeId) => entries.some((e) => e.typeId === typeId && e.endAt === null);
 
 const startOfDay = (time) => new Date(time).setHours(0, 0, 0, 0);
 
@@ -70,82 +42,70 @@ export function todayStat(typeId) {
   const from = startOfDay(Date.now());
   let count = 0;
   let last = 0;
-  for (const e of events) {
-    if (e.type !== typeId || isEnd(e) || e.time < from) continue;
+  for (const e of entries) {
+    if (e.typeId !== typeId || e.at < from) continue;
     count++;
-    last = e.time;
+    last = e.at;
   }
   return { count, last };
 }
 
-export const dayEvents = (day) => events.filter((e) => e.time >= day && e.time < day + 864e5);
+/* entries that started on the day that begins at `day` */
+export const dayEntries = (day) => entries.filter((e) => e.at >= day && e.at < day + 864e5);
 
-/* length of a finished activity, null if it is still running */
-export function spanLength(startEvent) {
-  const end = endOf(startEvent.activity);
-  return end ? end.time - startEvent.time : null;
-}
+/* ---------- changes ---------- */
 
-/* ---------- actions ---------- */
-
-/* a one-shot event, or the start of an activity; returns the created event (null if the activity already runs) */
+/* an event, or a running activity; returns the entry (null if that activity runs already) */
 export async function log(typeId) {
   const type = typeById(typeId);
-  if (!type || (type.span && isRunning(typeId))) return null;
-  const e = { id: uuid(), type: typeId, time: Date.now() };
-  if (type.span) Object.assign(e, { activity: uuid(), phase: "start" });
-  await change(() => insert(e), () => store.append(e));
+  if (!type || (type.kind === "activity" && isRunning(typeId))) return null;
+  const e = { id: db.uuid(), typeId, at: Date.now() };
+  if (type.kind === "activity") e.endAt = null;
+  await db.put("trackerEntries", e);
   return e;
 }
 
-export async function finish(activity) {
-  const s = events.find((e) => e.activity === activity && e.phase === "start");
-  if (!s || endOf(activity)) return null;
-  const e = { id: uuid(), type: s.type, time: Date.now(), activity, phase: "end" };
-  await change(() => insert(e), () => store.append(e));
-  return e;
-}
+/* finishes a running activity now; returns the entry */
+export const finish = (id) => db.update("trackerEntries", id, (e) => (e?.endAt === null ? { ...e, endAt: Date.now() } : undefined));
 
-/* deleting a start takes its end with it; returns what was removed (for undo) */
+/* undoes finish(): the activity runs again */
+export const resume = (id) => db.update("trackerEntries", id, (e) => (e?.endAt != null ? { ...e, endAt: null } : undefined));
+
+/* deletes an entry; returns it (for undo) */
 export async function remove(id) {
-  const e = events.find((x) => x.id === id);
-  if (!e) return [];
-  const gone = e.phase === "start" ? events.filter((x) => x.activity === e.activity) : [e];
-  await change(() => (events = events.filter((x) => !gone.includes(x))), () => store.remove(gone));
-  return gone;
+  const e = entries.find((x) => x.id === id);
+  if (e) await db.remove("trackerEntries", id);
+  return e ?? null;
 }
 
-export async function restore(list) {
-  await change(() => list.forEach(insert), async () => {
-    for (const e of list) await store.append(e);
+export const restore = (entry) => db.put("trackerEntries", entry);
+
+/* changes when an entry started (field "at") or ended ("endAt") */
+export function setTime(id, field, time) {
+  if (!Number.isFinite(time)) return Promise.resolve();
+  return db.update("trackerEntries", id, (e) => {
+    if (!e) return undefined;
+    const next = { ...e, [field]: time };
+    if (next.endAt != null && next.endAt < next.at) throw new Error("an activity can't end before it starts");
+    return next;
   });
 }
 
-export async function setTime(id, time) {
-  const e = events.find((x) => x.id === id);
-  if (!e || !Number.isFinite(time)) return;
-  const pair = e.activity && events.find((x) => x.activity === e.activity && x !== e);
-  if (e.phase === "end" && pair && time < pair.time) throw new Error("an activity can't end before it starts");
-  if (e.phase === "start" && pair && time > pair.time) throw new Error("an activity can't start after it ended");
-  const moved = { ...e, time };
-  await change(
-    () => {
-      events = events.map((x) => (x === e ? moved : x));
-      events.sort((a, b) => a.time - b.time);
-    },
-    () => store.retime(e, time),
-  );
+/* ---------- types ---------- */
+
+export function addType({ name, icon, kind }) {
+  const now = Date.now();
+  const rank = Math.max(-1, ...types.map((t) => t.rank)) + 1;
+  return db.put("trackerTypes", { id: db.uuid(), name, icon, kind, rank, archivedAt: null, createdAt: now, updatedAt: now });
 }
 
-export async function saveTypes(next) {
-  await change(() => (types = next), () => store.saveTypes(next));
-}
-
-/* id of a new type: its name as a slug, unique among the types, archived ones too ("smoked", "smoked-2"…);
-   never changes afterwards */
-export function newTypeId(name) {
-  const base = name.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "type";
-  let id = base;
-  for (let n = 2; typeById(id); n++) id = `${base}-${n}`;
-  return id;
+/* the edited list, in its order: ranks follow it, changed types get a new updatedAt */
+export function saveTypes(list) {
+  const now = Date.now();
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const out = list.map((t, rank) => {
+    const next = { ...t, rank };
+    return same(next, typeById(t.id)) ? next : { ...next, updatedAt: now };
+  });
+  return db.put("trackerTypes", out);
 }

@@ -1,6 +1,6 @@
 Every new tab opens a clean home screen with your favorite sites and three small tools: a fast plain-text notepad with tabs (like Notepad++), an activity tracker and a task board.
 
-Everything is saved as ordinary files in a folder you choose on your computer: notes as text files, the tracker and the board as JSON. Every change is saved instantly.
+Everything is saved in your browser as you type, nothing to set up. Export a backup to one JSON file whenever you like; NTab reminds you once a week.
 
 HOME SCREEN
 • Big tiles for your apps and sites, plus the same icons in a slim sidebar
@@ -8,41 +8,47 @@ HOME SCREEN
 • Every new tab starts here, so your notes never pop up on screen by themselves (handy when sharing your screen)
 • Site icons from Chrome's own cache, or upload your own
 • Hover a sidebar icon to see its full name and address
-• Edit the list in a simple form or as raw JSON; it follows your Chrome profile through Chrome sync
+• Edit the list in a simple form or as raw JSON
 
 NOTEPAD
 • Tabs: double-click the empty tab bar for a new note, drag to reorder, double-click to rename
-• Any file name and extension: note.txt, todo.md, log…
-• Saves as you type, no save button; unsaved text survives a crash or a closed tab
+• Any name: todo, todo.md, log.txt…
+• Saves as you type, no save button
+• Download a note as a file named like the note
 • Line numbers, word wrap, font size, configurable Tab width
 • Status bar with line, column, length and save state
-• File list with filter: open, delete or switch the folder
-• Right-click a tab to delete its file
-• Each browser tab keeps its own set of open notes; edits to the same file sync between them
+• List of all notes with filter: open or delete
+• Right-click a tab to download or delete the note
+• Each browser tab keeps its own set of open notes; edits to the same note sync between them
 
 TRACKER
 • One tap logs that something happened: woke up, workout, coffee, called mom…
 • Your own event types with an emoji
 • Activities with a start and a finish: a live timer and a growing bar while they run
 • Today's count and last time on every tile
-• Day log: fix a time you forgot to log, delete, undo
-• Saved as one line per event in monthly files, easy to read or process
+• Day log: fix a start or finish time, delete, undo
 
 TASK BOARD
 • Columns New, Work, Hold, Done
 • Tasks with a name and a description
 • Drag cards between columns, or change the status in the task window
 
+DATA
+• Export everything (notes, tracker, board, sites, settings) as one JSON backup, import it on another computer
+• Import text files as notes
+• A gentle reminder on the home screen when the last backup is a week old
+
 • Light, dark or automatic theme
 
 PRIVACY
 • No account, no servers, no tracking, no network requests
-• Your notes, events and tasks stay in the folder you picked
-• Permissions: "storage" for settings and your site list, "favicon" to show site icons from Chrome's local cache
+• Your notes, events and tasks stay in your browser (and in the backups you export)
+• One permission: "favicon", to show site icons from Chrome's local cache
 
 WHAT'S NEW
 • Tracker: log events with one tap, time activities
 • Task board with New / Work / Hold / Done
-• Notes now live in the "notes" subfolder of your folder; one click moves existing notes there
+• Everything is now kept in the browser, no folder to choose; backup export and import
+• Your old note files: Data → Import text files. The site list starts over from the defaults
 
 Note: only one extension can replace the new tab page. If another one already does, Chrome will ask which to keep.

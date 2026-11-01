@@ -1,7 +1,6 @@
-/* the Board app: a kanban board (new / work / hold / done) over board/tasks.json */
+/* the Board app: a kanban board (new / work / hold / done) */
 
 import * as model from "./model.js";
-import * as folder from "../../shared/folder.js";
 import { $, el, fmtTime } from "../../shared/util.js";
 
 const report = (e) => {
@@ -50,7 +49,7 @@ function card(t) {
   handle.title = "Drag to move";
   c.append(handle, el("div", "bd-name", t.name));
   if (t.description) c.append(el("div", "bd-desc", t.description));
-  c.append(el("div", "bd-meta", fmtTime(t.updated)));
+  c.append(el("div", "bd-meta", fmtTime(t.updatedAt)));
   c.addEventListener("click", () => !c.dataset.noclick && openTask(t));
   c.addEventListener("keydown", (e) => e.key === "Enter" && openTask(t));
   return c;
@@ -135,7 +134,7 @@ function openTask(task) {
   $("bd-desc").value = task?.description ?? "";
   $("bd-status").value = task?.status ?? "new";
   $("bd-del").hidden = !task;
-  $("bd-task-msg").textContent = task ? `created ${fmtTime(task.created)}` : "";
+  $("bd-task-msg").textContent = task ? `created ${fmtTime(task.createdAt)}` : "";
   $("bd-task").showModal();
   $("bd-name").focus();
 }
@@ -163,7 +162,6 @@ export default {
   id: "board",
   name: "Board",
   what: "task board",
-  needsFolder: true,
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path stroke="#fff" stroke-width="2.4" d="M10 9v14M16 9v9M22 9v5"/></svg>`,
 
   init() {
@@ -184,15 +182,9 @@ export default {
     });
     $("bd-toast-x").addEventListener("click", () => ($("bd-toast").hidden = true));
     model.subscribe(render);
-    document.addEventListener("visibilitychange", () => !document.hidden && !$("app-board").hidden && model.refresh());
   },
 
-  async start() {
-    await model.start();
-    $("bd-dir").textContent = `${folder.getDir().name}/board`;
-  },
+  start: () => model.start(),
 
-  show() {
-    model.refresh();
-  },
+  show() {},
 };

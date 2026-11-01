@@ -4,7 +4,6 @@ Plans and ideas that are not decided rules yet (those live in CLAUDE.md). Remove
 
 ## Next
 
-- **Web / PWA build on GitHub Pages.** The same code as a plain web page: `platform/web.js` (storage on
-  `localStorage` + the `storage` event, no `_favicon` → letters or uploaded icons), OPFS as the data folder where
-  there is no folder picker (phones), `manifest.webmanifest`, service worker, icons 192/512,
-  `navigator.storage.persist()`, export/import of the data folder. Mobile layout is the biggest part.
+- **Web / PWA build on GitHub Pages.** The same code as a plain web page: `platform/web.js` (no `_favicon` →
+  `faviconUrl` returns null: letters or uploaded icons), `manifest.webmanifest`, service worker, icons 192/512.
+  Data needs nothing new: IndexedDB, backups and the reminder work the same. Mobile layout is the biggest part.

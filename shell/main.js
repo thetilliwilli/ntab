@@ -1,13 +1,13 @@
-/* entry point: theme, the data folder gate, screens (home / apps); apps live in apps/<id>/ (see apps.js) */
+/* entry point: theme, screens (home / apps); apps live in apps/<id>/ (see apps.js), data in shared/db.js */
 
 import * as settings from "../shared/settings.js";
-import * as folder from "../shared/folder.js";
 import { apps, appById } from "./apps.js";
 import { initActions } from "./actions.js";
 import { initSidebar } from "./sidebar.js";
 import { initHome } from "./home.js";
 import { initActionsDialog } from "./actions-dialog.js";
 import { initAddDialog } from "./add-link.js";
+import { initData, checkReminder } from "./data.js";
 import { getView, onView } from "./view.js";
 import { $ } from "../shared/util.js";
 
@@ -37,131 +37,37 @@ $("theme-btn").addEventListener("click", () => {
   settings.updateSettings({ theme: THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] });
 });
 
-/* ---------- data folder ---------- */
+/* ---------- screens: home / an app; an app loads its data when it is first opened on the page ---------- */
 
-let ready = false; // the data folder is open and may be used
-let fresh = false; // another folder was picked on this page: apps start without their saved session
-let connecting = null;
-const live = new Set(); // apps started on the current folder
+const started = new Map(); // app -> promise of its start()
 
-const logError = (e) => e?.name !== "AbortError" && console.error(e);
-
-/* home, the current app, or the gate in its place while the folder isn't open */
 function show() {
   const app = appById(getView());
   $("home").hidden = !!app;
-  for (const a of apps) $(`app-${a.id}`).hidden = a !== app || (a.needsFolder && !ready);
-  $("gate").hidden = !app?.needsFolder || ready;
+  for (const a of apps) $(`app-${a.id}`).hidden = a !== app;
 }
 
-function gate(message, label, action, alt = false) {
-  ready = false;
-  live.clear();
-  show();
-  $("gate-msg").textContent = message;
-  const btn = $("gate-btn");
-  btn.hidden = !label;
-  btn.textContent = label || "";
-  btn.onclick = () =>
-    action().catch((e) => {
-      if (e.name !== "AbortError") $("gate-msg").textContent = `${message}\n\n${e.message}`;
-    });
-  $("gate-alt").hidden = !alt;
-}
-
-const cannotOpen = (e) => gate(`Cannot open “${folder.getDir()?.name}”:\n${e.message}`, "choose folder…", choose);
-
-/* brings the current app to a working state: folder open, app started, app shown */
 async function enter() {
   const app = appById(getView());
-  if (!app) return;
-  if (!app.needsFolder) return app.show();
-  if (!ready) return (connecting ??= connect().catch(logError));
-  if (!live.has(app)) {
-    live.add(app);
-    try {
-      await app.start({ fresh });
-    } catch (e) {
-      live.delete(app);
-      return cannotOpen(e);
-    }
-  }
+  if (!app) return checkReminder();
+  if (!started.has(app)) started.set(app, app.start().catch((e) => (started.delete(app), Promise.reject(e))));
+  await started.get(app);
   if (app === appById(getView())) app.show();
 }
-
-/* the folder is open: upgrade an older layout (with the user's OK), then start the current app */
-async function folderReady() {
-  const legacy = await folder.legacyNotes();
-  if (legacy.length) return upgradeGate(legacy);
-  await folder.markLayout();
-  ready = true;
-  show();
-  await enter();
-}
-
-function upgradeGate(names) {
-  const n = names.length;
-  const list = names.slice(0, 5).join(", ") + (n > 5 ? `, … (${n - 5} more)` : "");
-  gate(
-    `“${folder.getDir().name}” was set up by an older version: your notes are the files in it.\n` +
-      `Notes now live in its subfolder “notes”, so the folder can keep other data too.\n\n${list}`,
-    `move ${n} ${n === 1 ? "file" : "files"} to notes/`,
-    async () => {
-      await folder.upgrade(names);
-      await folderReady();
-    },
-    true,
-  );
-}
-
-async function choose() {
-  await folder.pickDir();
-  fresh = true;
-  live.clear();
-  await folderReady().catch(cannotOpen);
-}
-
-async function changeFolder() {
-  await Promise.all([...live].map((a) => a.flush?.()));
-  await choose();
-}
-
-async function connect() {
-  if (!("showDirectoryPicker" in window)) {
-    return gate("This browser does not support the File System Access API.");
-  }
-  const dir = await folder.restoreDir();
-  if (!dir) {
-    return gate("Choose a folder where your data will be kept: notes as plain text files, the rest as JSON.\nEvery change is saved there instantly.", "choose folder…", choose);
-  }
-  if (await folder.hasPermission()) return folderReady().catch(cannotOpen);
-  gate(
-    `Chrome needs your OK to access the data folder “${dir.name}” again.\nTip: pick “Allow on every visit” to skip this step next time.`,
-    "connect folder",
-    async () => {
-      if (await folder.requestPermission()) await folderReady().catch(cannotOpen);
-    },
-    true,
-  );
-}
-
-$("gate-alt").addEventListener("click", () => choose().catch(logError));
-
-/* ---------- screens: home / an app; the folder is touched only when an app that needs it is first opened ---------- */
 
 onView((view) => {
   document.title = appById(view)?.name ?? "new"; // "new" is also the static <title>
   show();
-  enter().catch(logError);
+  enter().catch(console.error);
 });
 
 /* ---------- start ---------- */
 
-const ctx = { changeFolder };
-for (const app of apps) app.init(ctx);
+for (const app of apps) app.init();
 initSidebar();
 initHome();
 initActionsDialog();
 initAddDialog();
+initData({ flush: () => Promise.all([...started.keys()].map((a) => a.flush?.())) });
 await settings.loadSettings();
 initActions().catch(console.error);

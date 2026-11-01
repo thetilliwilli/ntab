@@ -1,7 +1,6 @@
-/* the Tracker app: tiles that log events (one-shot or activities with a duration) into the "tracker" subfolder */
+/* the Tracker app: tiles that log events (a moment) or activities (a start and a finish, with a duration) */
 
 import * as model from "./model.js";
-import * as folder from "../../shared/folder.js";
 import { $, el, fmtDuration, sortable } from "../../shared/util.js";
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -19,7 +18,7 @@ const startOfDay = (t) => new Date(t).setHours(0, 0, 0, 0);
 const DAY = 864e5;
 
 let day = startOfDay(Date.now()); // the day the log shows
-let live = null; // running activities on screen: activity -> { dur, fill, start }
+let live = null; // running activities on screen: entry id -> { dur, fill, scale, start }
 
 const report = (e) => toast(e?.message || String(e), null, "err");
 
@@ -46,12 +45,12 @@ const fmtScale = (s) => (s >= DAY ? `${s / DAY}d` : s >= 36e5 ? `${s / 36e5}h` :
 
 function renderSpans() {
   const box = $("tr-spans");
-  const running = model.runningSpans();
+  const running = model.running();
   box.hidden = !running.length;
   box.textContent = "";
   live = new Map();
   for (const s of running) {
-    const type = model.typeById(s.type);
+    const type = model.typeById(s.typeId);
     const row = el("div", "tr-span");
     const dur = el("span", "tr-dur");
     const fill = el("div", "tr-fill");
@@ -59,17 +58,17 @@ function renderSpans() {
     const done = el("button", "primary", "Finish");
     done.addEventListener("click", () =>
       model
-        .finish(s.activity)
-        .then((end) => end && toast(`■ ${type?.name ?? s.type} finished · ${fmtDuration(end.time - s.time)}`, () => model.remove(end.id).catch(report)))
+        .finish(s.id)
+        .then((e) => e && toast(`■ ${type?.name ?? "?"} finished · ${fmtDuration(e.endAt - e.at)}`, () => model.resume(e.id).catch(report)))
         .catch(report),
     );
     const track = el("div", "tr-track");
     track.append(fill, scale);
-    const name = el("span", "tr-sname", type?.name ?? s.type);
-    name.append(el("small", "", `since ${hm(s.time)}`));
+    const name = el("span", "tr-sname", type?.name ?? "unknown type");
+    name.append(el("small", "", `since ${hm(s.at)}`));
     row.append(el("span", "tr-emoji", type?.icon ?? "•"), name, dur, done, track);
     box.append(row);
-    live.set(s.activity, { dur, fill, scale, start: s.time });
+    live.set(s.id, { dur, fill, scale, start: s.at });
   }
   tick();
 }
@@ -93,15 +92,16 @@ function renderTiles() {
   const box = $("tr-tiles");
   box.textContent = "";
   for (const t of model.activeTypes()) {
-    const running = t.span && model.isRunning(t.id);
+    const activity = t.kind === "activity";
+    const running = activity && model.isRunning(t.id);
     const { count, last } = model.todayStat(t.id);
     const b = el("button", `tr-tile${running ? " running" : ""}`);
     b.type = "button";
-    b.title = t.span ? `${t.name}: starts an activity` : t.name;
+    b.title = activity ? `${t.name}: starts an activity` : t.name;
     b.append(
       el("span", "tr-emoji", t.icon),
       el("span", "tr-tile-name", t.name),
-      el("span", "tr-tile-meta", running ? "running…" : count ? `today ×${count} · ${hm(last)}` : t.span ? "▶ activity" : "today —"),
+      el("span", "tr-tile-meta", running ? "running…" : count ? `today ×${count} · ${hm(last)}` : activity ? "▶ activity" : "today —"),
     );
     b.addEventListener("click", () => hit(t, b));
     box.append(b);
@@ -120,7 +120,7 @@ async function hit(t, node) {
   try {
     const e = await model.log(t.id);
     if (!e) return;
-    toast(`${t.icon} ${t.name} ${t.span ? "started" : "logged"} · ${hms(e.time)}`, () => model.remove(e.id).catch(report));
+    toast(`${t.icon} ${t.name} ${e.endAt === null ? "started" : "logged"} · ${hms(e.at)}`, () => model.remove(e.id).catch(report));
   } catch (err) {
     report(err);
   }
@@ -140,49 +140,51 @@ function renderLog() {
   $("tr-next").disabled = day >= startOfDay(Date.now());
   const list = $("tr-log");
   list.textContent = "";
-  const events = model.dayEvents(day).reverse();
-  if (!events.length) return list.append(el("div", "empty", "no events"));
-  for (const e of events) list.append(logRow(e));
+  const entries = model.dayEntries(day).reverse();
+  if (!entries.length) return list.append(el("div", "empty", "nothing logged"));
+  for (const e of entries) list.append(logRow(e));
+}
+
+/* time of an entry that changes on click ("at" = the start, "endAt" = the end of an activity) */
+function timeButton(e, field) {
+  const b = el("button", "tr-time", hms(e[field]));
+  b.title = field === "at" ? "Click to change the time" : "Click to change when it finished";
+  b.addEventListener("click", () => editTime(b, e, field));
+  return b;
 }
 
 function logRow(e) {
-  const type = model.typeById(e.type);
+  const type = model.typeById(e.typeId);
   const row = el("div", "tr-row");
-  const time = el("button", "tr-time", hms(e.time));
-  time.title = "Click to change the time";
-  time.addEventListener("click", () => editTime(row, time, e));
-
-  let note = "";
-  if (e.phase === "start") note = model.spanLength(e) == null ? "start · running" : "start";
-  if (e.phase === "end") {
-    const start = model.getEvents().find((x) => x.activity === e.activity && x.phase === "start");
-    note = start ? `end · ${fmtDuration(e.time - start.time)}` : "end";
-  }
+  const note = el("span", "tr-note");
+  if (e.endAt === null) note.textContent = "running";
+  else if (e.endAt != null) note.append("until ", timeButton(e, "endAt"), ` · ${fmtDuration(e.endAt - e.at)}`);
   const del = el("button", "fdel", "×");
-  del.title = "Delete this event";
+  del.title = "Delete this entry";
   del.addEventListener("click", () =>
     model
       .remove(e.id)
-      .then((gone) => gone.length && toast(`Deleted ${type?.name ?? e.type} · ${hms(e.time)}${gone.length > 1 ? " (with its end)" : ""}`, () => model.restore(gone).catch(report)))
+      .then((gone) => gone && toast(`Deleted ${type?.name ?? "entry"} · ${hms(e.at)}`, () => model.restore(gone).catch(report)))
       .catch(report),
   );
-  const what = el("span", `tr-what${type && !type.archived ? "" : " gone"}`, type?.name ?? `${e.type} (unknown type)`);
-  if (type?.archived) what.title = "archived type";
-  row.append(time, el("span", "tr-emoji", type?.icon ?? "•"), what, el("span", "tr-note", note), del);
+  const archived = type?.archivedAt != null;
+  const what = el("span", `tr-what${type && !archived ? "" : " gone"}`, type?.name ?? "unknown type");
+  if (archived) what.title = "archived type";
+  row.append(timeButton(e, "at"), el("span", "tr-emoji", type?.icon ?? "•"), what, note, del);
   return row;
 }
 
-function editTime(row, button, e) {
+function editTime(button, e, field) {
   const input = el("input");
   input.type = "datetime-local";
   input.step = 1;
-  input.value = toInput(e.time);
+  input.value = toInput(e[field]);
   let done = false;
   const finish = (save) => {
     if (done) return;
     done = true;
     const time = new Date(input.value).getTime();
-    if (save && Number.isFinite(time) && time !== e.time) model.setTime(e.id, time).catch(report).finally(renderLog);
+    if (save && Number.isFinite(time) && time !== e[field]) model.setTime(e.id, field, time).catch(report).finally(renderLog);
     else renderLog();
   };
   input.addEventListener("keydown", (ev) => {
@@ -273,7 +275,7 @@ function refreshNew() {
 function openNew() {
   $("tr-new-icon").value = "";
   $("tr-new-name").value = "";
-  $("tr-new-form").elements["tr-kind"].value = "once";
+  $("tr-new-form").elements["tr-kind"].value = "event";
   newMsg("");
   toggleAll(false);
   refreshNew();
@@ -291,7 +293,7 @@ async function submitNew(e) {
   }
   if (!isEmoji(icon)) return newMsg(icon ? "the icon must be one emoji" : "choose an icon");
   try {
-    await model.saveTypes([...model.getTypes(), { id: model.newTypeId(name), name, icon, span: $("tr-new-span").checked }]);
+    await model.addType({ name, icon, kind: $("tr-new-form").elements["tr-kind"].value });
     $("tr-new").close();
   } catch (err) {
     newMsg(err.message);
@@ -317,7 +319,8 @@ function renderTypeRows() {
 }
 
 function typeRow(t, i) {
-  const r = el("div", `tr-type-row${t.archived ? " archived" : ""}`);
+  const archived = t.archivedAt != null;
+  const r = el("div", `tr-type-row${archived ? " archived" : ""}`);
   const handle = el("span", "drag-handle", "⋮⋮");
   handle.title = "Drag to reorder";
   const icon = el("input", "tr-icon-in");
@@ -329,22 +332,20 @@ function typeRow(t, i) {
   const name = el("input");
   name.type = "text";
   name.value = t.name;
-  name.title = `id: ${t.id}`;
   name.setAttribute("aria-label", "Name");
   name.addEventListener("input", () => (t.name = name.value));
   const check = el("label", "check");
   const box = el("input");
   box.type = "checkbox";
-  box.checked = !!t.span;
-  box.addEventListener("change", () => (t.span = box.checked));
+  box.checked = t.kind === "activity";
+  box.addEventListener("change", () => (t.kind = box.checked ? "activity" : "event"));
   check.title = "Has a start and a finish, shows its duration while running";
   check.append(box, "activity");
   // archive instead of delete: the tile goes away, the log keeps showing the type's name and icon
-  const arch = el("button", "", t.archived ? "restore" : "archive");
-  arch.title = t.archived ? "Show its tile again" : "Hide its tile; its events stay in the log";
+  const arch = el("button", "", archived ? "restore" : "archive");
+  arch.title = archived ? "Show its tile again" : "Hide its tile; its entries stay in the log";
   arch.addEventListener("click", () => {
-    if (t.archived) delete t.archived;
-    else t.archived = true;
+    t.archivedAt = archived ? null : Date.now();
     renderTypeRows();
   });
 
@@ -390,7 +391,6 @@ export default {
   id: "tracker",
   name: "Tracker",
   what: "tracker",
-  needsFolder: true,
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path fill="none" stroke="#fff" stroke-width="2.4" d="M9 10l2 2 4-4M9 20l2 2 4-4M19 11h5M19 21h5"/></svg>`,
 
   init() {
@@ -437,15 +437,12 @@ export default {
 
     model.subscribe(render);
     setInterval(tick, 1000);
-    document.addEventListener("visibilitychange", () => !document.hidden && !$("app-tracker").hidden && model.refresh());
+    document.addEventListener("visibilitychange", () => !document.hidden && !$("app-tracker").hidden && render()); // "today" may have moved on
   },
 
-  async start() {
-    await model.start();
-    $("tr-dir").textContent = `${folder.getDir().name}/tracker`;
-  },
+  start: () => model.start(),
 
   show() {
-    model.refresh();
+    tick();
   },
 };

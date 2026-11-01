@@ -1,8 +1,7 @@
-/* "add link" dialog: the "+" tile on the home screen adds one link */
+/* "add link" dialog: the "+" tile on the home screen adds one web address */
 
-import { getLinks, getIconMap, iconEl } from "./actions.js";
+import { iconEl, addAction, newAction } from "./actions.js";
 import { pickFile, iconFromFile } from "./icon-file.js";
-import { saveLinks, setIcons } from "../shared/settings.js";
 import { $, hostOf, fixUrl } from "../shared/util.js";
 
 const addDlg = $("add");
@@ -13,11 +12,11 @@ let addIcon = null; // uploaded icon for the new link, data URL
 /* default name from the URL: "https://www.github.com/x" -> "github.com" */
 const nameFromUrl = (url) => (hostOf(fixUrl(url)) || "").replace(/^www\./, "");
 
-function addLink() {
+function action() {
   const url = addUrl.value.trim();
-  const link = { name: addName.value.trim() || nameFromUrl(url), url: url && fixUrl(url) };
-  if ($("add-blank").checked) link.target = "_blank";
-  return link;
+  const a = newAction(addName.value.trim() || nameFromUrl(url), url && fixUrl(url), $("add-blank").checked);
+  a.icon = addIcon;
+  return a;
 }
 
 function addMsg(text, kind = "") {
@@ -27,15 +26,13 @@ function addMsg(text, kind = "") {
 }
 
 function refreshAddIcon() {
-  const link = addLink();
-  const key = hostOf(link.url);
-  const icons = key && addIcon ? { ...getIconMap(), [key]: addIcon } : getIconMap();
-  const ico = iconEl({ ...link, name: link.name || "?" }, icons);
+  const a = action();
+  const ico = iconEl({ ...a, name: a.name || "?" });
   ico.id = "add-ico";
   $("add-ico").replaceWith(ico);
   addName.placeholder = nameFromUrl(addUrl.value) || "Name";
   $("add-reset").hidden = !addIcon;
-  $("add-ico-note").textContent = addIcon ? "your upload" : !key ? "" : getIconMap()[key] ? "uploaded earlier" : "from Chrome's cache of the site";
+  $("add-ico-note").textContent = addIcon ? "your upload" : hostOf(a.options.url) ? "from Chrome's cache of the site" : "";
 }
 
 export function openAddDialog() {
@@ -71,15 +68,13 @@ export function initAddDialog() {
   });
   $("add-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const link = addLink();
-    const key = hostOf(link.url);
-    if (!key) {
+    const a = action();
+    if (!hostOf(a.options.url)) {
       addMsg("enter a valid URL", "err");
       return addUrl.focus();
     }
     try {
-      await saveLinks([...getLinks(), link]);
-      if (addIcon) await setIcons({ ...getIconMap(), [key]: addIcon });
+      await addAction(a);
       addDlg.close();
     } catch (err) {
       addMsg(err.message, "err");

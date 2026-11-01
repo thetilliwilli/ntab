@@ -21,6 +21,9 @@
       <button class="side-more up" id="links-up" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
       <button class="side-more down" id="links-down" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
+    <button class="side-btn" id="data-btn" title="Data: backup, import" aria-label="Data">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg>
+    </button>
     <button class="side-btn" id="theme-btn" aria-label="Theme"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
     <button class="side-btn" id="links-edit" title="Edit actions" aria-label="Edit actions">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg>
@@ -28,16 +31,12 @@
   </aside>
 
   <section class="home" id="home" aria-label="Home">
-    <div class="home-grid" id="home-grid"></div>
-  </section>
-
-  <!-- in place of an app that keeps data in the data folder while the folder isn't open -->
-  <section class="gate" id="gate" hidden>
-    <p id="gate-msg"></p>
-    <div class="gate-actions">
-      <button class="primary" id="gate-btn"></button>
-      <button id="gate-alt" hidden>choose another folder…</button>
+    <div class="backup-bar" id="backup-bar" hidden>
+      <span id="backup-text"></span>
+      <button class="primary" id="backup-export">Export backup</button>
+      <button id="backup-later">Later</button>
     </div>
+    <div class="home-grid" id="home-grid"></div>
   </section>
 
   <!-- ===== app: notes ===== -->
@@ -56,9 +55,8 @@
     <div class="nothing" id="nothing" hidden>
       <div class="nothing-box">
         <div class="nothing-head">
-          <span class="nothing-title">No open notes · <span id="nothing-dir"></span></span>
+          <span class="nothing-title">No open notes</span>
           <button class="primary" id="nothing-new">+ new note</button>
-          <button id="nothing-change">change folder…</button>
         </div>
         <input id="nothing-filter" class="file-filter" placeholder="filter by name…" aria-label="Filter notes by name" spellcheck="false">
         <div id="nothing-list" class="file-list"></div>
@@ -67,7 +65,7 @@
 
     <div class="close-panel" id="close-panel" hidden>
       <span>Close <b id="cp-name"></b> — save as</span>
-      <input id="cp-input" aria-label="File name to save as" spellcheck="false">
+      <input id="cp-input" aria-label="Name to save as" spellcheck="false">
       <button id="cp-first" title="Use the first line of the note">first line</button>
       <button id="cp-current" title="Use the current tab name">current name</button>
       <button id="cp-save" class="primary">save &amp; close</button>
@@ -90,7 +88,7 @@
   <!-- ===== app: tracker ===== -->
   <main class="app" id="app-tracker" hidden>
     <div class="tr-bar">
-      <span class="tr-title">Tracker · <span id="tr-dir"></span></span>
+      <span class="tr-title">Tracker</span>
       <button id="tr-edit" title="Rename, reorder or archive event types">edit types</button>
     </div>
     <div class="tr-body">
@@ -115,7 +113,7 @@
   <!-- ===== app: board ===== -->
   <main class="app" id="app-board" hidden>
     <div class="bd-bar">
-      <span class="bd-title">Board · <span id="bd-dir"></span></span>
+      <span class="bd-title">Board</span>
       <button id="bd-new" class="primary">+ task</button>
     </div>
     <div class="bd-cols" id="bd-cols"></div>
@@ -127,8 +125,7 @@
 
   <dialog id="files" class="dlg">
     <div class="dlg-head">
-      <h2>Notes · <span id="files-dir"></span></h2>
-      <button id="files-change">change folder…</button>
+      <h2>Notes</h2>
       <button id="files-close" class="dlg-x" title="Close">×</button>
     </div>
     <div class="dlg-body">
@@ -158,8 +155,8 @@
         </div>
       </div>
       <div id="sc-json" hidden>
-        <p class="muted hint">Array of links <code>{ "name": "…", "url": "…", "target": "_blank" }</code> (<code>target</code> is optional)
-          and apps <code>{ "type": "notes", "name": "Notes" }</code> (<code>type</code>: <span id="sc-app-ids"></span>).</p>
+        <p class="muted hint">Array of actions <code>{ "id": "…", "name": "…", "kind": "open", "options": { "url": "…", "newTab": false } }</code>.
+          <code>url</code> is a web address or an app: <span id="sc-routes"></span>. Leave out <code>id</code> for a new action; icons stay with the id.</p>
         <textarea id="sc-json-text" spellcheck="false" aria-label="Actions JSON"></textarea>
         <p id="sc-json-err" class="err"></p>
       </div>
@@ -200,6 +197,32 @@
     </form>
   </dialog>
 
+  <dialog id="data" class="dlg dlg-narrow">
+    <div class="dlg-head">
+      <h2>Data</h2>
+      <button id="data-x" class="dlg-x" title="Close">×</button>
+    </div>
+    <div class="dlg-body data-body">
+      <p class="muted">Everything is kept in this browser. A backup is one JSON file with all notes, tracker,
+        board, actions and settings.</p>
+      <div class="data-row">
+        <button class="primary" id="data-export">Export backup</button>
+        <span class="muted" id="data-last"></span>
+      </div>
+      <div class="data-row">
+        <button id="data-import">Import backup…</button>
+        <span class="muted">replaces all data with the backup</span>
+      </div>
+      <div class="data-row">
+        <button id="data-text">Import text files…</button>
+        <span class="muted">each file becomes a note</span>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <span id="data-msg" class="msg"></span>
+    </div>
+  </dialog>
+
   <!-- tracker dialogs -->
   <dialog id="tr-new" class="dlg tr-new-dlg">
     <form method="dialog" id="tr-new-form">
@@ -223,8 +246,8 @@
           </div>
           <span>Kind</span>
           <div class="tr-kinds" role="radiogroup" aria-label="Kind">
-            <label class="check"><input type="radio" name="tr-kind" value="once" checked> one-shot: a tap logs the moment</label>
-            <label class="check"><input type="radio" name="tr-kind" value="span" id="tr-new-span"> activity: a tap starts it, Finish ends it, the duration is shown</label>
+            <label class="check"><input type="radio" name="tr-kind" value="event" checked> event: a tap logs the moment</label>
+            <label class="check"><input type="radio" name="tr-kind" value="activity" id="tr-new-activity"> activity: a tap starts it, Finish ends it, the duration is shown</label>
           </div>
         </div>
         <div class="tr-pick">
@@ -248,7 +271,7 @@
     </div>
     <div class="dlg-body">
       <div id="tr-types-rows"></div>
-      <p class="muted hint tr-types-hint">The id of a type never changes, so renaming keeps its history. An archived type has no tile; its events stay in the log.</p>
+      <p class="muted hint tr-types-hint">Renaming a type keeps its history. An archived type has no tile; its entries stay in the log.</p>
     </div>
     <div class="dlg-foot">
       <span id="tr-types-msg" class="msg"></span>

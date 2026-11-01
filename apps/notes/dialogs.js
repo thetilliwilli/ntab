@@ -1,14 +1,13 @@
-/* notes folder listing ([+] dialog and no-open-tabs screen), and the non-modal "close tab as…" panel */
+/* the list of notes ([+] dialog and the no-open-tabs screen), and the non-modal "close tab as…" panel */
 
 import * as notes from "./notes.js";
-import * as noteFiles from "./files.js";
 import { $, el, extStart, fmtTime, fmtSize } from "../../shared/util.js";
 
-/* ---------- file browser: [+] dialog and the no-open-tabs screen ---------- */
+/* ---------- note list: [+] dialog and the no-open-tabs screen ---------- */
 
-const openNote = (name) => notes.open(name).catch((e) => notes.report(e.message));
+const openNote = (id) => notes.open(id).catch((e) => notes.report(e.message));
 
-function fileBrowser({ list, filter, onPick }) {
+function noteList({ list, filter, onPick }) {
   let files = [];
 
   function render() {
@@ -20,12 +19,12 @@ function fileBrowser({ list, filter, onPick }) {
     for (const f of shown) {
       const row = el("div", "file-row");
       row.tabIndex = 0;
-      row.classList.toggle("open", notes.isOpen(f.name));
+      row.classList.toggle("open", notes.isOpen(f.id));
       const del = el("button", "fdel", "×");
-      del.title = "Delete file";
-      row.append(el("span", "fname", f.name), el("span", "fmeta", fmtTime(f.lastModified)), el("span", "fmeta", fmtSize(f.size)), del);
+      del.title = "Delete note";
+      row.append(el("span", "fname", f.name), el("span", "fmeta", fmtTime(f.updatedAt)), el("span", "fmeta", fmtSize(f.size)), del);
 
-      row.addEventListener("click", () => onPick(f.name));
+      row.addEventListener("click", () => onPick(f.id));
       row.addEventListener("keydown", (e) => {
         if (e.key === "Enter") row.click();
         if (e.key === "ArrowDown") (row.nextElementSibling || row).focus();
@@ -36,7 +35,7 @@ function fileBrowser({ list, filter, onPick }) {
         e.stopPropagation();
         if (!confirm(`Delete "${f.name}" permanently?`)) return;
         try {
-          await notes.remove(f.name);
+          await notes.remove(f.id);
           files = files.filter((x) => x !== f);
           render();
         } catch (err) {
@@ -62,7 +61,7 @@ function fileBrowser({ list, filter, onPick }) {
       list.textContent = "";
       list.append(el("div", "empty", "loading…"));
       try {
-        files = (await noteFiles.listNotes()).sort((a, b) => b.lastModified - a.lastModified);
+        files = (await notes.list()).sort((a, b) => b.updatedAt - a.updatedAt);
         render();
       } catch (e) {
         list.textContent = "";
@@ -73,29 +72,23 @@ function fileBrowser({ list, filter, onPick }) {
 }
 
 const dlg = $("files");
-const dialogFiles = fileBrowser({
+const dialogFiles = noteList({
   list: $("files-list"),
   filter: $("files-filter"),
-  onPick(name) {
+  onPick(id) {
     dlg.close();
-    openNote(name);
+    openNote(id);
   },
 });
-const inlineFiles = fileBrowser({ list: $("nothing-list"), filter: $("nothing-filter"), onPick: openNote });
+const inlineFiles = noteList({ list: $("nothing-list"), filter: $("nothing-filter"), onPick: openNote });
 
-export function initFilesDialog({ onChangeFolder }) {
+export function initFilesDialog() {
   $("tab-add").addEventListener("click", openFiles);
   $("files-close").addEventListener("click", () => dlg.close());
-  $("files-change").addEventListener("click", () => {
-    dlg.close();
-    onChangeFolder();
-  });
   $("nothing-new").addEventListener("click", () => notes.create().catch((e) => notes.report(e.message)));
-  $("nothing-change").addEventListener("click", onChangeFolder);
 }
 
 function openFiles() {
-  $("files-dir").textContent = noteFiles.dirLabel();
   dlg.showModal();
   $("files-filter").focus();
   return dialogFiles.load();
@@ -103,7 +96,6 @@ function openFiles() {
 
 /* fills the no-open-tabs screen */
 export function showInlineFiles() {
-  $("nothing-dir").textContent = noteFiles.dirLabel();
   $("nothing-filter").focus();
   return inlineFiles.load();
 }
@@ -115,12 +107,13 @@ const input = $("cp-input");
 let target = null;
 
 export function initClosePanel() {
+  const name = () => notes.getNote(target)?.name ?? "";
   $("cp-first").addEventListener("click", () => {
-    if (target) input.value = notes.firstLine(target) + target.slice(extStart(target)); // keep the current extension
+    if (target) input.value = notes.firstLine(target) + name().slice(extStart(name())); // keep the current extension
     input.focus();
   });
   $("cp-current").addEventListener("click", () => {
-    if (target) input.value = target;
+    if (target) input.value = name();
     input.focus();
   });
   $("cp-save").addEventListener("click", confirmClose);
@@ -132,21 +125,21 @@ export function initClosePanel() {
   notes.subscribe(() => target && !notes.isOpen(target) && hidePanel());
 }
 
-export function askClose(name) {
-  const n = notes.getNote(name);
+export function askClose(id) {
+  const n = notes.getNote(id);
   if (!n) return;
   const empty = !n.text.trim();
   if (empty || !n.edited) {
-    if (target === name) hidePanel();
-    // empty new note: drop its file too; unchanged since opened, or emptied: just close the tab
-    return notes.close(name, empty && n.created).catch((e) => notes.report(e.message));
+    if (target === id) hidePanel();
+    // empty new note: delete it; unchanged since opened, or emptied: just close the tab
+    return notes.close(id, empty && n.created).catch((e) => notes.report(e.message));
   }
-  target = name;
-  $("cp-name").textContent = name;
-  input.value = name;
+  target = id;
+  $("cp-name").textContent = n.name;
+  input.value = n.name;
   panel.hidden = false;
   input.focus();
-  input.setSelectionRange(0, extStart(name));
+  input.setSelectionRange(0, extStart(n.name));
 }
 
 function hidePanel() {
@@ -155,13 +148,13 @@ function hidePanel() {
 }
 
 async function confirmClose() {
-  const name = target;
-  const wanted = input.value.trim();
+  const id = target;
+  const wanted = input.value;
   hidePanel();
-  if (!name || !notes.isOpen(name)) return;
+  if (!id || !notes.isOpen(id)) return;
   try {
-    const final = wanted ? await notes.rename(name, wanted) : name;
-    await notes.close(final);
+    await notes.rename(id, wanted);
+    await notes.close(id);
   } catch (e) {
     notes.report(`close failed: ${e.message}`);
   }

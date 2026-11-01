@@ -1,4 +1,4 @@
-/* the Notes app: a tabbed plain-text notepad over the "notes" subfolder of the data folder */
+/* the Notes app: a tabbed plain-text notepad */
 
 import * as notes from "./notes.js";
 import * as editor from "./editor.js";
@@ -7,7 +7,7 @@ import { initFilesDialog, initClosePanel, showInlineFiles } from "./dialogs.js";
 import { getSettings, updateSettings, subscribeSettings } from "../../shared/settings.js";
 import { $ } from "../../shared/util.js";
 
-let ready = false; // notes.start() has run on the current folder
+let ready = false; // notes.start() has run
 
 /* editor (open tabs) / empty state with the file list (no open tabs) */
 function updateView() {
@@ -31,10 +31,9 @@ export default {
   id: "notes",
   name: "Notes",
   what: "notepad",
-  needsFolder: true,
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path stroke="#fff" stroke-width="2.4" d="M10 10h12M10 15.5h12M10 21h7"/></svg>`,
 
-  init(ctx) {
+  init() {
     const cfg = getSettings;
     $("font-dec").addEventListener("click", () => updateSettings({ fontSize: Math.max(9, cfg().fontSize - 1) }));
     $("font-inc").addEventListener("click", () => updateSettings({ fontSize: Math.min(32, cfg().fontSize + 1) }));
@@ -58,15 +57,15 @@ export default {
 
     initTabbar();
     initClosePanel();
-    initFilesDialog({ onChangeFolder: () => ctx.changeFolder().catch((e) => e?.name !== "AbortError" && notes.report(e?.message || String(e))) });
+    initFilesDialog();
     subscribeSettings(applySettings);
     applySettings(getSettings());
     updateView();
   },
 
-  async start(opts) {
+  async start() {
     ready = true;
-    await notes.start(opts);
+    await notes.start();
     updateView();
   },
 

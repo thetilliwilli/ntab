@@ -3,7 +3,7 @@
   "name": "NTab: Notepad New Tab",
   "short_name": "NTab",
   "version": "2.2.0",
-  "description": "Plain-text notepad with tabs, activity tracker, task board and quick links in your new tab. Data stays in a local folder.",
+  "description": "Plain-text notepad with tabs, activity tracker, task board and quick links in your new tab. Data stays in your browser.",
   "minimum_chrome_version": "122",
   "icons": {
     "16": "icons/icon-16.png",
@@ -15,7 +15,6 @@
     "newtab": "newtab.html"
   },
   "permissions": [
-    "storage",
     "favicon"
   ]
 }

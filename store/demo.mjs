@@ -1,10 +1,11 @@
-/* demo data for the store screenshots: actions, notes and which tabs are open, tracker types and events, board tasks.
-   sites are picked for their sharp 128px icons; Google's own subdomains (mail., drive., …) all get a generic "G" */
+/* demo data for the store screenshots: actions, notes and which tabs are open, tracker types and entries, board
+   tasks (scripts/release.mjs turns them into records). sites are picked for their sharp 128px icons; Google's own
+   subdomains (mail., drive., …) all get a generic "G" */
 
 export const actions = [
-  { type: "notes", name: "Notes" },
-  { type: "tracker", name: "Tracker" },
-  { type: "board", name: "Board" },
+  { name: "Notes", url: "#/notes" },
+  { name: "Tracker", url: "#/tracker" },
+  { name: "Board", url: "#/board" },
   { name: "GitHub", url: "https://github.com" },
   { name: "Stack Overflow", url: "https://stackoverflow.com" },
   { name: "ChatGPT", url: "https://chatgpt.com" },
@@ -91,31 +92,30 @@ Thinking, Fast and Slow
 
 export const openTabs = ["todo.md", "meeting-notes.txt", "ideas.md", "deploy.sh"];
 
-/* tracker: event times are minutes before the screenshot; an activity without an end is running */
+/* tracker: types by a key used below; entries start `ago` minutes before the screenshot, activities last `minutes`
+   (null = still running) */
 export const trackerTypes = [
-  { id: "wake-up", name: "Woke up", icon: "☀️" },
-  { id: "coffee", name: "Coffee", icon: "☕" },
-  { id: "water", name: "Water", icon: "💧" },
-  { id: "deep-work", name: "Deep work", icon: "💻", span: true },
-  { id: "workout", name: "Workout", icon: "🏋️", span: true },
-  { id: "walk", name: "Walk", icon: "🚶", span: true },
-  { id: "called-mom", name: "Called mom", icon: "📞" },
-  { id: "vitamins", name: "Vitamins", icon: "💊" },
+  { key: "wake-up", name: "Woke up", icon: "☀️", kind: "event" },
+  { key: "coffee", name: "Coffee", icon: "☕", kind: "event" },
+  { key: "water", name: "Water", icon: "💧", kind: "event" },
+  { key: "deep-work", name: "Deep work", icon: "💻", kind: "activity" },
+  { key: "workout", name: "Workout", icon: "🏋️", kind: "activity" },
+  { key: "walk", name: "Walk", icon: "🚶", kind: "activity" },
+  { key: "called-mom", name: "Called mom", icon: "📞", kind: "event" },
+  { key: "vitamins", name: "Vitamins", icon: "💊", kind: "event" },
 ];
 
-export const trackerEvents = [
+export const trackerEntries = [
   { type: "wake-up", ago: 300 },
   { type: "water", ago: 290 },
-  { type: "workout", ago: 280, activity: "w1", phase: "start" },
-  { type: "workout", ago: 245, activity: "w1", phase: "end" },
+  { type: "workout", ago: 280, minutes: 35 },
   { type: "vitamins", ago: 230 },
   { type: "coffee", ago: 225 },
-  { type: "walk", ago: 150, activity: "k1", phase: "start" },
-  { type: "walk", ago: 128, activity: "k1", phase: "end" },
+  { type: "walk", ago: 150, minutes: 22 },
   { type: "called-mom", ago: 110 },
   { type: "water", ago: 100 },
   { type: "coffee", ago: 95 },
-  { type: "deep-work", ago: 83, activity: "d1", phase: "start" },
+  { type: "deep-work", ago: 83, minutes: null },
 ];
 
 export const tasks = [

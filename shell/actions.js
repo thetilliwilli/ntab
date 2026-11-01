@@ -1,61 +1,71 @@
-/* the action list (links and apps) and uploaded icons: loaded once, kept in sync, drawn by the sidebar and home */
+/* actions (the "actions" store, see shared/db.js): loaded once, kept in sync, drawn by the sidebar and home.
+   an action is a button of some kind with its options; the only kind so far is "open" { url, newTab }:
+   "#/<app id>" opens an app on this page, anything else is a web address */
 
-import { loadLinks, onLinksChanged, getIcons, onIconsChanged } from "../shared/settings.js";
+import * as db from "../shared/db.js";
 import * as platform from "../platform/index.js";
 import { appById } from "./apps.js";
 import { setView } from "./view.js";
-import { el, isApp, iconKey } from "../shared/util.js";
+import { el, routeOf } from "../shared/util.js";
 
-let links = [];
-let icons = {};
+let actions = [];
 const subs = new Set();
 const notify = () => subs.forEach((fn) => fn());
 
-export const getLinks = () => links;
-export const getIconMap = () => icons;
+export const getActions = () => actions;
 export const subscribeActions = (fn) => subs.add(fn);
 
-/* what can be shown: links and apps this version has (a newer version on another machine may sync other apps) */
-export const shownActions = () => links.filter((a) => !isApp(a) || appById(a.type));
+export const newAction = (name, url, newTab = false) => ({ id: db.uuid(), name, icon: null, rank: 0, kind: "open", options: { url, newTab } });
 
-export async function initActions() {
-  [links, icons] = await Promise.all([loadLinks(), getIcons()]);
+/* the app an action opens, if it opens one of this version's apps */
+export const appOf = (action) => (action.kind === "open" ? appById(routeOf(action.options?.url)) : undefined) ?? null;
+export const isRoute = (action) => action.kind === "open" && routeOf(action.options?.url) != null;
+
+/* what this version can show: "open" actions of web addresses and of its own apps (a backup from a newer version
+   may have other kinds or apps; they are kept, not shown) */
+export const shownActions = () => actions.filter((a) => a.kind === "open" && (!isRoute(a) || appOf(a)));
+
+async function load() {
+  actions = (await db.all("actions")).sort((a, b) => a.rank - b.rank);
   notify();
-  onLinksChanged((l) => {
-    links = l;
-    notify();
-  });
-  onIconsChanged((i) => {
-    icons = i;
-    notify();
-  });
 }
 
-/* a link is a real <a>; an app is a button that switches the screen (class = the app id) */
-export function actionEl(link, cls) {
-  if (!isApp(link)) {
+export async function initActions() {
+  db.onChange(({ store }) => store === "actions" && load().catch(console.error));
+  await load();
+}
+
+/* the whole list, in this order */
+export const saveActions = (list) => db.replace("actions", list.map((a, rank) => ({ ...a, rank })));
+
+export const addAction = (action) => db.put("actions", { ...action, rank: Math.max(-1, ...actions.map((a) => a.rank)) + 1 });
+
+/* a web address is a real <a>; an app is a button that switches the screen (class "app <app id>") */
+export function actionEl(action, cls) {
+  const app = appOf(action);
+  if (!app) {
     const a = el("a", cls);
-    a.href = link.url;
-    if (link.target) a.target = link.target;
+    a.href = action.options.url;
+    if (action.options.newTab) a.target = "_blank";
     return a;
   }
-  const b = el("button", `${cls} app ${link.type}`);
+  const b = el("button", `${cls} app ${app.id}`);
   b.type = "button";
-  b.dataset.app = link.type;
-  b.addEventListener("click", () => setView(link.type));
+  b.dataset.app = app.id;
+  b.addEventListener("click", () => setView(app.id));
   return b;
 }
 
 /* icon: uploaded one > the app's built-in icon / the browser's favicon cache > first letter */
-export function iconEl(link, iconMap) {
-  const span = el("span", "ico", (link.name.trim()[0] || "?").toUpperCase());
-  const key = iconKey(link);
-  const app = isApp(link) && appById(link.type);
-  if (key && iconMap[key]) setImg(span, iconMap[key]);
+export function iconEl(action) {
+  const span = el("span", "ico", (action.name.trim()[0] || "?").toUpperCase());
+  const app = appOf(action);
+  const url = action.options?.url;
+  if (action.icon) setImg(span, action.icon);
   else if (app) {
     span.classList.add("img");
     span.innerHTML = app.icon;
-  } else if (key) cachedFavicon(link.url).then((src) => src && setImg(span, src));
+  } else if (!isRoute(action) && /^https?:/i.test(url ?? "")) cachedFavicon(url).then((src) => src && setImg(span, src));
   return span;
 }
 

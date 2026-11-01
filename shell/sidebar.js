@@ -1,22 +1,22 @@
 /* sidebar: home button, action icons (with a hover flyout and edge arrows), theme and edit buttons */
 
-import { getIconMap, shownActions, subscribeActions, actionEl, iconEl } from "./actions.js";
-import { appById } from "./apps.js";
+import { shownActions, subscribeActions, actionEl, iconEl, appOf } from "./actions.js";
 import { getView, setView, onView } from "./view.js";
-import { $, el, isApp } from "../shared/util.js";
+import { $, el } from "../shared/util.js";
 
 const side = $("links");
 
 /* hover flyout over the sidebar: icon + full name + url; clicking it does what the icon does */
 const fly = el("a", "flyout");
-let flyLink = null;
+let flyAction = null;
 fly.hidden = true;
 document.body.append(fly);
 fly.addEventListener("mouseleave", () => (fly.hidden = true));
 fly.addEventListener("click", (e) => {
-  if (flyLink && isApp(flyLink)) {
+  const app = flyAction && appOf(flyAction);
+  if (app) {
     e.preventDefault();
-    setView(flyLink.type);
+    setView(app.id);
   }
   fly.hidden = true;
 });
@@ -47,15 +47,15 @@ $("links-down").addEventListener("click", () => page(1));
 new ResizeObserver(markMore).observe(side);
 window.addEventListener("blur", () => (fly.hidden = true));
 
-function showFlyout(a, link) {
-  flyLink = link;
-  if (isApp(link)) fly.removeAttribute("href");
-  else fly.href = link.url;
-  if (link.target) fly.target = link.target;
+function showFlyout(a, action) {
+  flyAction = action;
+  const app = appOf(action);
+  if (app) fly.removeAttribute("href");
+  else fly.href = action.options.url;
+  if (!app && action.options.newTab) fly.target = "_blank";
   else fly.removeAttribute("target");
   fly.textContent = "";
-  const what = isApp(link) ? appById(link.type).what : link.url;
-  fly.append(a.querySelector(".ico").cloneNode(true), el("span", "fly-name", link.name), el("span", "fly-url", what));
+  fly.append(a.querySelector(".ico").cloneNode(true), el("span", "fly-name", action.name), el("span", "fly-url", app ? app.what : action.options.url));
   const r = a.getBoundingClientRect();
   fly.style.top = `${r.top}px`;
   fly.style.left = `${r.left}px`;
@@ -66,11 +66,11 @@ function showFlyout(a, link) {
 
 function render() {
   side.textContent = "";
-  for (const link of shownActions()) {
-    const item = actionEl(link, "link");
-    item.setAttribute("aria-label", link.name);
-    item.append(iconEl(link, getIconMap()));
-    item.addEventListener("mouseenter", () => showFlyout(item, link));
+  for (const action of shownActions()) {
+    const item = actionEl(action, "link");
+    item.setAttribute("aria-label", action.name);
+    item.append(iconEl(action));
+    item.addEventListener("mouseenter", () => showFlyout(item, action));
     side.append(item);
   }
   markView();
