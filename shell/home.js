@@ -1,7 +1,7 @@
 /* the home screen: the backup reminder, and the actions as tiles in their order; the last tile adds an action */
 
 import { shownActions, subscribeActions, actionEl, iconEl, appOf, describe } from "./actions.js";
-import { openAddDialog } from "./action-form.js";
+import { openAddDialog, actionMenu } from "./action-form.js";
 import { $, el } from "../shared/util.js";
 
 const grid = $("home-grid");
@@ -10,6 +10,7 @@ function tile(action) {
   const t = actionEl(action, "tile");
   t.title = appOf(action)?.name ?? describe(action);
   t.append(iconEl(action), el("span", "tile-name", action.name));
+  t.addEventListener("contextmenu", (e) => actionMenu(e, action));
   return t;
 }
 

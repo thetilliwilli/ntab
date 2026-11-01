@@ -1,6 +1,7 @@
 import * as notes from "./notes.js";
 import { askClose } from "./dialogs.js";
 import { $, el, extStart, sortable, isDragging, download } from "../../shared/util.js";
+import { showMenu, closeMenu } from "../../shared/menu.js";
 
 const box = $("tabs");
 let renaming = false;
@@ -8,44 +9,18 @@ let shown = null; // tab order the strip was built for; saves only flip classes,
 let shownActive = null;
 
 /* right-click menu on a tab: download the note as a file named after it, delete it (picking it is the confirmation) */
-const menu = el("div", "ctx-menu");
-const menuDown = el("button", "ctx-item", "Download");
-const menuDel = el("button", "ctx-item danger", "Delete note");
-let menuFor = null;
-menu.hidden = true;
-menu.setAttribute("role", "menu");
-for (const item of [menuDown, menuDel]) item.setAttribute("role", "menuitem");
-menu.append(menuDown, menuDel);
-document.body.append(menu);
-
 function openMenu(e, id) {
-  e.preventDefault();
-  menuFor = id;
-  menu.hidden = false;
-  // keep it inside the window
-  const x = Math.min(e.clientX, innerWidth - menu.offsetWidth - 4);
-  const y = Math.min(e.clientY, innerHeight - menu.offsetHeight - 4);
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
-  menuDown.focus();
+  showMenu(e, [
+    {
+      label: "Download",
+      run() {
+        const n = notes.getNote(id);
+        if (n) download(n.name, n.text, "application/octet-stream"); // a text type would make Chrome add ".txt" to "todo"
+      },
+    },
+    { label: "Delete note", danger: true, run: () => notes.close(id, true).catch((err) => notes.report(`delete failed: ${err.message}`)) },
+  ]);
 }
-
-const closeMenu = () => (menu.hidden = true);
-
-menuDown.addEventListener("click", () => {
-  closeMenu();
-  const n = notes.getNote(menuFor);
-  if (n) download(n.name, n.text, "application/octet-stream"); // a text type would make Chrome add ".txt" to "todo"
-});
-menuDel.addEventListener("click", () => {
-  closeMenu();
-  notes.close(menuFor, true).catch((err) => notes.report(`delete failed: ${err.message}`));
-});
-menu.addEventListener("keydown", (e) => e.key === "Escape" && closeMenu());
-menu.addEventListener("contextmenu", (e) => e.preventDefault());
-document.addEventListener("pointerdown", (e) => !menu.contains(e.target) && closeMenu(), true);
-window.addEventListener("blur", closeMenu);
-window.addEventListener("resize", closeMenu);
 
 export function initTabbar() {
   notes.subscribe(render);

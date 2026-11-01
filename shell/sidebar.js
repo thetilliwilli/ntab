@@ -2,6 +2,7 @@
 
 import { shownActions, subscribeActions, actionEl, iconEl, appOf, describe } from "./actions.js";
 import { getView, setView, onView } from "./view.js";
+import { actionMenu } from "./action-form.js";
 import { $, el } from "../shared/util.js";
 
 const side = $("links");
@@ -20,6 +21,11 @@ fly.addEventListener("click", (e) => {
     else side.querySelector(`[data-id="${flyAction.id}"]`)?.click(); // the icon runs the request
   }
   fly.hidden = true;
+});
+/* right-click: the flyout covers the icon, so it opens the icon's menu */
+fly.addEventListener("contextmenu", (e) => {
+  fly.hidden = true;
+  if (flyAction) actionMenu(e, flyAction);
 });
 /* the flyout covers the icon under the cursor, so the wheel lands on it: scroll the sidebar instead */
 fly.addEventListener(
@@ -73,6 +79,7 @@ function render() {
     item.dataset.id = action.id;
     item.append(iconEl(action));
     item.addEventListener("mouseenter", () => showFlyout(item, action));
+    item.addEventListener("contextmenu", (e) => actionMenu(e, action));
     side.append(item);
   }
   markView();

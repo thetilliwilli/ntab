@@ -8,7 +8,8 @@ HOME SCREEN
 • Every new tab starts here, so your notes never pop up on screen by themselves (handy when sharing your screen)
 • Site icons from Chrome's own cache, or upload your own
 • Hover a sidebar icon to see its full name and address
-• Edit the list in a simple form or as raw JSON
+• Right-click a tile to edit or delete it
+• Edit the whole list in a simple form or as raw JSON
 
 REQUEST TILES
 • A tile can send an HTTP request: URL, method, headers, body

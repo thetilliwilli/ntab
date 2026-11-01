@@ -89,7 +89,8 @@ cards it shifts.
 One list drives both the home tiles and the sidebar, in the same order. The dashed **+ Add** tile at the end
 opens the action form for a new action of any kind (URL, name — defaults to the host or app name —, icon upload,
 new tab or the request's method, headers as `Name: value` lines and body); it is added at the end of the list.
-In the editor, ⚙ (or the method button) on a row opens the same form for that row. Hovering a sidebar icon shows a flyout with its full name and address. Edit with
+In the editor, ⚙ (or the method button) on a row opens the same form for that row. Right-click a tile or a
+sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address. Edit with
 ✎ at the bottom of the sidebar (above it: **Data** and the theme switch auto / light / dark) — a form or raw JSON:
 
 ```json
@@ -148,6 +149,7 @@ Sources are plain ES modules, split by role:
   - `db.js` — the database: the data model, transactions, change events, backup dump and restore
   - `settings.js` — settings
   - `util.js` — DOM helpers, formatting, drag-to-reorder, routes, downloads
+  - `menu.js` — the right-click menu (tabs, tiles, sidebar icons)
 - `shell/` — the frame around the apps:
   - `main.js` — entry point: theme, screens
   - `apps.js` — the app registry and the app contract

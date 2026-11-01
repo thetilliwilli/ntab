@@ -116,6 +116,24 @@ actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
 ok("saved in the new order", actions.map((a) => a.name).join() === "example.com,Notepad,Wiki" && actions[1].id === json[0].id && actions[2].options.url === "https://en.wikipedia.org" && actions[2].icon === null, JSON.stringify(actions));
 ok("sidebar follows", (await P.ev(`[...document.querySelectorAll('#links > *')].map((n) => n.getAttribute('aria-label')).join()`)) === "example.com,Notepad,Wiki");
 
+// right-click on a tile: Edit opens the form with the action, saving keeps its id and place; Delete removes it
+const tileNamed = (n) => `[...document.querySelectorAll('#home-grid .tile')].find((t) => t.querySelector('.tile-name')?.textContent === ${JSON.stringify(n)})`;
+await P.ev(`${tileNamed("Notepad")}.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 200 }))`);
+ok("tile menu: Edit, Delete", (await P.ev(`[...document.querySelectorAll('.ctx-menu:not([hidden]) .ctx-item')].map((b) => b.textContent).join()`)) === "Edit,Delete");
+await P.ev(`document.querySelector('.ctx-menu .ctx-item').click()`);
+await sleep(100);
+ok("Edit opens the form", await P.ev(`document.getElementById('add').open && document.getElementById('add-title').textContent === 'Edit action' && document.getElementById('add-url').value === '#/notes'`));
+await P.ev(`document.getElementById('add-name').value = 'My notes'; document.getElementById('add-form').requestSubmit()`);
+await sleep(400);
+actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
+ok("edited in place", actions.map((a) => a.name).join() === "example.com,My notes,Wiki" && actions[1].id === json[0].id && actions[1].rank === 1, JSON.stringify(actions.map((a) => [a.name, a.rank])));
+// the sidebar: the flyout covers the icon, right-click on it gives the same menu
+await P.ev(`document.querySelector('#links [aria-label=Wiki]').dispatchEvent(new MouseEvent('mouseenter'))`);
+await P.ev(`document.querySelector('.flyout').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 200 }))`);
+await P.ev(`document.querySelector('.ctx-menu .danger').click()`);
+await sleep(400);
+ok("Delete from the sidebar", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
+
 console.log("errors:", P.errors, Q.errors);
 P.close();
 Q.close();

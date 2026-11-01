@@ -1,7 +1,8 @@
 /* the action form (#add): one action of any kind. the "+" tile on home adds one; the actions editor edits a row
    with it (⚙). kind-specific fields carry data-for="<kind>" and show only for that kind */
 
-import { iconEl, addAction, newAction, optionsFor, appOf, METHODS } from "./actions.js";
+import { iconEl, addAction, saveAction, removeAction, newAction, optionsFor, appOf, METHODS } from "./actions.js";
+import { showMenu } from "../shared/menu.js";
 import { pickFile, iconFromFile } from "./icon-file.js";
 import { appById } from "./apps.js";
 import { $, hostOf, fixUrl, routeOf } from "../shared/util.js";
@@ -96,6 +97,14 @@ export function openActionForm({ edit = null, onDone }) {
 }
 
 export const openAddDialog = () => openActionForm({ onDone: addAction });
+
+/* right-click on a tile or a sidebar icon: edit it in the form, or delete it (picking it is the confirmation) */
+export function actionMenu(e, action) {
+  showMenu(e, [
+    { label: "Edit", run: () => openActionForm({ edit: structuredClone(action), onDone: saveAction }) },
+    { label: "Delete", danger: true, run: () => removeAction(action.id).catch(console.error) },
+  ]);
+}
 
 export function initActionForm() {
   for (const [k, label] of [["open", "Open a page or app"], ["request", "Send a request"]]) {

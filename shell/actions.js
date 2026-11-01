@@ -54,6 +54,9 @@ export async function initActions() {
 /* the whole list, in this order */
 export const saveActions = (list) => db.replace("actions", list.map((a, rank) => ({ ...a, rank })));
 
+export const saveAction = (action) => db.put("actions", action);
+export const removeAction = (id) => db.remove("actions", id);
+
 export const addAction = (action) => db.put("actions", { ...action, rank: Math.max(-1, ...actions.map((a) => a.rank)) + 1 });
 
 /* a web address is a real <a>; an app is a button that switches the screen (class "app <app id>"); a request is a
