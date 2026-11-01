@@ -49,7 +49,7 @@
 /* type tiles */
 .tr-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; }
 
-.tr-tile {
+.tr-tile, .tr-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -64,7 +64,7 @@
 }
 
 .tr-tile:hover { background: var(--surface); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
-.tr-tile .tr-emoji { font-size: 34px; }
+.tr-tile .tr-emoji, .tr-preview .tr-emoji { font-size: 34px; }
 .tr-tile-name { max-width: 100%; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .tr-tile-meta { color: var(--muted); font-size: 11px; }
 .tr-tile.running { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); opacity: 0.6; cursor: default; }
@@ -122,14 +122,22 @@
 .tr-toast.err { background: var(--danger); color: #fff; }
 
 /* dialogs */
-.tr-form { display: flex; flex-direction: column; gap: 10px; }
-.tr-form-row { display: flex; gap: 8px; }
-.tr-form-row input { height: 32px; padding: 0 8px; }
-.tr-form-row input:last-child { flex: 1; min-width: 0; }
-.tr-icon-in { width: 64px; font-size: 20px; text-align: center; }
-.tr-pick { display: flex; flex-wrap: wrap; gap: 2px; }
-.tr-pick button { width: 34px; height: 34px; padding: 0; font-size: 20px; }
-.tr-check { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.tr-new-dlg { width: min(600px, 94vw); }
+.tr-new-body { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 14px 16px; padding: 14px 12px; }
+.tr-preview { min-height: 116px; }
+.tr-preview .tr-emoji.none { color: var(--muted); font-family: var(--ui); }
+.tr-fields { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; }
+.tr-fields > label, .tr-fields > span { color: var(--muted); }
+.tr-fields input:not([type]) { height: 30px; padding: 0 8px; }
+.tr-icon-line { display: flex; align-items: center; gap: 10px; }
+.tr-icon-line .muted { font-size: 12px; }
+.tr-icon-line .err { color: var(--danger); }
+.tr-icon-in { width: 56px; font-size: 18px; text-align: center; font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", var(--ui); }
+.tr-kinds { display: flex; flex-direction: column; gap: 4px; }
+.tr-kinds .check { color: var(--fg); font-size: 13px; white-space: normal; }
+.tr-pick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, 38px); gap: 2px; padding-top: 10px; border-top: 1px solid var(--border); }
+.tr-pick button { width: 38px; height: 38px; padding: 0; font-size: 22px; border: 1px solid transparent; }
+.tr-pick button.on { border-color: var(--accent); background: var(--hover); }
 
 .tr-type-row {
   display: grid;

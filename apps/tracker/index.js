@@ -196,13 +196,39 @@ function editTime(row, button, e) {
 
 /* ---------- new type dialog ---------- */
 
-const SUGGESTED = ["🚬", "🏋️", "☀️", "🌙", "📞", "💧", "🍽️", "☕", "💊", "🚶", "🧘", "📖", "🛁", "🚴", "🍺", "💤", "🧹", "🛒", "✉️", "🎮"];
+const SUGGESTED = [
+  "🚬", "☕", "💧", "🍽️", "🍺", "💊", "☀️", "🌙", "💤", "🛁",
+  "🏋️", "🚶", "🚴", "🏃", "🧘", "💻", "💼", "📖", "✍️", "🎧",
+  "📞", "✉️", "💬", "🧹", "🛒", "🍳", "🐕", "🎮",
+];
+
+/* one emoji (a single grapheme: ☀️, 🏋️, 👷‍♀️, 🇩🇪…), not text */
+const isEmoji = (s) => /^\p{RGI_Emoji}$/v.test(s) || /^\p{Extended_Pictographic}\uFE0F?$/u.test(s);
+const PASTE_HINT = /Mac/.test(navigator.platform) ? "Ctrl+Cmd+Space" : /Win/.test(navigator.platform) ? "Win+." : "";
+
+const newIcon = () => $("tr-new-icon").value.trim();
+const newMsg = (t) => ($("tr-new-msg").textContent = t);
+
+/* preview tile, the note next to the icon box, the picked icon in the grid */
+function refreshNew() {
+  const icon = newIcon();
+  const ok = isEmoji(icon);
+  $("tr-prev-icon").textContent = ok ? icon : "?";
+  $("tr-prev-icon").classList.toggle("none", !ok);
+  $("tr-prev-name").textContent = $("tr-new-name").value.trim() || "Name";
+  $("tr-icon-note").textContent = !icon
+    ? `pick one below${PASTE_HINT ? `, or paste any emoji (${PASTE_HINT})` : ", or paste any emoji"}`
+    : ok ? "" : "not an emoji: pick one below or paste one";
+  $("tr-icon-note").classList.toggle("err", !!icon && !ok);
+  for (const b of $("tr-new-pick").children) b.classList.toggle("on", b.textContent === icon);
+}
 
 function openNew() {
   $("tr-new-icon").value = "";
   $("tr-new-name").value = "";
-  $("tr-new-span").checked = false;
-  $("tr-new-msg").textContent = "";
+  $("tr-new-form").elements["tr-kind"].value = "once";
+  newMsg("");
+  refreshNew();
   $("tr-new").showModal();
   $("tr-new-name").focus();
 }
@@ -210,15 +236,17 @@ function openNew() {
 async function submitNew(e) {
   e.preventDefault();
   const name = $("tr-new-name").value.trim();
-  const icon = $("tr-new-icon").value.trim();
-  const msg = (t) => ($("tr-new-msg").textContent = t);
-  if (!name) return msg("enter a name");
-  if (!icon) return msg("pick or type an icon (an emoji)");
+  const icon = newIcon();
+  if (!name) {
+    newMsg("enter a name");
+    return $("tr-new-name").focus();
+  }
+  if (!isEmoji(icon)) return newMsg(icon ? "the icon must be one emoji" : "choose an icon");
   try {
     await model.saveTypes([...model.getTypes(), { id: model.newTypeId(name), name, icon, span: $("tr-new-span").checked }]);
     $("tr-new").close();
   } catch (err) {
-    msg(err.message);
+    newMsg(err.message);
   }
 }
 
@@ -292,8 +320,8 @@ function typeRow(t, i) {
 
 async function saveTypes() {
   const msg = (t) => ($("tr-types-msg").textContent = t);
-  const bad = draft.findIndex((t) => !t.name.trim() || !t.icon);
-  if (bad !== -1) return msg(`type ${bad + 1}: name and icon are required`);
+  const bad = draft.findIndex((t) => !t.name.trim() || !isEmoji(t.icon));
+  if (bad !== -1) return msg(`type ${bad + 1}: a name and one emoji as the icon are required`);
   try {
     await model.saveTypes(draft.map((t) => ({ ...t, name: t.name.trim() })));
     $("tr-types").close();
@@ -324,10 +352,23 @@ export default {
       b.type = "button";
       b.addEventListener("click", () => {
         $("tr-new-icon").value = em;
-        $("tr-new-name").focus();
+        newMsg("");
+        refreshNew();
       });
       pick.append(b);
     }
+    // the icon box keeps one emoji: typing or pasting a new one replaces the old
+    $("tr-new-icon").addEventListener("input", () => {
+      const parts = [...new Intl.Segmenter().segment($("tr-new-icon").value)].map((p) => p.segment);
+      const last = parts.findLast(isEmoji);
+      if (last && parts.length > 1) $("tr-new-icon").value = last;
+      newMsg("");
+      refreshNew();
+    });
+    $("tr-new-name").addEventListener("input", () => {
+      newMsg("");
+      refreshNew();
+    });
     $("tr-new-form").addEventListener("submit", submitNew);
     $("tr-new-cancel").addEventListener("click", () => $("tr-new").close());
     $("tr-new-x").addEventListener("click", () => $("tr-new").close());

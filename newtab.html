@@ -201,19 +201,33 @@
   </dialog>
 
   <!-- tracker dialogs -->
-  <dialog id="tr-new" class="dlg dlg-narrow">
+  <dialog id="tr-new" class="dlg tr-new-dlg">
     <form method="dialog" id="tr-new-form">
       <div class="dlg-head">
         <h2>New event type</h2>
         <button type="button" id="tr-new-x" class="dlg-x" title="Close">×</button>
       </div>
-      <div class="dlg-body tr-form">
-        <div class="tr-form-row">
-          <input id="tr-new-icon" class="tr-icon-in" maxlength="8" placeholder="🙂" aria-label="Icon (an emoji)" autocomplete="off">
-          <input id="tr-new-name" placeholder="Name, e.g. Smoked" aria-label="Name" autocomplete="off" spellcheck="false">
+      <div class="dlg-body tr-new-body">
+        <div class="tr-preview" aria-hidden="true">
+          <span class="tr-emoji" id="tr-prev-icon"></span>
+          <span class="tr-tile-name" id="tr-prev-name"></span>
+          <span class="tr-tile-meta">preview</span>
         </div>
-        <div id="tr-new-pick" class="tr-pick" aria-label="Suggested icons"></div>
-        <label class="check"><input type="checkbox" id="tr-new-span"> lasts a while: has a start and a finish, shows its duration while running</label>
+        <div class="tr-fields">
+          <label for="tr-new-name">Name</label>
+          <input id="tr-new-name" placeholder="e.g. Smoked, Workout, Called mom" autocomplete="off" spellcheck="false">
+          <label for="tr-new-icon">Icon</label>
+          <div class="tr-icon-line">
+            <input id="tr-new-icon" class="tr-icon-in" aria-describedby="tr-icon-note" autocomplete="off" spellcheck="false">
+            <span class="muted" id="tr-icon-note"></span>
+          </div>
+          <span>Kind</span>
+          <div class="tr-kinds" role="radiogroup" aria-label="Kind">
+            <label class="check"><input type="radio" name="tr-kind" value="once" checked> one-shot: a tap logs the moment</label>
+            <label class="check"><input type="radio" name="tr-kind" value="span" id="tr-new-span"> activity: a tap starts it, Finish ends it, the duration is shown</label>
+          </div>
+        </div>
+        <div id="tr-new-pick" class="tr-pick" aria-label="Icons to pick from"></div>
       </div>
       <div class="dlg-foot">
         <span id="tr-new-msg" class="msg err"></span>
