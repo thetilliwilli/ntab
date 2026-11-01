@@ -51,5 +51,9 @@ export const newPage = async () => connect((await (await fetch(`${CDP}/json/new?
 
 export const ok = (label, cond, extra = "") => console.log(cond ? "PASS" : "FAIL", label, extra);
 
-/* OPFS "notes" folder = the notes folder the stub's showDirectoryPicker returns */
-export const notesDir = `(await (await navigator.storage.getDirectory()).getDirectoryHandle('notes', { create: true }))`;
+/* OPFS "notes" folder = the data folder the stub's showDirectoryPicker returns; notes are in its "notes" subfolder */
+export const dataDir = `(await (await navigator.storage.getDirectory()).getDirectoryHandle('notes', { create: true }))`;
+export const notesDir = `(await ${dataDir}.getDirectoryHandle('notes', { create: true }))`;
+
+/* expression that empties the data folder */
+export const clearData = `(async () => { const d = ${dataDir}; for await (const k of d.keys()) await d.removeEntry(k, { recursive: true }); })()`;

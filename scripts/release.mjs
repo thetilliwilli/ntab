@@ -182,9 +182,12 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
     localStorage.setItem("stub:sync", ${JSON.stringify(JSON.stringify(sync))});
     localStorage.setItem("stub:local", ${JSON.stringify(JSON.stringify(local))});
     localStorage.setItem("theme", ${JSON.stringify(theme)});
-    const root = await navigator.storage.getDirectory();
+    const root = await (await navigator.storage.getDirectory()).getDirectoryHandle("notes", { create: true }); // the data folder
+    for await (const name of root.keys()) await root.removeEntry(name, { recursive: true });
+    const marker = await (await root.getFileHandle("ntab.json", { create: true })).createWritable();
+    await marker.write('{ "format": 1 }\n');
+    await marker.close();
     const dir = await root.getDirectoryHandle("notes", { create: true });
-    for await (const name of dir.keys()) await dir.removeEntry(name);
     for (const [name, text] of Object.entries(${JSON.stringify(demo.notes)})) {
       const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
       await w.write(text);

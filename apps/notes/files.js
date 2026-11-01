@@ -6,11 +6,11 @@ let dir = null;
 
 /* called each time the app starts (the folder may have changed) */
 export async function openDir() {
-  dir = folder.getDir();
+  dir = await folder.subdir("notes");
 }
 
-/* "my-folder", for display */
-export const dirLabel = () => folder.getDir()?.name || "";
+/* "my-folder/notes", for display */
+export const dirLabel = () => (folder.getDir() ? `${folder.getDir().name}/notes` : "");
 
 export async function listNotes() {
   const out = [];

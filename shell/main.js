@@ -89,17 +89,36 @@ async function enter() {
   if (app === appById(getView())) app.show();
 }
 
+/* the folder is open: upgrade an older layout (with the user's OK), then start the current app */
 async function folderReady() {
+  const legacy = await folder.legacyNotes();
+  if (legacy.length) return upgradeGate(legacy);
+  await folder.markLayout();
   ready = true;
   show();
   await enter();
+}
+
+function upgradeGate(names) {
+  const n = names.length;
+  const list = names.slice(0, 5).join(", ") + (n > 5 ? `, … (${n - 5} more)` : "");
+  gate(
+    `“${folder.getDir().name}” was set up by an older version: your notes are the files in it.\n` +
+      `Notes now live in its subfolder “notes”, so the folder can keep other data too.\n\n${list}`,
+    `move ${n} ${n === 1 ? "file" : "files"} to notes/`,
+    async () => {
+      await folder.upgrade(names);
+      await folderReady();
+    },
+    true,
+  );
 }
 
 async function choose() {
   await folder.pickDir();
   fresh = true;
   live.clear();
-  await folderReady();
+  await folderReady().catch(cannotOpen);
 }
 
 async function changeFolder() {
@@ -113,14 +132,14 @@ async function connect() {
   }
   const dir = await folder.restoreDir();
   if (!dir) {
-    return gate("Choose a folder where notes will be kept as plain text files.\nEvery change is saved there instantly.", "choose folder…", choose);
+    return gate("Choose a folder where your data will be kept: notes as plain text files, the rest as JSON.\nEvery change is saved there instantly.", "choose folder…", choose);
   }
-  if (await folder.hasPermission()) return folderReady();
+  if (await folder.hasPermission()) return folderReady().catch(cannotOpen);
   gate(
-    `Chrome needs your OK to access the notes folder “${dir.name}” again.\nTip: pick “Allow on every visit” to skip this step next time.`,
+    `Chrome needs your OK to access the data folder “${dir.name}” again.\nTip: pick “Allow on every visit” to skip this step next time.`,
     "connect folder",
     async () => {
-      if (await folder.requestPermission()) await folderReady();
+      if (await folder.requestPermission()) await folderReady().catch(cannotOpen);
     },
     true,
   );

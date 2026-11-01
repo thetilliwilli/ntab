@@ -5,10 +5,14 @@
  *     ntab.json   { "format": 1 }: marks a folder in this layout; the root holds only what the whole extension needs
  *     notes/      Notes: one plain text file per note
  *
- * every app keeps its files in its own subfolder (subdir()).
+ * every app keeps its files in its own subfolder (subdir()). up to 2.1.0 the notes were the files in the root;
+ * such a folder (files in the root, no ntab.json) is upgraded by moving them into notes/, after the user agrees.
  */
 
 import { idbGet, idbSet } from "./idb.js";
+
+const MARKER = "ntab.json";
+const FORMAT = 1;
 
 let dir = null;
 let dirId = ""; // random id of the chosen folder: drafts and cross-page messages are scoped to it
@@ -71,3 +75,53 @@ export async function readJson(parent, name) {
 }
 
 export const writeJson = (parent, name, value) => writeText(parent, name, JSON.stringify(value, null, 2) + "\n");
+
+/* ---------- layout ---------- */
+
+/* names of the notes an older version kept in the root; empty if the folder is in the current layout */
+export async function legacyNotes() {
+  if (await readText(dir, MARKER)) return [];
+  const names = [];
+  for await (const h of dir.values()) if (h.kind === "file" && !h.name.startsWith(".")) names.push(h.name);
+  return names.sort();
+}
+
+/* marks the folder as being in the current layout (call when legacyNotes() is empty or after upgrade()) */
+export async function markLayout() {
+  if (!(await readText(dir, MARKER))) await writeJson(dir, MARKER, { format: FORMAT });
+}
+
+/* moves the given root files into notes/ (a free name if one is taken there), then marks the folder */
+export async function upgrade(names) {
+  const notes = await subdir("notes");
+  for (const name of names) {
+    let target = name;
+    for (let n = 2; await exists(notes, target); n++) target = withSuffix(name, n);
+    const h = await dir.getFileHandle(name);
+    try {
+      await h.move(notes, target); // keeps the file's date; not available everywhere
+    } catch {
+      const file = await h.getFile();
+      const w = await (await notes.getFileHandle(target, { create: true })).createWritable();
+      await w.write(file);
+      await w.close();
+      await dir.removeEntry(name);
+    }
+  }
+  await markLayout();
+}
+
+async function exists(parent, name) {
+  try {
+    await parent.getFileHandle(name);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* "a.txt", 2 -> "a (2).txt" */
+function withSuffix(name, n) {
+  const i = name.lastIndexOf(".");
+  return i > 0 ? `${name.slice(0, i)} (${n})${name.slice(i)}` : `${name} (${n})`;
+}

@@ -1,9 +1,10 @@
 /* smoke test: home screen -> notepad -> type -> the file is written. run: node test/example.mjs */
-import { newPage, sleep, ok, notesDir } from "./cdp.mjs";
+import { newPage, sleep, ok, notesDir, clearData } from "./cdp.mjs";
 
 const P = await newPage();
 await P.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 700, deviceScaleFactor: 1, mobile: false });
-await P.ev(`(async () => { localStorage.clear(); const d = ${notesDir}; for await (const k of d.keys()) await d.removeEntry(k, { recursive: true }); })()`);
+await P.ev(`localStorage.clear()`);
+await P.ev(clearData);
 await P.send("Page.reload");
 await sleep(1200);
 ok("starts on home", await P.ev(`!document.getElementById('home').hidden`));
