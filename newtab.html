@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="shared/base.css">
   <link rel="stylesheet" href="shell/shell.css">
   <link rel="stylesheet" href="apps/notes/notes.css">
+  <link rel="stylesheet" href="apps/tracker/tracker.css">
   <script src="shell/theme.js"></script>
 </head>
 <body>
@@ -85,6 +86,31 @@
     </footer>
   </main>
 
+  <!-- ===== app: tracker ===== -->
+  <main class="app" id="app-tracker" hidden>
+    <div class="tr-bar">
+      <span class="tr-title">Tracker · <span id="tr-dir"></span></span>
+      <button id="tr-edit" title="Rename, reorder or archive event types">edit types</button>
+    </div>
+    <div class="tr-body">
+      <section class="tr-spans" id="tr-spans" hidden aria-label="Running activities"></section>
+      <section class="tr-tiles" id="tr-tiles" aria-label="Event types"></section>
+      <section class="tr-log" aria-label="Log">
+        <div class="tr-log-head">
+          <button id="tr-prev" title="Previous day">◀</button>
+          <span id="tr-day" class="tr-day"></span>
+          <button id="tr-next" title="Next day">▶</button>
+          <button id="tr-today">today</button>
+        </div>
+        <div id="tr-log" class="tr-rows"></div>
+      </section>
+    </div>
+    <div class="tr-toast" id="tr-toast" hidden>
+      <span id="tr-toast-text"></span>
+      <button id="tr-toast-undo">Undo</button>
+    </div>
+  </main>
+
   <dialog id="files" class="dlg">
     <div class="dlg-head">
       <h2>Notes · <span id="files-dir"></span></h2>
@@ -113,14 +139,13 @@
           <span>Notepad isn't in the list — without it there is no way to open your notes.</span>
           <button id="sc-notes-back">add it back</button>
         </div>
-        <div class="sc-adds">
+        <div class="sc-adds" id="sc-adds">
           <button id="sc-add" class="add">+ link</button>
-          <button id="sc-add-notes" class="add">+ notepad</button>
         </div>
       </div>
       <div id="sc-json" hidden>
         <p class="muted hint">Array of links <code>{ "name": "…", "url": "…", "target": "_blank" }</code> (<code>target</code> is optional)
-          and the notepad <code>{ "type": "notes", "name": "Notes" }</code>.</p>
+          and apps <code>{ "type": "notes", "name": "Notes" }</code> (<code>type</code>: <span id="sc-app-ids"></span>).</p>
         <textarea id="sc-json-text" spellcheck="false" aria-label="Actions JSON"></textarea>
         <p id="sc-json-err" class="err"></p>
       </div>
@@ -151,7 +176,7 @@
           <span class="muted" id="add-ico-note">from Chrome's cache of the site</span>
         </div>
         <span></span>
-        <label class="sc-check"><input id="add-blank" type="checkbox"> open in a new browser tab</label>
+        <label class="check"><input id="add-blank" type="checkbox"> open in a new browser tab</label>
       </div>
       <div class="dlg-foot">
         <span id="add-msg" class="msg"></span>
@@ -159,6 +184,45 @@
         <button id="add-save" class="primary">Add</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- tracker dialogs -->
+  <dialog id="tr-new" class="dlg dlg-narrow">
+    <form method="dialog" id="tr-new-form">
+      <div class="dlg-head">
+        <h2>New event type</h2>
+        <button type="button" id="tr-new-x" class="dlg-x" title="Close">×</button>
+      </div>
+      <div class="dlg-body tr-form">
+        <div class="tr-form-row">
+          <input id="tr-new-icon" class="tr-icon-in" maxlength="8" placeholder="🙂" aria-label="Icon (an emoji)" autocomplete="off">
+          <input id="tr-new-name" placeholder="Name, e.g. Smoked" aria-label="Name" autocomplete="off" spellcheck="false">
+        </div>
+        <div id="tr-new-pick" class="tr-pick" aria-label="Suggested icons"></div>
+        <label class="check"><input type="checkbox" id="tr-new-span"> lasts a while: has a start and a finish, shows its duration while running</label>
+      </div>
+      <div class="dlg-foot">
+        <span id="tr-new-msg" class="msg err"></span>
+        <button type="button" id="tr-new-cancel">Cancel</button>
+        <button type="submit" class="primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="tr-types" class="dlg dlg-wide">
+    <div class="dlg-head">
+      <h2>Event types</h2>
+      <button id="tr-types-x" class="dlg-x" title="Close">×</button>
+    </div>
+    <div class="dlg-body">
+      <div id="tr-types-rows"></div>
+      <p class="muted hint tr-types-hint">The id of a type never changes, so renaming keeps its history. An archived type has no tile; its events stay in the log.</p>
+    </div>
+    <div class="dlg-foot">
+      <span id="tr-types-msg" class="msg"></span>
+      <button id="tr-types-cancel">Cancel</button>
+      <button id="tr-types-save" class="primary">Save</button>
+    </div>
   </dialog>
 
   <script type="module" src="shell/main.js"></script>

@@ -13,6 +13,7 @@
  */
 
 import notes from "../apps/notes/index.js";
+import tracker from "../apps/tracker/index.js";
 
-export const apps = [notes];
+export const apps = [notes, tracker];
 export const appById = (id) => apps.find((a) => a.id === id);

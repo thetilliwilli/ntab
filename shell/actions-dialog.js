@@ -3,28 +3,35 @@
 import { getLinks, getIconMap, iconEl } from "./actions.js";
 import { pickFile, iconFromFile } from "./icon-file.js";
 import { saveLinks, setIcons } from "../shared/settings.js";
-import { $, el, hostOf, fixUrl, iconKey, sortable } from "../shared/util.js";
+import { apps, appById } from "./apps.js";
+import { $, el, hostOf, fixUrl, isApp, iconKey, sortable } from "../shared/util.js";
 
 const isNotes = (action) => action.type === "notes";
+const newApp = (app) => ({ type: app.id, name: app.name });
 
 const dlg = $("sc");
 const rows = $("sc-rows");
 const jsonText = $("sc-json-text");
 const jsonErr = $("sc-json-err");
 
-let draft = []; // [{ name, url, target? } | { type: "notes", name }] being edited
+let draft = []; // [{ name, url, target? } | { type: <app id>, name }] being edited
 let pendingIcons = {}; // icon key -> dataURL, or null = reset
 let mode = "form";
-
-const newNotes = () => ({ type: "notes", name: "Notes" });
 
 export function initActionsDialog() {
   $("links-edit").addEventListener("click", openDialog);
   $("sc-mode-form").addEventListener("click", () => setMode("form"));
   $("sc-mode-json").addEventListener("click", () => setMode("json"));
   $("sc-add").addEventListener("click", () => addRow({ name: "", url: "" }, false));
-  $("sc-add-notes").addEventListener("click", () => addRow(newNotes(), false));
-  $("sc-notes-back").addEventListener("click", () => addRow(newNotes(), true));
+  $("sc-notes-back").addEventListener("click", () => addRow(newApp(appById("notes")), true));
+  // "+ notepad", "+ tracker"…: one button per app, shown while the app isn't in the list
+  for (const app of apps) {
+    const b = el("button", "add", `+ ${app.what}`);
+    b.dataset.app = app.id;
+    b.addEventListener("click", () => addRow(newApp(app), false));
+    $("sc-adds").append(b);
+  }
+  $("sc-app-ids").textContent = apps.map((a) => `"${a.id}"`).join(", ");
   $("sc-save").addEventListener("click", save);
   $("sc-cancel").addEventListener("click", () => dlg.close());
   $("sc-x").addEventListener("click", () => dlg.close());
@@ -75,14 +82,14 @@ function setMode(m, force = false) {
 
 function normalize(l) {
   const name = String(l.name ?? "").trim();
-  if (isNotes(l)) return { type: "notes", name: name || "Notes" };
+  if (isApp(l)) return { type: l.type, name: name || appById(l.type)?.name || l.type };
   const out = { name, url: fixUrl(String(l.url ?? "").trim()) };
   if (l.target) out.target = String(l.target);
   return out;
 }
 
 /* drops untouched empty link rows, normalizes the rest */
-const cleanList = (list) => list.filter((l) => isNotes(l) || String(l.name ?? "").trim() || String(l.url ?? "").trim()).map(normalize);
+const cleanList = (list) => list.filter((l) => isApp(l) || String(l.name ?? "").trim() || String(l.url ?? "").trim()).map(normalize);
 
 function parseJson() {
   try {
@@ -90,9 +97,10 @@ function parseJson() {
     if (!Array.isArray(data)) throw new Error("top level must be an array");
     data.forEach((l, i) => {
       if (!l || typeof l !== "object") throw new Error(`item ${i + 1}: must be an object`);
-      if (l.type != null && l.type !== "notes") throw new Error(`item ${i + 1}: "type" can only be "notes" (or left out for a link)`);
+      if (l.type != null && !appById(l.type))
+        throw new Error(`item ${i + 1}: "type" can only be ${apps.map((a) => `"${a.id}"`).join(", ")} (or left out for a link)`);
       if (typeof l.name !== "string") throw new Error(`item ${i + 1}: "name" must be a string`);
-      if (isNotes(l)) return;
+      if (isApp(l)) return;
       if (typeof l.url !== "string") throw new Error(`item ${i + 1}: "url" must be a string`);
       if (l.target != null && typeof l.target !== "string") throw new Error(`item ${i + 1}: "target" must be a string`);
     });
@@ -113,7 +121,7 @@ function mergedIcons() {
 async function save() {
   const list = mode === "json" ? parseJson() : cleanList(draft);
   if (!list) return;
-  const bad = list.findIndex((l) => !isNotes(l) && (!l.name || !hostOf(l.url)));
+  const bad = list.findIndex((l) => !isApp(l) && (!l.name || !hostOf(l.url)));
   if (bad !== -1) return msg(`item ${bad + 1}: name and a valid URL are required`, "err");
   if (!list.some(isNotes) && !confirm("The notepad isn't in the list, so there will be no way to open your notes.\nSave anyway?")) return;
   try {
@@ -131,20 +139,25 @@ function renderRows() {
   rows.textContent = "";
   draft.forEach((link, i) => rows.append(row(link, i)));
   $("sc-nonotes").hidden = draft.some(isNotes);
+  for (const b of $("sc-adds").querySelectorAll("[data-app]")) b.hidden = draft.some((l) => l.type === b.dataset.app);
 }
 
 function row(link, i) {
   const r = el("div", "sc-row");
-  const handle = el("span", "sc-handle", "⋮⋮");
+  const handle = el("span", "drag-handle", "⋮⋮");
   handle.title = "Drag to reorder";
 
   const type = el("select");
   type.setAttribute("aria-label", "Action type");
-  type.append(new Option("link", "link"), new Option("notepad", "notes"));
-  type.value = isNotes(link) ? "notes" : "link";
+  type.append(new Option("link", "link"), ...apps.map((a) => new Option(a.what, a.id)));
+  if (isApp(link) && !appById(link.type)) type.append(new Option(`${link.type} (unknown)`, link.type)); // from a newer version
+  type.value = isApp(link) ? link.type : "link";
   type.addEventListener("change", () => {
-    if (type.value === "notes") {
-      link.type = "notes";
+    const app = appById(type.value);
+    if (app) {
+      // a name that was empty or the previous app's default follows the new app
+      if (!link.name.trim() || link.name === appById(link.type)?.name) link.name = app.name;
+      link.type = app.id;
       delete link.url;
       delete link.target;
     } else {
@@ -201,8 +214,8 @@ function row(link, i) {
   });
 
   r.append(handle, iconEl(normalize(link), mergedIcons()), type, name);
-  if (isNotes(link)) {
-    r.append(el("span", "sc-what", "opens the notepad"));
+  if (isApp(link)) {
+    r.append(el("span", "sc-what", `opens the ${appById(link.type)?.what ?? "app"}`));
   } else {
     const url = el("input", "url");
     url.type = "text";
@@ -213,7 +226,7 @@ function row(link, i) {
     url.addEventListener("input", () => (link.url = url.value));
     url.addEventListener("change", refreshIcon);
 
-    const check = el("label", "sc-check");
+    const check = el("label", "check");
     const box = el("input");
     box.type = "checkbox";
     box.checked = !!link.target;

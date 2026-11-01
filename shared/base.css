@@ -113,6 +113,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 
 code { font-family: var(--mono); font-size: 12px; }
 .muted { color: var(--muted); }
+.hint { margin: 0 0 8px; font-size: 12px; }
 .err { color: var(--danger); }
 
 /* ---------- dialogs ---------- */
@@ -164,3 +165,6 @@ code { font-family: var(--mono); font-size: 12px; }
 .msg.err { color: var(--danger); }
 .msg.ok { color: var(--ok); }
 
+/* rows of an editable list: drag handle, small checkbox with a label */
+.drag-handle { color: var(--muted); text-align: center; cursor: grab; user-select: none; }
+.check { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; white-space: nowrap; }

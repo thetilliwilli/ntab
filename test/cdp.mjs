@@ -57,3 +57,20 @@ export const notesDir = `(await ${dataDir}.getDirectoryHandle('notes', { create:
 
 /* expression that empties the data folder */
 export const clearData = `(async () => { const d = ${dataDir}; for await (const k of d.keys()) await d.removeEntry(k, { recursive: true }); })()`;
+
+/* expression that sets the action list in the stub's sync storage (takes effect on the next load) */
+export const setActions = (list) => {
+  const sync = { "links.n": list.length };
+  list.forEach((a, i) => (sync[`links.${i}`] = a));
+  return `localStorage.setItem("stub:sync", ${JSON.stringify(JSON.stringify(sync))})`;
+};
+
+/* opens an app from the sidebar; grants the data folder through the stub's picker if the gate asks for it */
+export async function openApp(P, id) {
+  await P.ev(`document.querySelector('#links .${id}').click()`);
+  await sleep(600);
+  if (await P.ev(`!document.getElementById('gate').hidden`)) {
+    await P.ev(`document.getElementById('gate-btn').click()`);
+    await sleep(800);
+  }
+}

@@ -82,3 +82,13 @@ export function sortable(node, { group, key, vertical = false, onDrop, onEnd }) 
     onDrop(from, key, after);
   });
 }
+
+/* 45s, 12m 05s, 3h 07m 09s */
+export function fmtDuration(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h) return `${h}h ${pad(m)}m ${pad(s % 60)}s`;
+  if (m) return `${m}m ${pad(s % 60)}s`;
+  return `${s}s`;
+}
