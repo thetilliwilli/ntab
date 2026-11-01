@@ -227,7 +227,11 @@
             <label class="check"><input type="radio" name="tr-kind" value="span" id="tr-new-span"> activity: a tap starts it, Finish ends it, the duration is shown</label>
           </div>
         </div>
-        <div id="tr-new-pick" class="tr-pick" aria-label="Icons to pick from"></div>
+        <div class="tr-pick">
+          <div id="tr-new-pick" class="tr-pick-grid" aria-label="Suggested icons"></div>
+          <button type="button" id="tr-all-btn" class="tr-all-btn" aria-controls="tr-all" aria-expanded="false">all emoji…</button>
+          <div id="tr-all" class="tr-all" hidden aria-label="All emoji"></div>
+        </div>
       </div>
       <div class="dlg-foot">
         <span id="tr-new-msg" class="msg err"></span>

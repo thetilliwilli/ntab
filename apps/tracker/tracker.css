@@ -135,9 +135,13 @@
 .tr-icon-in { width: 56px; font-size: 18px; text-align: center; font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", var(--ui); }
 .tr-kinds { display: flex; flex-direction: column; gap: 4px; }
 .tr-kinds .check { color: var(--fg); font-size: 13px; white-space: normal; }
-.tr-pick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, 38px); gap: 2px; padding-top: 10px; border-top: 1px solid var(--border); }
-.tr-pick button { width: 38px; height: 38px; padding: 0; font-size: 22px; border: 1px solid transparent; }
-.tr-pick button.on { border-color: var(--accent); background: var(--hover); }
+.tr-pick { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.tr-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, 38px); gap: 2px; }
+.tr-pick-grid button { width: 38px; height: 38px; padding: 0; font-size: 22px; border: 1px solid transparent; }
+.tr-pick-grid button.on { border-color: var(--accent); background: var(--hover); }
+.tr-all-btn { align-self: flex-start; height: 26px; border-color: var(--border); }
+.tr-all { max-height: min(260px, 30vh); overflow: auto; padding-right: 4px; border-top: 1px solid var(--border); }
+.tr-all-head { position: sticky; top: 0; z-index: 1; padding: 6px 0 4px; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 600; }
 
 .tr-type-row {
   display: grid;

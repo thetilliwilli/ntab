@@ -206,6 +206,53 @@ const SUGGESTED = [
 const isEmoji = (s) => /^\p{RGI_Emoji}$/v.test(s) || /^\p{Extended_Pictographic}\uFE0F?$/u.test(s);
 const PASTE_HINT = /Mac/.test(navigator.platform) ? "Ctrl+Cmd+Space" : /Win/.test(navigator.platform) ? "Win+." : "";
 
+/* every emoji the browser knows that is a single code point (~1400), found by testing code points, so there is no
+   emoji data to ship; grouped roughly by Unicode block. names aren't available, so there's no search */
+const ALL_GROUPS = [
+  ["Faces", [[0x1f600, 0x1f64f]]],
+  ["Nature, food, places, objects", [[0x1f300, 0x1f5ff]]],
+  ["Transport and map", [[0x1f680, 0x1f6ff]]],
+  ["People, animals, food, objects (newer)", [[0x1f900, 0x1faff]]],
+  ["Symbols", [[0x2000, 0x33ff], [0x1f000, 0x1f2ff], [0x1f780, 0x1f7ff]]],
+];
+const COMPONENT = (cp) => (cp >= 0x1f3fb && cp <= 0x1f3ff) || (cp >= 0x1f9b0 && cp <= 0x1f9b3); // skin tones, hair
+
+function emojiAt(cp) {
+  if (COMPONENT(cp)) return null;
+  const s = String.fromCodePoint(cp);
+  if (/^\p{RGI_Emoji}$/v.test(s)) return s;
+  return /^\p{RGI_Emoji}$/v.test(s + "\uFE0F") ? s + "\uFE0F" : null; // ☀ -> ☀️
+}
+
+const pickButton = (em) => {
+  const b = el("button", "", em);
+  b.type = "button";
+  b.dataset.emoji = em;
+  return b;
+};
+
+/* built on first open */
+function buildAll() {
+  const box = $("tr-all");
+  if (box.childElementCount) return;
+  for (const [name, ranges] of ALL_GROUPS) {
+    const grid = el("div", "tr-pick-grid");
+    for (const [from, to] of ranges) for (let cp = from; cp <= to; cp++) {
+      const em = emojiAt(cp);
+      if (em) grid.append(pickButton(em));
+    }
+    box.append(el("div", "tr-all-head", name), grid);
+  }
+}
+
+function toggleAll(open = $("tr-all").hidden) {
+  if (open) buildAll();
+  $("tr-all").hidden = !open;
+  $("tr-all-btn").textContent = open ? "fewer emoji" : "all emoji…";
+  $("tr-all-btn").setAttribute("aria-expanded", open);
+  if (open) refreshNew();
+}
+
 const newIcon = () => $("tr-new-icon").value.trim();
 const newMsg = (t) => ($("tr-new-msg").textContent = t);
 
@@ -220,7 +267,7 @@ function refreshNew() {
     ? `pick one below${PASTE_HINT ? `, or paste any emoji (${PASTE_HINT})` : ", or paste any emoji"}`
     : ok ? "" : "not an emoji: pick one below or paste one";
   $("tr-icon-note").classList.toggle("err", !!icon && !ok);
-  for (const b of $("tr-new-pick").children) b.classList.toggle("on", b.textContent === icon);
+  for (const b of $("tr-new").querySelectorAll("[data-emoji]")) b.classList.toggle("on", b.dataset.emoji === icon);
 }
 
 function openNew() {
@@ -228,6 +275,7 @@ function openNew() {
   $("tr-new-name").value = "";
   $("tr-new-form").elements["tr-kind"].value = "once";
   newMsg("");
+  toggleAll(false);
   refreshNew();
   $("tr-new").showModal();
   $("tr-new-name").focus();
@@ -346,17 +394,15 @@ export default {
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path fill="none" stroke="#fff" stroke-width="2.4" d="M9 10l2 2 4-4M9 20l2 2 4-4M19 11h5M19 21h5"/></svg>`,
 
   init() {
-    const pick = $("tr-new-pick");
-    for (const em of SUGGESTED) {
-      const b = el("button", "", em);
-      b.type = "button";
-      b.addEventListener("click", () => {
-        $("tr-new-icon").value = em;
-        newMsg("");
-        refreshNew();
-      });
-      pick.append(b);
-    }
+    for (const em of SUGGESTED) $("tr-new-pick").append(pickButton(em));
+    $("tr-new").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-emoji]");
+      if (!b) return;
+      $("tr-new-icon").value = b.dataset.emoji;
+      newMsg("");
+      refreshNew();
+    });
+    $("tr-all-btn").addEventListener("click", () => toggleAll());
     // the icon box keeps one emoji: typing or pasting a new one replaces the old
     $("tr-new-icon").addEventListener("input", () => {
       const parts = [...new Intl.Segmenter().segment($("tr-new-icon").value)].map((p) => p.segment);

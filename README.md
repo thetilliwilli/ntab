@@ -73,7 +73,8 @@ when such a folder is opened (files in the root, no `ntab.json`), the gate offer
 ## Tracker
 
 - An **event type** has an emoji, a name and an id (a slug of the first name; it never changes, so renaming
-  keeps the history). **+ new type** adds one; **edit types** renames, reorders, switches one-shot ⇄ activity
+  keeps the history). **+ new type** adds one: pick the icon from the suggestions or from **all emoji…** (every
+  single-character emoji the browser knows, found at runtime, no emoji data shipped, so no search), or paste one; **edit types** renames, reorders, switches one-shot ⇄ activity
   and archives (an archived type loses its tile, its events keep their name in the log).
 - A tile click logs an event with the current time. A type marked *lasts a while* starts an **activity**
   instead: it shows on top with its running time, a growing bar and **Finish**, which logs its end.
