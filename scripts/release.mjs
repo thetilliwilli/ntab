@@ -138,11 +138,11 @@ async function screenshots(icons) {
 
   // first visit: grant the folder (the stub's picker), later loads restore the open tabs from the session
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await openNotepad(P);
+  await openApp(P, "notes");
 
   // 1. notepad with tabs
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await openNotepad(P);
+  await openApp(P, "notes");
   await caret(P, "Prepare slides for Thursday's demo");
   await shot(1, { label: "notepad" });
 
@@ -150,22 +150,21 @@ async function screenshots(icons) {
   P = await prepare(P, icons, { theme: "light", active: "todo.md" });
   await shot(2, { label: "home screen" });
 
-  // 3. wrapped text, sidebar flyout
+  // 3. tracker with a running activity
+  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
+  await openApp(P, "tracker");
+  await shot(3, { label: "tracker" });
+
+  // 4. task board
+  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
+  await openApp(P, "board");
+  await shot(4, { label: "task board" });
+
+  // 5. wrapped text, sidebar flyout
   P = await prepare(P, icons, { theme: "light", active: "meeting-notes.txt", wrap: true });
-  await openNotepad(P);
+  await openApp(P, "notes");
   await caret(P, "decision by next Tuesday");
-  await shot(3, { label: "flyout", hover: "#links .link:nth-child(5)" });
-
-  // 4. file list
-  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await openNotepad(P);
-  await P.ev(`document.getElementById('tab-add').click()`);
-  await shot(4, { label: "file list" });
-
-  // 5. actions editor
-  P = await prepare(P, icons, { theme: "light", active: "todo.md" });
-  await P.ev(`document.getElementById('links-edit').click()`);
-  await shot(5, { label: "actions editor" });
+  await shot(5, { label: "flyout", hover: "#links .link:nth-child(7)" });
   await closePage(P);
 }
 
@@ -185,14 +184,34 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
     const root = await (await navigator.storage.getDirectory()).getDirectoryHandle("notes", { create: true }); // the data folder
     for await (const name of root.keys()) await root.removeEntry(name, { recursive: true });
     const marker = await (await root.getFileHandle("ntab.json", { create: true })).createWritable();
-    await marker.write('{ "format": 1 }\n');
+    await marker.write('{ "format": 1 }\\n');
     await marker.close();
-    const dir = await root.getDirectoryHandle("notes", { create: true });
-    for (const [name, text] of Object.entries(${JSON.stringify(demo.notes)})) {
+    const put = async (dir, name, text) => {
       const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
       await w.write(text);
       await w.close();
+    };
+    const dir = await root.getDirectoryHandle("notes", { create: true });
+    for (const [name, text] of Object.entries(${JSON.stringify(demo.notes)})) await put(dir, name, text);
+
+    const now = Date.now(), pad = (n) => String(n).padStart(2, "0");
+    const events = ${JSON.stringify(demo.trackerEvents)}.map((e, i) => {
+      const out = { id: "demo-" + i, type: e.type, time: now - e.ago * 60000 };
+      if (e.activity) Object.assign(out, { activity: e.activity, phase: e.phase });
+      return out;
+    });
+    const byMonth = {};
+    for (const e of events) {
+      const d = new Date(e.time), f = "events-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + ".jsonl";
+      byMonth[f] = (byMonth[f] || "") + JSON.stringify(e) + "\\n";
     }
+    const tracker = await root.getDirectoryHandle("tracker", { create: true });
+    await put(tracker, "types.json", JSON.stringify({ types: ${JSON.stringify(demo.trackerTypes)} }, null, 2));
+    for (const [f, text] of Object.entries(byMonth)) await put(tracker, f, text);
+
+    const tasks = ${JSON.stringify(demo.tasks)}.map((t, i) =>
+      ({ id: "task-" + i, ...t, created: now - (i + 2) * 86400000, updated: now - (i + 1) * 3600000 }));
+    await put(await root.getDirectoryHandle("board", { create: true }), "tasks.json", JSON.stringify({ tasks }, null, 2));
   })()`);
   await closePage(P);
   P = await openPage("/test.html");
@@ -202,8 +221,8 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
   return P;
 }
 
-async function openNotepad(P) {
-  await P.ev(`document.querySelector('#links .notes').click()`);
+async function openApp(P, id) {
+  await P.ev(`document.querySelector('#links .${id}').click()`);
   await sleep(500);
   if (await P.ev(`!document.getElementById('gate').hidden`)) {
     await P.ev(`document.getElementById('gate-btn').click()`); // the stub's picker hands out the OPFS folder
@@ -281,7 +300,7 @@ function promoHtml(w, h) {
   <div class="text">
     <div class="head">${icon}<h1>NTab</h1></div>
     <h2>Notepad New Tab</h2>
-    <p>Plain-text notes and your favorite sites in every new tab.</p>
+    <p>Notes, a tracker, a task board and your favorite sites in every new tab.</p>
   </div>
   ${big ? `<img src="/out/screenshots/1.png" alt="">` : ""}`;
 }

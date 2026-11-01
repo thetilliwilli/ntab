@@ -27,7 +27,7 @@ published it, run `npm run release:done` to record the version.
   (`ignore/publish/changes.txt` lists the commits since the last one)
 - `store/privacy/` — single purpose and one justification per permission
 - `store/listing.json` — category, language, homepage and support URLs
-- `store/demo.mjs` — actions and notes shown on the screenshots
+- `store/demo.mjs` — actions, notes, tracker events and board tasks shown on the screenshots
 - `store/published.json` — the version live in the store, its permissions and commit
 - `scripts/release.mjs` — the script; screenshot scenes are in `screenshots()`
 

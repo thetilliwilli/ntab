@@ -1,8 +1,10 @@
-/* demo data for the store screenshots: actions, notes and which tabs are open.
+/* demo data for the store screenshots: actions, notes and which tabs are open, tracker types and events, board tasks.
    sites are picked for their sharp 128px icons; Google's own subdomains (mail., drive., …) all get a generic "G" */
 
 export const actions = [
   { type: "notes", name: "Notes" },
+  { type: "tracker", name: "Tracker" },
+  { type: "board", name: "Board" },
   { name: "GitHub", url: "https://github.com" },
   { name: "Stack Overflow", url: "https://stackoverflow.com" },
   { name: "ChatGPT", url: "https://chatgpt.com" },
@@ -88,3 +90,42 @@ Thinking, Fast and Slow
 };
 
 export const openTabs = ["todo.md", "meeting-notes.txt", "ideas.md", "deploy.sh"];
+
+/* tracker: event times are minutes before the screenshot; an activity without an end is running */
+export const trackerTypes = [
+  { id: "wake-up", name: "Woke up", icon: "☀️" },
+  { id: "coffee", name: "Coffee", icon: "☕" },
+  { id: "water", name: "Water", icon: "💧" },
+  { id: "deep-work", name: "Deep work", icon: "💻", span: true },
+  { id: "workout", name: "Workout", icon: "🏋️", span: true },
+  { id: "walk", name: "Walk", icon: "🚶", span: true },
+  { id: "called-mom", name: "Called mom", icon: "📞" },
+  { id: "vitamins", name: "Vitamins", icon: "💊" },
+];
+
+export const trackerEvents = [
+  { type: "wake-up", ago: 300 },
+  { type: "water", ago: 290 },
+  { type: "workout", ago: 280, activity: "w1", phase: "start" },
+  { type: "workout", ago: 245, activity: "w1", phase: "end" },
+  { type: "vitamins", ago: 230 },
+  { type: "coffee", ago: 225 },
+  { type: "walk", ago: 150, activity: "k1", phase: "start" },
+  { type: "walk", ago: 128, activity: "k1", phase: "end" },
+  { type: "called-mom", ago: 110 },
+  { type: "water", ago: 100 },
+  { type: "coffee", ago: 95 },
+  { type: "deep-work", ago: 83, activity: "d1", phase: "start" },
+];
+
+export const tasks = [
+  { name: "Prepare slides for Thursday's demo", description: "10 slides max, live demo of the new onboarding", status: "work" },
+  { name: "Fix flaky login test on CI", description: "fails about once in 20 runs, timing issue in the mock server", status: "work" },
+  { name: "Book the car service", description: "Saturday morning if possible", status: "new" },
+  { name: "Renew passport", description: "photos first", status: "new" },
+  { name: "Order a birthday gift for Kate", description: "", status: "new" },
+  { name: "Conference budget", description: "waiting for Mark's answer", status: "hold" },
+  { name: "Reply to Anna about the Q4 roadmap", description: "", status: "done" },
+  { name: "Review the pricing page copy", description: "", status: "done" },
+  { name: "Pay the electricity bill", description: "", status: "done" },
+];
