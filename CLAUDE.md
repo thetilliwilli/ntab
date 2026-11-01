@@ -11,6 +11,7 @@ store releases, the header comment of `apps/notes/notes.js` for the save/draft/s
 
 ## Working rules
 
+- CLAUDE.md holds only lasting rules and decisions. Plans, ideas and temporary notes go to BACKLOG.md.
 - Commit to `master` after each finished change (no need to ask). Push to `origin`
   (https://github.com/thetilliwilli/ntab, public) only when asked.
 - Verify changes in the headless test harness (see Testing) before committing; check screenshots for visual work.
@@ -42,8 +43,6 @@ store releases, the header comment of `apps/notes/notes.js` for the save/draft/s
   undo toast, day log with time edit.
 - Board: fixed columns new / work / hold / done; drag on pointer events (works with touch), status also in the
   task dialog.
-- Planned next: a web/PWA build of the same code hosted on GitHub Pages (platform/web.js: storage on
-  localStorage, OPFS as the folder where there is no folder picker, service worker, export/import).
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.
 - Theme colors stay our own tokens: Chrome has no API to read its theme colors (only light/dark is known);
