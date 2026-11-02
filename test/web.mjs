@@ -1,7 +1,7 @@
 /* the web version (PWA, no chrome.*): serves the repo as it is (like GitHub Pages) on its own port, then checks
    index.html → newtab.html, the web platform, the manifest, the service worker and its cache, a request that CORS
    blocks (no "Allow access", the note points to the extension), that the app works offline after the server
-   is gone, and that a site opened from a tile gets no opener and no referrer; sw.js must be up to date (node scripts/sw.mjs). needs test/run.sh's Chrome (CDP on 9333).
+   is gone, updates while the app runs (a bar in an app, a reload on home), and that a site opened from a tile gets no opener and no referrer; sw.js must be up to date (node scripts/sw.mjs). needs test/run.sh's Chrome (CDP on 9333).
    run: node test/web.mjs   (SHOTS=dir for a screenshot) */
 import http from "node:http";
 import fs from "node:fs";
@@ -108,18 +108,36 @@ const notes = await P.ev(dbAll("notes"));
 ok("offline: a note is typed and saved", notes.length === 1 && notes[0].text === "offline", JSON.stringify(notes));
 if (SHOTS) await P.shot(`${SHOTS}/web.png`);
 
-// a new release: the next load finds the new sw.js, which caches the new set and drops the old one
-swVersion = "test0release";
+// a new release while the app runs: coming back to the screen looks for it (an installed app is resumed, not
+// reloaded); in an app a bar offers to reload, home reloads into it; on the home screen it reloads by itself
+const waitCache = async (name) => {
+  let keys;
+  for (let t = 0; t < 10e3; t += 250) {
+    await sleep(250);
+    keys = await P.ev(`caches.keys().then((k) => k.filter((x) => x.startsWith('ntab-')))`).catch(() => null);
+    if (keys?.length === 1 && keys[0] === name) break;
+  }
+  return keys;
+};
+const back = () => P.ev(`window.marker = 1; document.dispatchEvent(new Event('visibilitychange'))`);
+const reloaded = () => P.ev(`window.marker === undefined`);
+swVersion = "test1release";
 server = http.createServer(serve);
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
-await P.send("Page.reload");
-let after;
-for (let t = 0; t < 10e3; t += 250) {
-  await sleep(250);
-  after = await P.ev(`caches.keys().then((k) => k.filter((x) => x.startsWith('ntab-')))`);
-  if (after.length === 1 && after[0] === "ntab-test0release") break;
-}
-ok("a new version replaces the cache", after.length === 1 && after[0] === "ntab-test0release", JSON.stringify(after));
+await back();
+let after = await waitCache("ntab-test1release");
+await sleep(500);
+ok("back on screen: the new version is fetched and replaces the cache", after?.length === 1 && after[0] === "ntab-test1release", JSON.stringify(after));
+ok("in an app: no reload, the bar offers it", !(await reloaded()) && (await P.ev(`!document.getElementById('update-bar').hidden && !document.getElementById('app-notes').hidden`)));
+await P.ev(`document.getElementById('go-home').click()`);
+await sleep(1500);
+ok("going home reloads into the new version", (await reloaded()) && (await P.ev(`document.getElementById('update-bar').hidden && !document.getElementById('home').hidden`)));
+swVersion = "test2release";
+await back();
+after = await waitCache("ntab-test2release");
+await sleep(1500);
+ok("on the home screen: reloads by itself", after?.[0] === "ntab-test2release" && (await reloaded()) && (await P.ev(`document.getElementById('update-bar').hidden`)));
+ok("the note survived the reloads", (await P.ev(dbAll("notes")))[0]?.text === "offline");
 
 // a site opened from a tile (another origin; a new tab, then this one) gets no opener and no referrer
 const seen = [];

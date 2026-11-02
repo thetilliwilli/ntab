@@ -34,7 +34,10 @@ open it in any browser, or install it as an app (the install icon in Chrome's ad
   its storage persistent.
 - Offline: `sw.js` caches every file per version and starts from the cache. `VERSION` and `FILES` in it are
   generated: run `node scripts/sw.mjs` after changing any file (`--check` tells whether it is stale; `test/web.mjs`
-  checks it). A new version is downloaded in full in the background and is used from the next load.
+  checks it). A new version is downloaded in full in the background. The page looks for one whenever it comes back to the
+  screen (an installed app on a phone is resumed, not reloaded) and reloads into it at the first safe moment: at once
+  on the home screen, otherwise on going home or leaving the app; meanwhile a bar offers **Reload**
+  (`shell/update.js`).
 - The origin `thetilliwilli.github.io` is shared by every Pages site of the account: any of them could read this data.
 
 ## Home screen
@@ -197,6 +200,7 @@ Sources are plain ES modules, split by role:
   - `render.html`, `render-frame.js` — the sandboxed frame that runs a request's render function
   - `data.js` — the Data dialog (backup export / import, text files) and the backup reminder
   - `theme.js` — applies the saved theme before the first paint
+  - `update.js` — the web version: reloads into a new version at a safe moment
 - `apps/notes/` — `index.js` (the app), `notes.js` (open notes, autosave, session, cross-page sync),
   `editor.js`, `tabbar.js`, `dialogs.js`
 - `apps/tracker/` — `index.js` (UI), `model.js` (types, entries, activities)

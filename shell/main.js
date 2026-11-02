@@ -10,6 +10,7 @@ import { initActionForm } from "./action-form.js";
 import { initRequestDialog } from "./request.js";
 import { initData, checkReminder } from "./data.js";
 import { getView, onView } from "./view.js";
+import { initUpdate } from "./update.js";
 import { $ } from "../shared/util.js";
 
 /* ---------- theme ---------- */
@@ -70,6 +71,7 @@ initHome();
 initActionsDialog();
 initActionForm();
 initRequestDialog();
+initUpdate();
 initData({ flush: () => Promise.all([...started.keys()].map((a) => a.flush?.())) });
 await settings.loadSettings();
 initActions().catch(console.error);
