@@ -84,6 +84,7 @@ function tick() {
     fill.style.width = `${(ms / s) * 100}%`;
     scale.textContent = `scale ${fmtScale(s)}`;
   }
+  for (const bar of document.querySelectorAll(".tr-len.running span")) bar.textContent = fmtDuration(now - Number(bar.dataset.at));
 }
 
 /* ---------- tiles ---------- */
@@ -142,7 +143,10 @@ function renderLog() {
   list.textContent = "";
   const entries = model.dayEntries(day).reverse();
   if (!entries.length) return list.append(el("div", "empty", "nothing logged"));
-  for (const e of entries) list.append(logRow(e));
+  // activity bars are as long as their duration, the day's longest fills the column
+  const now = Date.now();
+  const longest = Math.max(1, ...entries.map((e) => (e.endAt === undefined ? 0 : (e.endAt ?? now) - e.at)));
+  for (const e of entries) list.append(logRow(e, longest, now));
 }
 
 /* time of an entry that changes on click ("at" = the start, "endAt" = the end of an activity) */
@@ -153,12 +157,24 @@ function timeButton(e, field) {
   return b;
 }
 
-function logRow(e) {
+/* start | end | icon | name | duration bar (activities) | × */
+function logRow(e, longest, now) {
   const type = model.typeById(e.typeId);
   const row = el("div", "tr-row");
-  const note = el("span", "tr-note");
-  if (e.endAt === null) note.textContent = "running";
-  else if (e.endAt != null) note.append("until ", timeButton(e, "endAt"), ` · ${fmtDuration(e.endAt - e.at)}`);
+  const end = el("span", "tr-end");
+  const bar = el("span", "tr-len");
+  if (e.endAt !== undefined) {
+    const ms = (e.endAt ?? now) - e.at;
+    if (e.endAt === null) {
+      end.append(el("span", "tr-running", "running"));
+      bar.classList.add("running");
+    } else end.append(timeButton(e, "endAt"));
+    const fill = el("i");
+    fill.style.width = `${Math.max(0, Math.min(1, ms / longest)) * 100}%`;
+    const text = el("span", "", fmtDuration(ms));
+    text.dataset.at = e.at;
+    bar.append(fill, text);
+  }
   const del = el("button", "fdel", "×");
   del.title = "Delete this entry";
   del.addEventListener("click", () =>
@@ -170,7 +186,9 @@ function logRow(e) {
   const archived = type?.archivedAt != null;
   const what = el("span", `tr-what${type && !archived ? "" : " gone"}`, type?.name ?? "unknown type");
   if (archived) what.title = "archived type";
-  row.append(timeButton(e, "at"), el("span", "tr-emoji", type?.icon ?? "•"), what, note, del);
+  const start = el("span", "tr-start");
+  start.append(timeButton(e, "at"));
+  row.append(start, end, el("span", "tr-emoji", type?.icon ?? "•"), what, bar, del);
   return row;
 }
 

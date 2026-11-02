@@ -91,9 +91,9 @@ ok("time changed: one entry moved back", ev.length === 5 && Date.now() - ev[0].a
 
 // the activity: its end time is editable too, and it can't end before it starts
 const act = ev.find((e) => e.endAt);
-await P.ev(`[...document.querySelectorAll('.tr-note .tr-time')][0].click()`);
+await P.ev(`[...document.querySelectorAll('.tr-end .tr-time')][0].click()`);
 await sleep(100);
-await P.ev(`(() => { const i = document.querySelector('.tr-note input'); const d = new Date(${act.at} - 60e3); const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
+await P.ev(`(() => { const i = document.querySelector('.tr-end input'); const d = new Date(${act.at} - 60e3); const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
 await sleep(300);
 ok("end before start refused", (await entries(P)).find((e) => e.id === act.id).endAt === act.endAt && (await q(P, `document.getElementById('tr-toast').classList.contains('err')`)));
 
