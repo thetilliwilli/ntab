@@ -9,11 +9,12 @@ const hms = (t) => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 const hm = (t) => hms(t).slice(0, 5);
-/* value of <input type="datetime-local" step="1"> in local time */
+/* value of <input type="datetime-local"> in local time, to the minute (shown times are minutes, stored ones ms) */
 const toInput = (t) => {
   const d = new Date(t);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${hms(t)}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${hm(t)}`;
 };
+const minuteOf = (t) => Math.floor(t / 60000);
 const startOfDay = (t) => new Date(t).setHours(0, 0, 0, 0);
 const DAY = 864e5;
 
@@ -121,7 +122,7 @@ async function hit(t, node) {
   try {
     const e = await model.log(t.id);
     if (!e) return;
-    toast(`${t.icon} ${t.name} ${e.endAt === null ? "started" : "logged"} · ${hms(e.at)}`, () => model.remove(e.id).catch(report));
+    toast(`${t.icon} ${t.name} ${e.endAt === null ? "started" : "logged"} · ${hm(e.at)}`, () => model.remove(e.id).catch(report));
   } catch (err) {
     report(err);
   }
@@ -151,7 +152,7 @@ function renderLog() {
 
 /* time of an entry that changes on click ("at" = the start, "endAt" = the end of an activity) */
 function timeButton(e, field) {
-  const b = el("button", "tr-time", hms(e[field]));
+  const b = el("button", "tr-time", hm(e[field]));
   b.title = field === "at" ? "Click to change the time" : "Click to change when it finished";
   b.addEventListener("click", () => editTime(b, e, field));
   return b;
@@ -180,7 +181,7 @@ function logRow(e, longest, now) {
   del.addEventListener("click", () =>
     model
       .remove(e.id)
-      .then((gone) => gone && toast(`Deleted ${type?.name ?? "entry"} · ${hms(e.at)}`, () => model.restore(gone).catch(report)))
+      .then((gone) => gone && toast(`Deleted ${type?.name ?? "entry"} · ${hm(e.at)}`, () => model.restore(gone).catch(report)))
       .catch(report),
   );
   const archived = type?.archivedAt != null;
@@ -195,14 +196,14 @@ function logRow(e, longest, now) {
 function editTime(button, e, field) {
   const input = el("input");
   input.type = "datetime-local";
-  input.step = 1;
   input.value = toInput(e[field]);
   let done = false;
   const finish = (save) => {
     if (done) return;
     done = true;
     const time = new Date(input.value).getTime();
-    if (save && Number.isFinite(time) && time !== e[field]) model.setTime(e.id, field, time).catch(report).finally(renderLog);
+    // an unchanged minute keeps the stored seconds
+    if (save && Number.isFinite(time) && minuteOf(time) !== minuteOf(e[field])) model.setTime(e.id, field, time).catch(report).finally(renderLog);
     else renderLog();
   };
   input.addEventListener("keydown", (ev) => {

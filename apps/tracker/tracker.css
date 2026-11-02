@@ -82,33 +82,34 @@
 
 .tr-row {
   display: grid;
-  grid-template-columns: 84px 84px 28px minmax(100px, 1fr) minmax(120px, 2fr) 26px;
+  grid-template-columns: 100px 100px 44px minmax(120px, 1fr) minmax(160px, 2fr) 48px;
   align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 4px 0 10px;
+  gap: 12px;
+  height: 60px;
+  padding: 0 6px 0 14px;
+  font-size: 24px;
   border-bottom: 1px solid var(--border);
 }
 
 .tr-row:last-child { border-bottom: 0; }
 .tr-row:hover { background: var(--hover); }
-.tr-time { justify-self: start; height: 22px; padding: 0 4px; border-color: transparent; font-family: var(--mono); }
+.tr-time { justify-self: start; height: 40px; padding: 0 6px; font-size: 24px; border-color: transparent; font-family: var(--mono); }
 .tr-time:hover { border-color: var(--border-strong); }
 .tr-start, .tr-end { position: relative; }
 /* the time editor is wider than its column: it floats over the row */
 .tr-row input[type="datetime-local"] {
-  position: absolute; z-index: 2; top: 50%; left: 0; height: 24px; transform: translateY(-50%);
-  background: var(--surface); font-family: var(--mono);
+  position: absolute; z-index: 2; top: 50%; left: 0; height: 44px; transform: translateY(-50%);
+  background: var(--surface); font-family: var(--mono); font-size: 22px;
 }
-.tr-running { padding: 0 5px; color: var(--accent); font-size: 12px; }
-.tr-len { position: relative; display: flex; align-items: center; height: 20px; }
+.tr-running { padding: 0 7px; color: var(--accent); font-size: 18px; }
+.tr-len { position: relative; display: flex; align-items: center; height: 40px; }
 .tr-len i { position: absolute; inset: 0 auto 0 0; min-width: 2px; background: var(--accent); opacity: 0.25; }
 .tr-len.running i { opacity: 0.45; }
-.tr-len span { position: relative; padding: 0 6px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tr-row .tr-emoji { font-size: 16px; }
+.tr-len span { position: relative; padding: 0 10px; font-size: 22px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tr-row .tr-emoji { font-size: 32px; }
 .tr-what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tr-what.gone { color: var(--muted); font-style: italic; }
-.tr-row .fdel { height: 24px; padding: 0; }
+.tr-row .fdel { height: 44px; padding: 0; font-size: 24px; }
 .tr-row .fdel:hover { background: var(--danger); color: #fff; }
 
 /* undo toast */
@@ -145,11 +146,15 @@
 .tr-kinds { display: flex; flex-direction: column; gap: 4px; }
 .tr-kinds .check { color: var(--fg); font-size: 13px; white-space: normal; }
 .tr-pick { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
-.tr-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, 38px); gap: 2px; }
-.tr-pick-grid button { width: 38px; height: 38px; padding: 0; font-size: 22px; border: 1px solid transparent; }
+.tr-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, 57px); gap: 3px; }
+/* the emoji font for every button: symbols like ☀ ☕ 🍽 would otherwise come from a text font in another size */
+.tr-pick-grid button {
+  width: 57px; height: 57px; padding: 0; border: 1px solid transparent;
+  font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", var(--ui); font-size: 33px; line-height: 1;
+}
 .tr-pick-grid button.on { border-color: var(--accent); background: var(--hover); }
 .tr-all-btn { align-self: flex-start; height: 26px; border-color: var(--border); }
-.tr-all { max-height: min(260px, 30vh); overflow: auto; padding-right: 4px; border-top: 1px solid var(--border); }
+.tr-all { max-height: min(390px, 40vh); overflow: auto; padding-right: 4px; border-top: 1px solid var(--border); }
 .tr-all-head { position: sticky; top: 0; z-index: 1; padding: 6px 0 4px; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 600; }
 
 .tr-type-row {

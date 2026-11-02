@@ -41,8 +41,8 @@ ok("3 entries (2 events + 1 running activity)", ev.length === 3 && !("endAt" in 
 ok("running span shown", await q(P, `!document.getElementById('tr-spans').hidden && document.querySelectorAll('.tr-span').length === 1`));
 ok("tile says ×2", await q(P, `document.querySelector('.tr-tile .tr-tile-meta').textContent.includes('×2')`));
 await sleep(1500);
-const dur1 = await q(P, `document.querySelector('.tr-dur').textContent`);
-ok("duration ticks", /\ds$/.test(dur1) && dur1 !== "0s", dur1);
+const dur1 = await q(P, `[document.querySelector('.tr-dur').textContent, parseFloat(document.querySelector('.tr-span .tr-fill').style.width)]`);
+ok("duration in minutes, the bar ticks", dur1[0] === "0m" && dur1[1] > 0, JSON.stringify(dur1));
 if (SHOTS) await P.shot(`${SHOTS}/tracker.png`);
 
 // second page sees it, finishes it
@@ -82,6 +82,14 @@ await sleep(300);
 ok("restored", (await entries(P)).length === 5);
 
 // edit time of the newest row: one hour earlier
+// shown to the minute; opening the editor and pressing Enter keeps the stored milliseconds
+const before = (await entries(P)).map((e) => e.at).join();
+ok("log time to the minute", /^\d\d:\d\d$/.test(await q(P, `document.querySelector('.tr-row .tr-time').textContent`)));
+await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
+await sleep(100);
+await P.ev(`document.querySelector('.tr-row input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))`);
+await sleep(300);
+ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before);
 await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
 await sleep(100);
 await P.ev(`(() => { const i = document.querySelector('.tr-row input'); const d = new Date(Math.max(new Date(i.value).getTime() - 3600e3, new Date().setHours(0, 0, 1, 0))); /* back, but still today */ const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
