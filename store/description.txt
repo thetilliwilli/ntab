@@ -43,6 +43,7 @@ TASK BOARD
 
 DATA
 • Export everything (notes, tracker, board, sites, settings) as one JSON backup, import it on another computer
+• Importing only adds what is missing, it never deletes or overwrites anything
 • Import text files as notes
 • Delete all data for a fresh start
 • A gentle reminder on the home screen when the last backup is a week old
@@ -60,7 +61,7 @@ WHAT'S NEW
 • Tracker: log events with one tap, time activities
 • Task board with New / Work / Hold / Done
 • Request tiles: send an HTTP request, see the answer
-• Everything is now kept in the browser, no folder to choose; backup export and import
+• Everything is now kept in the browser, no folder to choose; backup export and import (adds, never deletes)
 • Your old note files: Data → Import text files. The site list starts over from the defaults
 
 Note: only one extension can replace the new tab page. If another one already does, Chrome will ask which to keep.

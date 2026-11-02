@@ -7,7 +7,7 @@
  *   init()    once per page: wire its DOM
  *   start()   once per page, when it is first opened: load its data
  *   show()    each time its screen comes to the front
- *   flush()   optional: write pending changes now (before a backup is restored)
+ *   flush()   optional: write pending changes now (before a backup is taken or merged)
  */
 
 import notes from "../apps/notes/index.js";

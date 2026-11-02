@@ -64,22 +64,33 @@ await pick([path.join(tmp, "todo.md"), path.join(tmp, "plain")]);
 const notes = await P.ev(dbAll("notes"));
 ok("text files imported as notes", notes.length === 2 && notes.some((n) => n.name === "todo.md" && n.text === "# todo\n- a") && notes.some((n) => n.name === "plain"), JSON.stringify(notes.map((n) => n.name)));
 
-// import: a broken file is refused, a backup replaces everything (after a confirm) and reloads
+// import: a broken file is refused; a backup only adds what is missing (by id), nothing here changes or goes
 fs.writeFileSync(path.join(tmp, "bad.json"), JSON.stringify({ app: "ntab", format: 1, data: { settings: {}, notes: [{ id: "x" }] } }));
 await P.ev(`document.getElementById('data-import').click()`);
 await pick([path.join(tmp, "bad.json")]);
 ok("broken backup refused", /bad\.json: notes\[0\]: "name" must be a string/.test(await P.ev(`document.getElementById('data-msg').textContent`)), await P.ev(`document.getElementById('data-msg').textContent`));
-const Q = await newPage(); // another tab: reloads with the new data
+const Q = await newPage(); // another tab: hears about the added records
 await sleep(1000);
+await openApp(Q, "board");
 backup.data.settings = { ...backup.data.settings, fontSize: 20 };
+backup.data.tasks[0].name = "Changed in the backup"; // same id as the task here: the one here stays
+backup.data.tasks.push({ id: "t2", name: "From the backup", description: "", status: "new", rank: -5, createdAt: 2, updatedAt: 2 });
+backup.data.notes.push({ id: "n9", name: "backup note", text: "x", createdAt: 2, updatedAt: 2 });
 fs.writeFileSync(path.join(tmp, "good.json"), JSON.stringify(backup));
-await P.ev(`window.confirm = () => true`);
+await P.ev(`window.confirm = () => { throw new Error("no confirm for a merge") }`);
 await P.ev(`document.getElementById('data-import').click()`);
 await pick([path.join(tmp, "good.json")]);
 await sleep(1000);
-ok("backup restored: notes from the file only", (await P.ev(dbAll("notes"))).length === 0 && (await P.ev(dbAll("tasks"))).length === 1);
-ok("settings restored", (await P.ev(inDb(`async (s, req) => req(s.meta.get("settings"))`, "readonly"))).fontSize === 20);
-ok("other tab reloaded", await Q.ev(`performance.getEntriesByType('navigation')[0].type === 'reload'`));
+const tasks = (await P.ev(dbAll("tasks"))).sort((a, b) => a.rank - b.rank);
+ok("merge: notes here stay, the new one added", (await P.ev(dbAll("notes"))).map((n) => n.name).sort().join() === "backup note,plain,todo.md");
+ok("merge: the task here unchanged, the new one after it", tasks.map((t) => `${t.id}:${t.name}:${t.rank}`).join() === "t1:Task:0,t2:From the backup:1", JSON.stringify(tasks));
+ok("merge: settings here stay", (await P.ev(inDb(`async (s, req) => req(s.meta.get("settings"))`, "readonly")))?.fontSize !== 20);
+ok("merge: the result is said", (await P.ev(`document.getElementById('data-msg').textContent`)) === "good.json: added 1 notes, 1 tasks; 4 already here, kept as they are.", await P.ev(`document.getElementById('data-msg').textContent`));
+ok("merge: the other tab shows the new task", await Q.ev(`[...document.querySelectorAll('#bd-cols .bd-card, #bd-cols [class*=card]')].some((c) => c.textContent.includes('From the backup'))`));
+await P.ev(`window.confirm = () => true`);
+await P.ev(inDb(`async (s) => { s.notes.clear(); s.tasks.delete("t2"); }`)); // the rest of the scenario starts from the old state
+await P.send("Page.reload");
+await sleep(1000);
 
 // routes: an app is "#/<id>"; typing one in the address opens it
 await P.ev(`location.hash = '#/board'`);

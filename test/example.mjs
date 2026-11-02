@@ -16,6 +16,30 @@ await P.type("hello");
 await sleep(800);
 const notes = await P.ev(dbAll("notes"));
 ok("typed text saved as note “new1”", notes.length === 1 && notes[0].text === "hello" && notes[0].name === "new1", JSON.stringify(notes));
+// sidebar arrows: in the flow above and below the icons, never over one; at the edge disabled, still there
+await P.ev(resetData(Array.from({ length: 20 }, (_, i) => ({ name: `Site ${i}`, url: `https://s${i}.test` }))));
+await P.send("Page.reload");
+await sleep(1000);
+const arrows = () => P.ev(`(() => {
+  const r = (id) => document.getElementById(id).getBoundingClientRect();
+  const list = r('links'), up = r('links-up'), down = r('links-down');
+  return { up: up.height > 0, down: down.height > 0, upOff: document.getElementById('links-up').disabled,
+    downOff: document.getElementById('links-down').disabled, clear: up.bottom <= list.top && down.top >= list.bottom,
+    home: r('go-home').height };
+})()`);
+let a = await arrows();
+ok("arrows shown outside the list, up disabled at the top", a.up && a.down && a.clear && a.upOff && !a.downOff, JSON.stringify(a));
+ok("home button 48px like the icons", a.home === 48, a.home);
+for (let i = 0; i < 6; i++) await P.ev(`document.getElementById('links-down').click()`), await sleep(150);
+await sleep(600);
+a = await arrows();
+ok("at the bottom: down disabled but still in place", a.down && a.downOff && !a.upOff && a.clear, JSON.stringify(a));
+await P.ev(resetData());
+await P.send("Page.reload");
+await sleep(1000);
+a = await arrows();
+ok("no arrows when the icons fit", !a.up && !a.down, JSON.stringify(a));
+
 console.log("errors:", P.errors);
 await P.close();
 process.exit(0);

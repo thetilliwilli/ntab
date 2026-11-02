@@ -26,18 +26,16 @@
 .side-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 #data-btn { border-top: 1px solid var(--border); }
 
-/* height of the notepad tab bar, so their bottom borders line up */
-.side-home { height: var(--bar-h); border-bottom: 1px solid var(--border); }
+.side-home { height: 48px; border-bottom: 1px solid var(--border); }
 .side-home.on { color: var(--accent); }
 
-.links-wrap { flex: 1; position: relative; min-height: 0; display: flex; }
-.links { flex: 1; overflow: hidden auto; padding: 6px 0; scrollbar-width: none; }
+.links-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.links { flex: 1; min-height: 0; overflow: hidden auto; padding: 6px 0; scrollbar-width: none; }
 
-/* shown only when there are more icons above / below; click scrolls by a page */
+/* when the icons don't fit: arrows above and below them (in the flow, never over an icon, so a quick double click
+   can't land on one); the one at the edge is disabled, not hidden. click scrolls by a page */
 .side-more {
-  position: absolute;
-  left: 0;
-  right: 0;
+  flex: none;
   display: grid;
   place-items: center;
   height: 22px;
@@ -48,10 +46,10 @@
 }
 
 .side-more:hover { background: var(--hover); }
-.side-more.up { top: 0; border-bottom: 1px solid var(--border); }
-.side-more.down { bottom: 0; border-top: 1px solid var(--border); }
+.side-more.up { border-bottom: 1px solid var(--border); }
+.side-more.down { border-top: 1px solid var(--border); }
 .side-more svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-.links-wrap:not(.more-up) .up, .links-wrap:not(.more-down) .down { display: none; }
+.links-wrap:not(.overflow) .side-more { display: none; }
 
 .link {
   display: grid;

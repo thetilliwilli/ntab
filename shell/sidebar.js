@@ -41,12 +41,14 @@ side.addEventListener("scroll", () => {
   markMore();
 });
 
-/* arrows at the edges of the sidebar when icons are cut off; clicking one scrolls by a page */
+/* arrows above and below the icons while they don't fit (in the flow, not over the icons); the one at the edge is
+   disabled rather than hidden, so nothing moves under a cursor that keeps clicking. click scrolls by a page */
 const wrap = side.parentElement;
 function markMore() {
   const top = side.scrollTop;
-  wrap.classList.toggle("more-up", top > 1);
-  wrap.classList.toggle("more-down", top + side.clientHeight < side.scrollHeight - 1);
+  wrap.classList.toggle("overflow", side.scrollHeight > side.clientHeight + 1);
+  $("links-up").disabled = top <= 1;
+  $("links-down").disabled = top + side.clientHeight >= side.scrollHeight - 1;
 }
 const page = (dir) => side.scrollBy({ top: dir * (side.clientHeight - 48), behavior: "smooth" });
 $("links-up").addEventListener("click", () => page(-1));

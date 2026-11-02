@@ -55,8 +55,9 @@ The **Data** button in the sidebar:
 
 - **Export backup** downloads `ntab-backup-YYYY-MM-DD.json`:
   `{ "app": "ntab", "format": 1, "exportedAt": …, "data": { settings, notes, trackerTypes, trackerEntries, tasks, actions } }`
-- **Import backup…** checks the file, shows what is in it and, after a confirm, replaces all data with it
-  (other NTab pages reload).
+- **Import backup…** checks the file and adds what this browser doesn't have yet (by id): nothing is deleted or
+  changed, a record that is here already stays as it is, settings stay. To restore a backup exactly: **Delete all
+  data…**, then import it.
 - **Import text files…** adds every picked file as a note named like the file.
 - **Delete all data…** deletes everything NTab keeps in this browser (the database, the cached theme) after a
   confirm and starts fresh with the default actions; other NTab pages reload.
@@ -109,7 +110,7 @@ One list drives both the home tiles and the sidebar, in the same order. The dash
 opens the action form for a new action of any kind (URL, name — defaults to the host or app name —, icon upload,
 new tab or the request's method, headers as `Name: value` lines and body); it is added at the end of the list.
 In the editor, ⚙ (or the method button) on a row opens the same form for that row. Right-click a tile or a
-sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address. Edit with
+sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address; when the icons don't fit, arrows above and below them scroll by a page. Edit with
 ✎ at the bottom of the sidebar (above it: **Data** and the theme switch auto / light / dark) — a form or raw JSON:
 
 ```json

@@ -35,11 +35,12 @@ save/session model, and `shell/apps.js` for the app contract.
   and a future PWA. No File System Access API, no OPFS, no files, no `localStorage`/`chrome.storage` for data
   (only the theme is cached in `localStorage` for the first paint). One strict model for all entities (uuid `id`,
   `name`, `…At` times in ms, numeric `rank`, `kind` for the sort of a record); keep it consistent when adding fields.
-- Backups: one JSON file (`shell/data.js`), import replaces everything after a confirm; "Import text files" adds
+- Backups: one JSON file (`shell/data.js`). Import only adds records whose id isn't here yet (no confirm needed); a
+  record that exists here stays as it is, even if the backup's differs (the user's choice: "the current one always");
+  settings stay; added ranked records go after the existing ones. Nothing is ever lost by an import. "Import text files" adds
   notes; a note downloads as a file named exactly like the note (never append `.txt`). Backup reminder on home
   every 7 days, "Later" = 3 days. Per-entity exports other than a single note were declined for now. "Delete all data…" in Data deletes
-  the database and `localStorage` after a confirm (fresh start with the default actions). Import merges are not offered:
-  import always replaces.
+  the database and `localStorage` after a confirm (fresh start with the default actions).
 - No migrations: 2.2.0 started over (the 2.1 folder and `chrome.storage.sync` actions are not read; old notes come
   back through "Import text files"). The v1 shortcuts migration was removed on purpose too. Existing lists don't get
   new actions automatically (the editor has "+ <app>" buttons, "add it back" for the notepad and warns when saving
@@ -77,8 +78,9 @@ save/session model, and `shell/apps.js` for the app contract.
 - Requests and CORS: `optional_host_permissions` for all sites, granted one site at a time from the result window
   ("Allow access to <site>") after a failed request; never `host_permissions` (install warning, review). Unknown kinds or
   apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`.
-- Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows at the top/bottom edge when
-  icons are cut off. Home button on top; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
+- Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows above and below the
+  icons when they don't fit: in the flow (never over an icon, so repeated clicks can't hit an action), the one at the
+  edge disabled, not hidden. Home button on top, 48px like the icons; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
 - Tab right-click menu: "Download" and "Delete note"; delete removes note + tab immediately, no confirmation
   (choosing it is the confirmation). The × in the `[+]` note list keeps its `confirm()` (small target, easy to
   misclick). Deletion is permanent; a trash was offered and not requested.

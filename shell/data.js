@@ -2,7 +2,8 @@
  * the Data dialog (sidebar button): backup export / import, text files as notes; and the backup reminder on home.
  *
  * a backup is one JSON file: { app: "ntab", format: 1, exportedAt, data: { settings, notes, trackerTypes,
- * trackerEntries, tasks, actions } } with the records as they are in shared/db.js. importing it replaces everything.
+ * trackerEntries, tasks, actions } } with the records as they are in shared/db.js. importing it only adds what this
+ * browser doesn't have (by id): nothing is ever deleted or changed by an import.
  * the reminder shows on home once meta "backup".remindAt has passed and there is something to lose.
  */
 
@@ -89,11 +90,12 @@ async function importBackup() {
   } catch (e) {
     return msg(`${file.name}: ${e.message}`, "err");
   }
-  const n = (store) => data[store].length;
-  const summary = `${n("notes")} notes, ${n("trackerTypes")} tracker types, ${n("trackerEntries")} tracker entries, ${n("tasks")} tasks, ${n("actions")} actions`;
-  if (!confirm(`Replace all data in NTab with this backup?\n\n${file.name}\n${summary}\n\nEverything NTab has now is deleted. Other NTab tabs reload.`)) return;
   await flushApps();
-  await db.restore(data); // reloads the page
+  const r = await db.merge(data);
+  const LABELS = { notes: "notes", trackerTypes: "tracker types", trackerEntries: "tracker entries", tasks: "tasks", actions: "actions" };
+  const parts = Object.entries(LABELS).filter(([k]) => r[k].added).map(([k, label]) => `${r[k].added} ${label}`);
+  const kept = Object.values(r).reduce((n, x) => n + x.kept, 0);
+  msg(`${file.name}: ${parts.length ? `added ${parts.join(", ")}` : "nothing new"}${kept ? `; ${kept} already here, kept as they are` : ""}.`, "ok");
 }
 
 async function importText() {

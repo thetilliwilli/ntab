@@ -181,19 +181,27 @@ export const dump = () =>
     return out;
   });
 
-/* replaces all data with `data` (the shape dump() returns), then reloads every page */
-export async function restore(data) {
-  await run([...STORES, "meta"], "readwrite", (s) => {
-    s.meta.put(data.settings, "settings");
-    s.meta.delete("session");
+/* adds the records of `data` (the shape dump() returns) that this browser doesn't have (by id); nothing is deleted or
+   changed, a record that exists here stays as it is (settings too). added records of ranked stores go after the
+   ones here, in their order. returns { <store>: { added, kept } } */
+export async function merge(data) {
+  const out = {};
+  const added = {};
+  await run(STORES, "readwrite", async (s) => {
     for (const name of STORES) {
-      s[name].clear();
-      data[name].forEach((r) => s[name].put(r));
+      const have = new Set(await req(s[name].getAllKeys()));
+      const fresh = data[name].filter((r) => !have.has(r.id));
+      if (fresh.length && fresh.some((r) => "rank" in r)) {
+        const top = Math.max(-1, ...(await req(s[name].getAll())).map((r) => r.rank ?? -1));
+        fresh.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).forEach((r, i) => (r.rank = top + 1 + i));
+      }
+      fresh.forEach((r) => s[name].put(r));
+      out[name] = { added: fresh.length, kept: data[name].length - fresh.length };
+      added[name] = fresh.map((r) => r.id);
     }
   });
-  frozen = true;
-  bc.postMessage({ reset: true });
-  location.reload();
+  for (const name of STORES) if (added[name].length) changed(name, added[name]);
+  return out;
 }
 
 /* deletes everything of NTab in this browser (the database, the cached theme), then reloads: a fresh start with the
