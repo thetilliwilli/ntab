@@ -137,7 +137,14 @@ export function initRequestDialog() {
     $("req-note").textContent = "copied";
   });
   $("req-allow").addEventListener("click", async () => {
-    if (await platform.requestHostAccess(current.options.url)) runRequest(current);
-    else $("req-note").textContent = "access was not granted";
+    let granted;
+    try {
+      granted = await platform.requestHostAccess(current.options.url);
+    } catch (e) {
+      // the browser didn't even ask: say why (e.g. the extension was not reloaded after an update of its manifest)
+      return ($("req-note").textContent = `the browser refused to ask for access: ${e?.message || e}`);
+    }
+    if (granted) runRequest(current);
+    else $("req-note").textContent = "access was not granted (declined in the browser's prompt)";
   });
 }
