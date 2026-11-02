@@ -58,7 +58,7 @@ const man = await P.ev(`(async () => {
   const icons = await Promise.all(m.icons.map((i) => fetch(new URL(i.src, href)).then((r) => r.ok)));
   return { name: m.name, start: m.start_url, icons };
 })()`);
-ok("manifest linked, its icons exist", man.name === "NTab: Notepad New Tab" && man.start === "newtab.html" && man.icons.length === 4 && man.icons.every(Boolean), JSON.stringify(man));
+ok("manifest linked, its icons exist", man.name === "NTab" && man.start === "newtab.html" && man.icons.length === 4 && man.icons.every(Boolean), JSON.stringify(man));
 
 const reg = await P.ev(`navigator.serviceWorker.ready.then((r) => r.scope)`);
 ok("service worker active", reg === `${ORIGIN}/`, reg);

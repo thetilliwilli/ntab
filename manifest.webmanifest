@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "NTab: Notepad New Tab",
+  "name": "NTab",
   "short_name": "NTab",
   "description": "Plain-text notepad with tabs, activity tracker, task board and quick links. Data stays in your browser.",
   "start_url": "newtab.html",
