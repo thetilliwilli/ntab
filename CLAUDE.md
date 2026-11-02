@@ -77,7 +77,8 @@ save/session model, and `shell/apps.js` for the app contract.
   Delete (no confirmation, like notes).
 - Requests and CORS: `optional_host_permissions` for all sites, granted one site at a time from the result window
   ("Allow access to <site>") after a failed request; never `host_permissions` (install warning, review). Unknown kinds or
-  apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`.
+  apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`; the editor's "Embed icons" stores the cached
+  favicons the same way (so a backup carries them to the web version), "Reset icons" drops all, ↺ on a row drops one; all in the draft (Save).
 - Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows above and below the
   icons when they don't fit: in the flow (never over an icon, so repeated clicks can't hit an action), the one at the
   edge disabled, not hidden. Home button on top, 48px like the icons; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
@@ -126,7 +127,7 @@ were considered and declined, keep it dependency-free):
   `resetData()` empties it and sets the actions, reload afterwards.
 - Pages start at home; click `#links .<app id>` (or `openApp(P, id)`) to open an app. File pickers: catch the
   `<input type=file>` and feed it with `DOM.setFileInputFiles` (see `test/data.mjs`). Background pages run timers
-  about once a second, so allow 1.5 s for their saves. Use two pages for cross-tab sync tests. Favicons from `_favicon/` don't exist outside the extension, so icons fall back to
+  about once a second, so allow 1.5 s for their saves. Use two pages for cross-tab sync tests. The stub's favicon cache is `/fav/<host>.png` (run.sh puts one for `s1.test`); other sites fall back to
   letters in the harness.
 - Scenarios covered earlier by throwaway scripts (before 2.2.0's storage, rewrite as needed): autosave max-wait,
   drag reorder (tabs and actions), wrap gutter alignment and typing speed, flyout, theme cycle and persistence,

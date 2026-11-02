@@ -110,7 +110,9 @@ One list drives both the home tiles and the sidebar, in the same order. The dash
 opens the action form for a new action of any kind (URL, name — defaults to the host or app name —, icon upload,
 new tab or the request's method, headers as `Name: value` lines and body); it is added at the end of the list.
 In the editor, ⚙ (or the method button) on a row opens the same form for that row. Right-click a tile or a
-sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address; when the icons don't fit, arrows above and below them scroll by a page. Edit with
+sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address; when the icons don't fit, arrows above and below them scroll by a page. In the editor, **Embed icons** stores every
+favicon the browser has cached for your sites in the actions (so a backup carries them, e.g. to the web version,
+which has no favicon cache), **Reset icons** sets every action back to its automatic icon, ↺ on a row only that one; **Save** keeps them. Edit with
 ✎ at the bottom of the sidebar (above it: **Data** and the theme switch auto / light / dark) — a form or raw JSON:
 
 ```json

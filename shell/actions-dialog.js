@@ -1,6 +1,8 @@
 /* actions editor (✎ in the sidebar): form mode and raw JSON mode (like VS Code settings) */
 
-import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor, DEFAULT_RENDER } from "./actions.js";
+import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor, DEFAULT_RENDER, cachedFavicon, loadImg } from "./actions.js";
+import { iconFromImage } from "./icon-file.js";
+import * as platform from "../platform/index.js";
 import { openActionForm } from "./action-form.js";
 import { apps, appById } from "./apps.js";
 import { $, el, hostOf, fixUrl, routeOf, sortable } from "../shared/util.js";
@@ -34,6 +36,9 @@ export function initActionsDialog() {
   }
   $("sc-routes").textContent = apps.map((a) => `"#/${a.id}"`).join(", ");
   $("sc-save").addEventListener("click", save);
+  $("sc-embed").hidden = !platform.faviconUrl("https://example.com/"); // the web version has no favicon cache
+  $("sc-embed").addEventListener("click", embedIcons);
+  $("sc-reset-icons").addEventListener("click", resetIcons);
   $("sc-cancel").addEventListener("click", () => dlg.close());
   $("sc-x").addEventListener("click", () => dlg.close());
 }
@@ -154,6 +159,41 @@ async function save() {
   }
 }
 
+/* ---------- icons of all actions (in the draft: Save keeps them, Cancel drops them) ---------- */
+
+/* the favicon each site has in the browser's cache goes into its action as an image, so backups carry it */
+async function embedIcons() {
+  const todo = draft.filter((a) => known(a) && !a.icon && !isRoute(normalize(a)) && /^https?:/i.test(normalize(a).options.url));
+  if (!todo.length) return msg("nothing to embed: every site has its own icon already");
+  $("sc-embed").disabled = true;
+  msg("embedding…");
+  let done = 0;
+  try {
+    for (const a of todo) {
+      const src = await cachedFavicon(normalize(a).options.url);
+      if (!src) continue;
+      try {
+        a.icon = iconFromImage(await loadImg(src));
+        done++;
+      } catch {} // unreadable: the site keeps its automatic icon
+    }
+  } finally {
+    $("sc-embed").disabled = false;
+  }
+  renderRows();
+  const none = todo.length - done;
+  msg(`${done} ${done === 1 ? "icon" : "icons"} embedded${none ? `, ${none} not in the browser's cache (they keep the letter)` : ""}. Save to keep.`, done ? "ok" : "");
+}
+
+/* every action back to its automatic icon (app icon, the browser's favicon, the letter) */
+function resetIcons() {
+  const n = draft.filter((a) => a.icon).length;
+  if (!n) return msg("every icon is automatic already");
+  draft.forEach((a) => (a.icon = null));
+  renderRows();
+  msg(`${n} ${n === 1 ? "icon" : "icons"} back to automatic. Save to keep.`, "ok");
+}
+
 /* ---------- form rows ---------- */
 
 function renderRows() {
@@ -203,7 +243,7 @@ function row(a, i) {
 
   r.append(handle, iconEl(normalize({ ...a, name: a.name || "?" })), name);
   if (!known(a)) {
-    r.append(el("span", "sc-what", `“${a.kind}” action from a newer version: kept, not shown`), el("span"), del);
+    r.append(el("span", "sc-what", `“${a.kind}” action from a newer version: kept, not shown`), el("span"), el("span"), del);
     return r;
   }
 
@@ -250,6 +290,15 @@ function row(a, i) {
   });
   url.addEventListener("change", refreshIcon);
 
-  r.append(url, extra, more, del);
+  // an embedded or uploaded icon: back to the automatic one (in the draft, like everything here)
+  const reset = el("button", "sc-reset", "↺");
+  reset.title = "Back to the automatic icon";
+  reset.style.visibility = a.icon ? "" : "hidden";
+  reset.addEventListener("click", () => {
+    a.icon = null;
+    renderRows();
+  });
+
+  r.append(url, extra, reset, more, del);
   return r;
 }

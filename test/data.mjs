@@ -145,6 +145,37 @@ await P.ev(`document.querySelector('.ctx-menu .danger').click()`);
 await sleep(400);
 ok("Delete from the sidebar", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
 
+// Embed icons: cached favicons go into the actions (the stub's cache has one for s1.test); Reset icons drops them all
+await P.ev(resetData([{ name: "Notes", url: "#/notes" }, { name: "One", url: "https://s1.test/" }, { name: "Two", url: "https://s2.test/" }]));
+await P.send("Page.reload");
+await sleep(1000);
+await P.ev(`document.getElementById('links-edit').click()`);
+await sleep(300);
+await P.ev(`document.getElementById('sc-embed').click()`);
+await sleep(800);
+ok("embed: the message", (await P.ev(`document.getElementById('sc-msg').textContent`)) === "1 icon embedded, 1 not in the browser's cache (they keep the letter). Save to keep.", await P.ev(`document.getElementById('sc-msg').textContent`));
+ok("embed: nothing saved before Save", (await P.ev(dbAll("actions"))).every((a) => a.icon === null));
+await P.ev(`document.getElementById('sc-save').click()`);
+await sleep(400);
+let icons = Object.fromEntries((await P.ev(dbAll("actions"))).map((a) => [a.name, a.icon]));
+ok("embed: s1.test has a 128px PNG, the others none", /^data:image\/png;base64,/.test(icons.One) && icons.Two === null && icons.Notes === null);
+ok("embed: 128×128", (await P.ev(`new Promise((r) => { const i = new Image(); i.onload = () => r(i.width + 'x' + i.height); i.src = ${JSON.stringify(icons.One)}; })`)) === "128x128");
+await P.ev(`document.getElementById('links-edit').click()`);
+await sleep(300);
+ok("↺ only on the row with its own icon", (await P.ev(`[...document.querySelectorAll('#sc-rows .sc-reset')].map((b) => b.style.visibility !== 'hidden').join()`)) === "false,true,false");
+await P.ev(`document.querySelectorAll('#sc-rows .sc-reset')[1].click()`);
+await sleep(200);
+ok("↺: the row is automatic again (in the draft)", await P.ev(`[...document.querySelectorAll('#sc-rows .sc-reset')].every((b) => b.style.visibility === 'hidden')`));
+await P.ev(`document.getElementById('sc-cancel').click()`);
+await P.ev(`document.getElementById('links-edit').click()`);
+await sleep(300);
+await P.ev(`document.getElementById('sc-reset-icons').click()`);
+await sleep(200);
+ok("reset: the message", (await P.ev(`document.getElementById('sc-msg').textContent`)) === "1 icon back to automatic. Save to keep.");
+await P.ev(`document.getElementById('sc-save').click()`);
+await sleep(400);
+ok("reset: every icon automatic", (await P.ev(dbAll("actions"))).every((a) => a.icon === null));
+
 // Delete all data: after a confirm the database and the cached theme go, both pages start fresh (default actions)
 await P.ev(`localStorage.setItem('theme', 'dark')`);
 await Q.send("Page.reload");

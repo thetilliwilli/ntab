@@ -1,4 +1,4 @@
-/* turning a user's image file into an uploaded icon (actions editor and the action form) */
+/* turning a user's image file, or a cached favicon, into an icon stored in the action (actions editor, action form) */
 
 import { loadImg } from "./actions.js";
 
@@ -18,14 +18,18 @@ export function pickFile() {
 export async function iconFromFile(file) {
   const obj = URL.createObjectURL(file);
   try {
-    const img = await loadImg(obj);
-    const c = document.createElement("canvas");
-    c.width = c.height = ICON_SIZE;
-    const ctx = c.getContext("2d");
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, 0, 0, ICON_SIZE, ICON_SIZE);
-    return c.toDataURL("image/png");
+    return iconFromImage(await loadImg(obj));
   } finally {
     URL.revokeObjectURL(obj);
   }
+}
+
+/* a loaded image (same origin, e.g. the favicon cache) -> ICON_SIZE square PNG data URL */
+export function iconFromImage(img) {
+  const c = document.createElement("canvas");
+  c.width = c.height = ICON_SIZE;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, ICON_SIZE, ICON_SIZE);
+  return c.toDataURL("image/png");
 }

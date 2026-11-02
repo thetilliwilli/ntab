@@ -126,11 +126,12 @@ function signature(img) {
   return ctx.getImageData(0, 0, 16, 16).data.join(",");
 }
 
-/* the cache answers unknown pages with a generic globe; detect it so we can show the letter instead */
+/* the browser's cached favicon of a page as a URL, or null (none, or the generic globe the cache answers unknown pages
+   with: then the letter shows instead) */
 let defaultSig = null;
 const cache = new Map();
 
-function cachedFavicon(url) {
+export function cachedFavicon(url) {
   const src = platform.faviconUrl(url);
   if (!src) return Promise.resolve(null);
   if (!cache.has(url)) {
