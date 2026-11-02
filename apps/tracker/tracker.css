@@ -173,3 +173,31 @@
 .tr-type-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
 .tr-type-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
 .tr-types-hint { margin: 10px 0 0; }
+.dlg-foot .tr-clear { color: var(--danger); }
+.dlg-foot .tr-clear:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* narrow screens (phones): the log row in two lines, times, icon, name and × on top, the duration bar below */
+@media (max-width: 600px) {
+  .tr-body { padding: 12px 10px 60px; }
+  .tr-day { min-width: 0; flex: 1; }
+  .tr-row {
+    grid-template-columns: auto 62px 28px minmax(0, 1fr) 36px;
+    grid-template-areas: "start end icon what del" "bar bar bar bar bar";
+    gap: 0 6px;
+    height: auto;
+    min-height: 48px;
+    padding: 4px 2px 4px 6px;
+    font-size: 17px;
+  }
+  .tr-start { grid-area: start; }
+  .tr-end { grid-area: end; }
+  .tr-row .tr-emoji { grid-area: icon; font-size: 24px; }
+  .tr-what { grid-area: what; }
+  .tr-len { grid-area: bar; height: 26px; margin-bottom: 2px; }
+  .tr-len:empty { display: none; }
+  .tr-len span { font-size: 15px; }
+  .tr-row .fdel { grid-area: del; height: 40px; font-size: 20px; }
+  .tr-time { height: 40px; padding: 0 4px; font-size: 17px; }
+  .tr-running { padding: 0 4px; font-size: 14px; }
+  .tr-row input[type="datetime-local"] { font-size: 16px; height: 40px; }
+}

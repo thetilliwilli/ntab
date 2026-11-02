@@ -32,6 +32,7 @@ db.onChange(({ store }) => started && (store === "trackerTypes" || store === "tr
 /* ---------- derived ---------- */
 
 /* activities that run now, oldest first */
+export const entryCount = () => entries.length;
 export const running = () => entries.filter((e) => e.endAt === null);
 export const isRunning = (typeId) => entries.some((e) => e.typeId === typeId && e.endAt === null);
 
@@ -79,6 +80,13 @@ export async function remove(id) {
 }
 
 export const restore = (entry) => db.put("trackerEntries", entry);
+
+/* deletes every entry (the types stay); returns them (for undo: restore(list)) */
+export async function clearEntries() {
+  const gone = entries;
+  await db.replace("trackerEntries", []);
+  return gone;
+}
 
 /* changes when an entry started (field "at") or ended ("endAt") */
 export function setTime(id, field, time) {

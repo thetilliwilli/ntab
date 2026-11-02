@@ -123,6 +123,13 @@ async function refresh() {
     : "No backup yet. Your data lives only in this browser: export a backup now and then.";
 }
 
+/* everything goes: back to a fresh start (other NTab tabs reload) */
+async function wipeAll() {
+  const where = location.protocol.startsWith("http") ? location.host : "this browser";
+  if (!confirm(`Delete ALL NTab data in ${where}: notes, tracker, board, actions and settings?\n\nThis can't be undone; export a backup first if you may need it. Other NTab tabs reload.`)) return;
+  await db.wipe(); // reloads the page
+}
+
 const guard = (fn) => () => fn().catch((e) => msg(e.message || String(e), "err"));
 
 /* flush: writes the apps' pending changes before a backup is taken or replaced */
@@ -137,6 +144,7 @@ export function initData({ flush }) {
   $("data-export").addEventListener("click", guard(exportAll));
   $("data-import").addEventListener("click", guard(importBackup));
   $("data-text").addEventListener("click", guard(importText));
+  $("data-wipe").addEventListener("click", guard(wipeAll));
   $("backup-export").addEventListener("click", guard(exportAll));
   $("backup-later").addEventListener("click", async () => {
     $("backup-bar").hidden = true;

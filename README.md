@@ -58,6 +58,8 @@ The **Data** button in the sidebar:
 - **Import backup…** checks the file, shows what is in it and, after a confirm, replaces all data with it
   (other NTab pages reload).
 - **Import text files…** adds every picked file as a note named like the file.
+- **Delete all data…** deletes everything NTab keeps in this browser (the database, the cached theme) after a
+  confirm and starts fresh with the default actions; other NTab pages reload.
 
 When the last backup is a week old (or there was none for a week) and there is something to lose, the home screen
 shows a reminder with **Export backup** and **Later** (3 days).
@@ -89,6 +91,8 @@ shows a reminder with **Export backup** and **Later** (3 days).
 - A running activity shows on top with its running time, a growing bar and **Finish**.
 - The day log below (◀ ▶ today) lists the entries of a day; click a time (the start, or an activity's finish)
   to correct it, `×` deletes. Every log, finish and delete can be undone from the toast.
+- **edit types → Delete all log entries…** empties the log after a confirm (the types stay; undo from the toast),
+  e.g. on a second device that got the types from a backup.
 - An entry is one record: `{ id, typeId, at }` for an event, `{ id, typeId, at, endAt }` for an activity
   (`endAt: null` while it runs).
 

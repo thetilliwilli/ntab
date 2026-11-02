@@ -165,6 +165,8 @@
 .data-body p { margin: 0 0 4px; }
 .data-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
 .data-row .muted { font-size: 12px; }
+.data-row .danger { color: var(--danger); }
+.data-row .danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 /* add link dialog */
 

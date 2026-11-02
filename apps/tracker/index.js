@@ -398,6 +398,20 @@ async function saveTypes() {
   }
 }
 
+/* every log entry goes (e.g. on a new device that got the types from a backup); the types stay */
+async function clearLog() {
+  const n = model.entryCount();
+  if (!n) return ($("tr-types-msg").textContent = "the log is empty");
+  if (!confirm(`Delete all ${n} log entries? The event types stay.`)) return;
+  try {
+    const gone = await model.clearEntries();
+    $("tr-types").close();
+    toast(`Deleted ${gone.length} log entries`, () => model.restore(gone).catch(report));
+  } catch (e) {
+    report(e);
+  }
+}
+
 /* ---------- app ---------- */
 
 function render() {
@@ -441,6 +455,7 @@ export default {
     $("tr-types-x").addEventListener("click", () => $("tr-types").close());
     $("tr-types-cancel").addEventListener("click", () => $("tr-types").close());
     $("tr-types-save").addEventListener("click", saveTypes);
+    $("tr-clear").addEventListener("click", clearLog);
 
     const go = (d) => {
       day = startOfDay(d);

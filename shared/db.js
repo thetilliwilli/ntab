@@ -195,3 +195,20 @@ export async function restore(data) {
   bc.postMessage({ reset: true });
   location.reload();
 }
+
+/* deletes everything of NTab in this browser (the database, the cached theme), then reloads: a fresh start with the
+   default actions. other pages reload too (a deleted database also closes their connections: onversionchange) */
+export async function wipe() {
+  frozen = true;
+  bc.postMessage({ reset: true });
+  if (opening) (await opening.catch(() => null))?.close();
+  await new Promise((resolve) => {
+    const r = indexedDB.deleteDatabase("ntab");
+    r.onsuccess = r.onerror = r.onblocked = resolve; // blocked: it completes once the other pages have closed theirs
+  });
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {}
+  location.reload();
+}

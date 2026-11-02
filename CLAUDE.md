@@ -37,7 +37,9 @@ save/session model, and `shell/apps.js` for the app contract.
   `name`, `…At` times in ms, numeric `rank`, `kind` for the sort of a record); keep it consistent when adding fields.
 - Backups: one JSON file (`shell/data.js`), import replaces everything after a confirm; "Import text files" adds
   notes; a note downloads as a file named exactly like the note (never append `.txt`). Backup reminder on home
-  every 7 days, "Later" = 3 days. Per-entity exports other than a single note were declined for now.
+  every 7 days, "Later" = 3 days. Per-entity exports other than a single note were declined for now. "Delete all data…" in Data deletes
+  the database and `localStorage` after a confirm (fresh start with the default actions). Import merges are not offered:
+  import always replaces.
 - No migrations: 2.2.0 started over (the 2.1 folder and `chrome.storage.sync` actions are not read; old notes come
   back through "Import text files"). The v1 shortcuts migration was removed on purpose too. Existing lists don't get
   new actions automatically (the editor has "+ <app>" buttons, "add it back" for the notepad and warns when saving
@@ -51,7 +53,8 @@ save/session model, and `shell/apps.js` for the app contract.
   "NTab: Notepad New Tab".
 - Tracker decisions: an entry is one record `{id, typeId, at, endAt?}` (event: no `endAt`; activity: `endAt` null
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
-  never deleted; undo toast, day log with start and finish time edit.
+  never deleted; undo toast, day log with start and finish time edit. "Delete all log entries…" (edit types
+  dialog, confirm + undo) empties the log, types stay.
 - Board: fixed columns new / work / hold / done; drag on pointer events (works with touch), status also in the
   task dialog.
 - No keyboard shortcuts (hotkeys) for now.

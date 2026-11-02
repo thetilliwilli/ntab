@@ -273,6 +273,10 @@
         <button id="data-text">Import text files…</button>
         <span class="muted">each file becomes a note</span>
       </div>
+      <div class="data-row">
+        <button id="data-wipe" class="danger">Delete all data…</button>
+        <span class="muted">everything NTab keeps in this browser, back to a fresh start</span>
+      </div>
     </div>
     <div class="dlg-foot">
       <span id="data-msg" class="msg"></span>
@@ -330,6 +334,7 @@
       <p class="muted hint tr-types-hint">Renaming a type keeps its history. An archived type has no tile; its entries stay in the log.</p>
     </div>
     <div class="dlg-foot">
+      <button id="tr-clear" class="tr-clear" title="Delete every entry of the log (the event types stay)">Delete all log entries…</button>
       <span id="tr-types-msg" class="msg"></span>
       <button id="tr-types-cancel">Cancel</button>
       <button id="tr-types-save" class="primary">Save</button>

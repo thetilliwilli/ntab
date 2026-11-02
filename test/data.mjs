@@ -134,6 +134,23 @@ await P.ev(`document.querySelector('.ctx-menu .danger').click()`);
 await sleep(400);
 ok("Delete from the sidebar", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
 
+// Delete all data: after a confirm the database and the cached theme go, both pages start fresh (default actions)
+await P.ev(`localStorage.setItem('theme', 'dark')`);
+await Q.send("Page.reload");
+await sleep(1000);
+await Q.ev(`window.marker = 1`);
+const before = (await P.ev(dbAll("notes"))).length + (await P.ev(dbAll("actions"))).length;
+await P.ev(`document.getElementById('data-btn').click()`);
+await P.ev(`window.confirm = () => false; document.getElementById('data-wipe').click()`);
+await sleep(300);
+ok("wipe: declined keeps the data", (await P.ev(dbAll("notes"))).length + (await P.ev(dbAll("actions"))).length === before && before > 0);
+await P.ev(`window.confirm = () => true; document.getElementById('data-wipe').click()`);
+await sleep(2000);
+const fresh = { notes: (await P.ev(dbAll("notes"))).length, actions: (await P.ev(dbAll("actions"))).map((a) => a.name).join(),
+  theme: await P.ev(`localStorage.getItem('theme')`), home: await P.ev(`!document.getElementById('home').hidden`) };
+ok("wipe: no notes, default actions, theme back to auto, home", fresh.notes === 0 && fresh.actions.split(",").length === 5 && fresh.theme !== "dark" && fresh.home, JSON.stringify(fresh));
+ok("wipe: the other tab reloaded", (await Q.ev(`window.marker ?? 'reloaded'`)) === "reloaded");
+
 console.log("errors:", P.errors, Q.errors);
 await P.close();
 await Q.close();

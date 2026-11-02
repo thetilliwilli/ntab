@@ -34,6 +34,7 @@ TRACKER
 • Activities with a start and a finish: a live timer and a growing bar while they run
 • Today's count and last time on every tile
 • Day log: fix a start or finish time, delete, undo
+• Clear the whole log in one go, your event types stay
 
 TASK BOARD
 • Columns New, Work, Hold, Done
@@ -43,6 +44,7 @@ TASK BOARD
 DATA
 • Export everything (notes, tracker, board, sites, settings) as one JSON backup, import it on another computer
 • Import text files as notes
+• Delete all data for a fresh start
 • A gentle reminder on the home screen when the last backup is a week old
 
 • Light, dark or automatic theme

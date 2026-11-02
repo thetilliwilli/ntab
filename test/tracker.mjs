@@ -135,6 +135,33 @@ await P.ev(`document.getElementById('tr-types-save').click()`);
 await sleep(300);
 ok("restored: tile back", await q(P, `document.querySelectorAll('.tr-tile').length === 3`));
 ok("title Tracker", (await q(P, `document.title`)) === "Tracker");
+
+// delete all log entries (the types stay), after a confirm; the other page follows; undo brings them back
+const logged = (await entries(P)).length;
+const typeCount = (await typesOf(P)).length;
+await P.ev(`document.getElementById('tr-edit').click()`);
+await sleep(200);
+await P.ev(`window.confirm = () => false; document.getElementById('tr-clear').click()`);
+await sleep(200);
+ok("delete all: declined confirm keeps the log", (await entries(P)).length === logged && logged > 0, logged);
+await P.ev(`window.confirm = (m) => (window.asked = m, true); document.getElementById('tr-clear').click()`);
+await sleep(400);
+ok("delete all: asked with the count", (await q(P, `window.asked`)) === `Delete all ${logged} log entries? The event types stay.`);
+const kept = [(await entries(P)).length, (await typesOf(P)).length];
+ok("delete all: no entries, types stay", kept[0] === 0 && kept[1] === typeCount, JSON.stringify(kept));
+ok("delete all: dialog closed, toast with undo", await q(P, `!document.getElementById('tr-types').open && !document.getElementById('tr-toast').hidden && !document.getElementById('tr-toast-undo').hidden`));
+await sleep(600);
+await openApp(Q, "tracker");
+ok("delete all: the other page's log is empty", await q(Q, `document.querySelectorAll('#tr-log .tr-row').length === 0`));
+await P.ev(`document.getElementById('tr-toast-undo').click()`);
+await sleep(400);
+ok("delete all: undo restores them", (await entries(P)).length === logged);
+
+// a phone: the log rows fit the screen
+await P.send("Emulation.setDeviceMetricsOverride", { width: 360, height: 760, deviceScaleFactor: 1, mobile: true });
+await sleep(300);
+ok("phone: log rows fit", await q(P, `[...document.querySelectorAll('.tr-row')].every((r) => r.scrollWidth <= r.clientWidth) && document.querySelector('.tr-body').scrollWidth <= document.querySelector('.tr-body').clientWidth`));
+if (SHOTS) await P.shot(`${SHOTS}/tracker-phone.png`);
 console.log("errors:", P.errors, Q.errors);
 await P.close(); await Q.close();
 process.exit(0);
