@@ -105,7 +105,15 @@
 
 /* ---------- home ---------- */
 
-.home { overflow: auto; background: var(--bg); }
+.home { position: relative; overflow: auto; background: var(--bg); }
+
+/* the GitHub corner (the repository) and the version beside it */
+.gh-corner { position: absolute; z-index: 1; top: 0; right: 0; width: 64px; height: 64px; }
+.gh-corner svg { display: block; width: 100%; height: 100%; }
+.gh-bg { fill: var(--fg); }
+.gh-cat { fill: var(--bg); }
+.gh-corner:hover .gh-bg { fill: var(--accent); }
+.app-ver { position: absolute; top: 8px; right: 72px; color: var(--muted); font: 11px var(--mono); white-space: nowrap; }
 
 .home-grid {
   display: grid;
@@ -148,7 +156,7 @@
   gap: 8px;
   width: calc(100% - 48px);
   max-width: 1072px;
-  margin: 24px auto -32px;
+  margin: 64px auto -32px; /* below the GitHub corner */
   padding: 8px 8px 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);

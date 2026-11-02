@@ -83,6 +83,9 @@ await P.ev(inDb(`async (s) => {
 await P.send("Page.reload");
 await sleep(1200);
 ok("page is controlled by the service worker", await P.ev(`!!navigator.serviceWorker.controller`));
+const ver = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8")).version;
+ok("version with the build", (await P.ev(`document.getElementById('app-ver').textContent`)) === `v${ver} · build ${version.slice(0, 8)}`, await P.ev(`document.getElementById('app-ver').textContent`));
+ok("GitHub corner", (await P.ev(`(() => { const a = document.querySelector('.gh-corner'); return a.href + ' ' + a.target + ' ' + a.rel; })()`)) === "https://github.com/thetilliwilli/ntab _blank noopener noreferrer");
 await sleep(300);
 ok("a site's tile shows its letter (no favicon cache)", (await P.ev(`[...document.querySelectorAll('#home-grid .tile')].find((t) => t.textContent.includes('Down')).querySelector('.ico').outerHTML`)) === '<span class="ico">D</span>');
 await P.ev(`[...document.querySelectorAll('#home-grid .tile')].find((t) => t.textContent.includes('Down')).click()`);

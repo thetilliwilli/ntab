@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/newtab-test}
 mkdir -p "$OUT"
-cp -r platform shared shell apps icons test/stub.js "$OUT"/
+cp -r platform shared shell apps icons manifest.json test/stub.js "$OUT"/
 mkdir -p "$OUT/fav" && cp icons/icon-48.png "$OUT/fav/s1.test.png" # a cached favicon for the stub
 sed 's#<script type="module" src="shell/main.js">#<script src="stub.js"></script>\n&#' newtab.html > "$OUT/test.html"
 (cd "$OUT" && python3 -m http.server 8765 >/dev/null 2>&1 &)

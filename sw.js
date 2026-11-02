@@ -5,12 +5,13 @@
    the origin (thetilliwilli.github.io) is shared with other Pages sites: only our own "ntab-" caches are touched */
 
 // generated: start
-const VERSION = "caa28c989218";
+const VERSION = "1958ba2dec17";
 const FILES = [
   "./",
   "index.html",
   "newtab.html",
   "manifest.webmanifest",
+  "manifest.json",
   "apps/board/board.css",
   "apps/board/index.js",
   "apps/board/model.js",

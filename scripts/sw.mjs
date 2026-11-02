@@ -12,7 +12,7 @@ const SKIP = new Set(["platform/extension.js", "icons/icon-16.png", "icons/icon-
 const walk = (d) =>
   fs.readdirSync(path.join(ROOT, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`]));
 
-const files = ["index.html", "newtab.html", "manifest.webmanifest", ...DIRS.flatMap(walk).filter((f) => !SKIP.has(f)).sort()];
+const files = ["index.html", "newtab.html", "manifest.webmanifest", "manifest.json", ...DIRS.flatMap(walk).filter((f) => !SKIP.has(f)).sort()];
 const hash = crypto.createHash("sha256");
 for (const f of files) hash.update(f + "\0").update(fs.readFileSync(path.join(ROOT, f)));
 const version = hash.digest("hex").slice(0, 12);

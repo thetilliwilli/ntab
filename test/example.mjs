@@ -9,6 +9,7 @@ await P.ev(resetData());
 await P.send("Page.reload");
 await sleep(1000);
 ok("starts on home", await P.ev(`!document.getElementById('home').hidden`));
+ok("version shown (no build outside the web version)", /^v\d+\.\d+\.\d+$/.test(await P.ev(`document.getElementById('app-ver').textContent`)), await P.ev(`document.getElementById('app-ver').textContent`));
 await openApp(P, "notes");
 await P.ev(`document.getElementById('nothing-new').click()`);
 await sleep(500);

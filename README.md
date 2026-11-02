@@ -45,7 +45,9 @@ open it in any browser, or install it as an app (the install icon in Chrome's ad
 Every new tab, reload and browser restart starts at the home screen, so notes never appear on screen by
 themselves (handy when sharing the screen). An app opens from its tile or its sidebar icon; the
 house button at the top of the sidebar goes back home. The address shows the screen as a route (`#/notes`);
-switching screens replaces it instead of adding browser history. An app loads its data when it is first opened.
+switching screens replaces it instead of adding browser history. The top right corner of the home screen links to
+the GitHub repository and shows the version (`manifest.json`; the web version adds its build, the id of the cached file
+set, so you can tell whether a phone has the latest). An app loads its data when it is first opened.
 
 ## Data
 

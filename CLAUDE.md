@@ -66,6 +66,8 @@ save/session model, and `shell/apps.js` for the app contract.
 - Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
   (screen sharing). Screens are hash routes (`#/notes`), replaced, never added to history; a route in the address
   on load is dropped. An app loads its data when first opened on the page.
+- Home screen corner: a GitHub corner (octocat triangle, top right, new tab) to the repository and the version beside it
+  (`manifest.json` version; the web version adds "build <sw VERSION>").
 - Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. Kinds: `open`
   `{url, newTab}` (`#/<app id>` opens an app, anything else is a web address) and `request`
   `{url, method, headers, body, render}` (shows the response as text, JSON pretty-printed; no images or other binary
