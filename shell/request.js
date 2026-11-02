@@ -165,7 +165,7 @@ async function send() {
 async function failed(e) {
   const host = new URL(current.options.url).host;
   const allowed = await platform.hasHostAccess(current.options.url);
-  canAllow = !allowed;
+  canAllow = !allowed && platform.canRequestAccess;
   $("req-allow").textContent = `Allow access to ${host}`;
   set({
     status: "request failed",
@@ -173,8 +173,11 @@ async function failed(e) {
     meta: e.message,
     note: allowed
       ? `${host} could not be reached.`
-      : `${host} could not be reached, or it doesn't allow requests from other sites (CORS). ` +
-        `If the site is up, allow NTab to access it: the browser asks once for this site only.`,
+      : !platform.canRequestAccess
+        ? `${host} could not be reached, or it doesn't allow requests from other sites (CORS). ` +
+          `The web version can't ask for access; such requests work in the NTab extension.`
+        : `${host} could not be reached, or it doesn't allow requests from other sites (CORS). ` +
+          `If the site is up, allow NTab to access it: the browser asks once for this site only.`,
   });
 }
 

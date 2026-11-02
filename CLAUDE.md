@@ -42,6 +42,11 @@ save/session model, and `shell/apps.js` for the app contract.
   back through "Import text files"). The v1 shortcuts migration was removed on purpose too. Existing lists don't get
   new actions automatically (the editor has "+ <app>" buttons, "add it back" for the notepad and warns when saving
   without it). The user explicitly declined these migrations.
+- Web version (PWA) on GitHub Pages, served from `master` root (`.nojekyll`): https://thetilliwilli.github.io/ntab/.
+  `platform/web.js` (no favicons, no site access: request "Allow access" is hidden). `sw.js`: cache-first, the whole
+  file set per `VERSION`, `skipWaiting` (the next load gets the new set, never a mix); run `node scripts/sw.mjs`
+  before every commit that changes app files. Web-only files stay out of the extension zip (`release.mjs`). Target:
+  desktop first; mobile layout is later (Android only, iOS is not supported).
 - Apps: notes, tracker, board (`apps/<id>/`, registered in `shell/apps.js`). The extension name stays
   "NTab: Notepad New Tab".
 - Tracker decisions: an entry is one record `{id, typeId, at, endAt?}` (event: no `endAt`; activity: `endAt` null
@@ -109,7 +114,8 @@ were considered and declined, keep it dependency-free):
   port 9333. Re-run the copy after editing sources (or kill the server/Chrome and run it again).
 - `test/cdp.mjs` has helpers (`newPage`, `closeTab`, `ev`, `type`, `click`, `shot`, `ok`, `inDb`, `dbAll`,
   `resetData`, `actionList`, `openApp`); `test/extension.mjs` runs the real unpacked extension (its own headless
-  Chrome over a DevTools pipe) for what the localhost page can't show (CSP, the sandboxed render frame); `test/example.mjs` is a smoke test, `notes`, `tracker`, `board` and `data`
+  Chrome over a DevTools pipe) for what the localhost page can't show (CSP, the sandboxed render frame); `test/web.mjs` serves the repo
+  like Pages and checks the PWA (service worker, offline, update, the web platform); `test/example.mjs` is a smoke test, `notes`, `tracker`, `board` and `data`
   (backup, import, reminder, routes, actions editor) cover the rest (`node test/<name>.mjs`, `SHOTS=dir` for
   screenshots; Node 22+ for the global WebSocket). A page must load once before `inDb` (it creates the database);
   `resetData()` empties it and sets the actions, reload afterwards.

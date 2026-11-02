@@ -1,14 +1,20 @@
 /*
  * the Chrome extension platform: every chrome.* call lives here (and nowhere else).
- * platform/index.js picks it; a plain web page (PWA) will provide the same exports from web.js.
+ * platform/index.js picks it at runtime; a plain web page (the PWA) gets the same exports from web.js.
  * data is not platform specific: it is in IndexedDB everywhere (shared/db.js).
  *
+ *   name               "extension" | "web"
  *   faviconUrl         URL of the browser's cached favicon of a page, or null if the platform has none
+ *   canRequestAccess   whether the platform can grant access to a site at all (false on the web)
  *   hasHostAccess      whether requests to the site of `url` may ignore CORS (an optional host permission)
  *   requestHostAccess  asks the user for that, for this one site (call it from a click); resolves to true/false,
  *                      rejects when the browser refuses to ask (the message says why).
  *                      a web page can't have it: there hasHostAccess is false and requestHostAccess rejects
  */
+
+export const name = "extension";
+
+export const canRequestAccess = true;
 
 export const faviconUrl = (pageUrl) => chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(pageUrl)}&size=64`);
 

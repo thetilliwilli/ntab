@@ -22,6 +22,21 @@ From the Chrome Web Store, or unpacked:
 
 After editing any file, hit the reload icon on the extension card in `chrome://extensions`.
 
+## Web version
+
+The same code runs as a plain web page (a PWA) on GitHub Pages: https://thetilliwilli.github.io/ntab/ —
+open it in any browser, or install it as an app (the install icon in Chrome's address bar). Pages serves the
+`master` branch as it is (`.nojekyll` keeps the files untouched), so a push deploys it.
+
+- `platform/web.js` stands in for the extension: no favicon cache (tiles show letters or uploaded icons), and no
+  access to other sites, so request actions work only with servers that allow CORS (and only `https://` ones).
+- Its data is its own (another origin than the extension): move it with a backup. The page asks the browser to keep
+  its storage persistent.
+- Offline: `sw.js` caches every file per version and starts from the cache. `VERSION` and `FILES` in it are
+  generated: run `node scripts/sw.mjs` after changing any file (`--check` tells whether it is stale; `test/web.mjs`
+  checks it). A new version is downloaded in full in the background and is used from the next load.
+- The origin `thetilliwilli.github.io` is shared by every Pages site of the account: any of them could read this data.
+
 ## Home screen
 
 Every new tab, reload and browser restart starts at the home screen, so notes never appear on screen by
@@ -153,8 +168,12 @@ Sources are plain ES modules, split by role:
 
 - `manifest.json` — MV3; `chrome_url_overrides.newtab`, permission `favicon`, optional host permissions
 - `newtab.html` — the page: shell, the screens of all apps, dialogs
-- `icons/` — `icon.svg` (source, also the page favicon) and the PNG sizes for the manifest
-- `platform/` — the only place that calls `chrome.*` (the favicon cache); `index.js` picks the platform
+- `index.html`, `manifest.webmanifest`, `sw.js`, `.nojekyll` — the web version only (see Web version); `scripts/sw.mjs`
+  writes the file list and version into `sw.js`
+- `icons/` — `icon.svg` (source, also the page favicon) and the PNG sizes for the manifest; `icon-192/512.png` and
+  `icon-maskable.svg` → `icon-maskable-512.png` for the web app
+- `platform/` — the only place that calls `chrome.*`: `extension.js`, `web.js` (the web version); `index.js` picks
+  one at runtime
 - `shared/` — code every part uses:
   - `base.css` — theme tokens, controls, dialogs
   - `db.js` — the database: the data model, transactions, change events, backup dump and restore
@@ -176,5 +195,6 @@ Sources are plain ES modules, split by role:
 - `apps/tracker/` — `index.js` (UI), `model.js` (types, entries, activities)
 - `apps/board/` — `index.js` (UI, drag and drop), `model.js` (tasks)
 - `store/`, `scripts/release.mjs` — store listing sources and the release builder
-- `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board, data and request tests);
+- `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board, data, request,
+  web and real-extension tests);
   not part of the package

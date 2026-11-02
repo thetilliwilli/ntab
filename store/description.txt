@@ -46,6 +46,7 @@ DATA
 • A gentle reminder on the home screen when the last backup is a week old
 
 • Light, dark or automatic theme
+• Also runs as a web app (works offline) in any browser: thetilliwilli.github.io/ntab
 
 PRIVACY
 • No account, no servers, no tracking; no network requests except the request tiles you create
@@ -53,6 +54,7 @@ PRIVACY
 • One permission: "favicon", to show site icons from Chrome's local cache. Access to a site is asked only when one of your request tiles needs it, for that site only
 
 WHAT'S NEW
+• NTab as a web app: thetilliwilli.github.io/ntab
 • Tracker: log events with one tap, time activities
 • Task board with New / Work / Hold / Done
 • Request tiles: send an HTTP request, see the answer

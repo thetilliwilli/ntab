@@ -98,7 +98,9 @@ fs.mkdirSync(path.join(OUT, "screenshots"));
 const out = (p, data) => fs.writeFileSync(path.join(OUT, p), data);
 
 const zip = `ntab-${manifest.version}.zip`;
-git("archive", "-o", path.join(OUT, zip), "HEAD", "manifest.json", "newtab.html", "platform", "shared", "shell", "apps", "icons");
+git("archive", "-o", path.join(OUT, zip), "HEAD", "manifest.json", "newtab.html", "platform", "shared", "shell", "apps", "icons",
+  // the web version's own files (see sw.js) stay out of the extension
+  ":(exclude)platform/web.js", ":(exclude)icons/icon-192.png", ":(exclude)icons/icon-512.png", ":(exclude)icons/icon-maskable*");
 out("name.txt", manifest.name);
 out("summary.txt", manifest.description);
 out("description.txt", description);
