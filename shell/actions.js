@@ -23,9 +23,12 @@ export const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"];
 
 export const newAction = (name, url, newTab = false) => ({ id: db.uuid(), name, icon: null, rank: 0, kind: "open", options: { url, newTab } });
 
+/* a request's render function when the user hasn't written one: the body as it came */
+export const DEFAULT_RENDER = "x => x";
+
 /* the options a kind starts with, keeping the url */
 export function optionsFor(kind, url = "") {
-  if (kind === "request") return { url, method: "GET", headers: {}, body: "" };
+  if (kind === "request") return { url, method: "GET", headers: {}, body: "", render: DEFAULT_RENDER };
   return { url, newTab: false };
 }
 

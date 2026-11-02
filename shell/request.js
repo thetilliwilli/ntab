@@ -1,10 +1,14 @@
-/* "request" actions: sends the request and shows the response in a dialog (#req): status, time, type, size, the
-   headers (folded) and the body as text (JSON pretty-printed). binary responses aren't shown, only described.
+/* "request" actions: sends the request and shows the response in a dialog (#req): status, time, type, size, and two
+   tabs: "render" (default) shows what the action's render function makes of the body, "raw" the headers (folded)
+   and the body as text (JSON pretty-printed). binary responses aren't shown, only described.
+   the render function is code the user typed: MV3 lets only a sandboxed page evaluate it, so it runs in the
+   iframe shell/render.html (no chrome.*, no access to our data); its messages are only data to us.
    without a host permission the browser applies CORS; when a request fails that way the dialog offers to allow
    the site (an optional host permission, see platform/) and sends it again */
 
 import * as platform from "../platform/index.js";
 import { $, fmtSize } from "../shared/util.js";
+import { DEFAULT_RENDER } from "./actions.js";
 
 const TIMEOUT = 30_000;
 const MAX_SHOWN = 1 << 20; // longer bodies are cut in the dialog (Copy takes it all)
@@ -15,6 +19,59 @@ let current = null; // the action shown
 let ctrl = null; // AbortController of the request in flight
 let fullBody = "";
 let canAllow = false; // the last failure may be CORS on a site without host access
+let tab = "render";
+let rendered = ""; // the text of what the render frame shows (for Copy)
+let renderId = 0; // the latest render job; older answers are ignored
+let frameReady = false;
+let pending = null; // a render job sent before the frame was loaded
+let renderTimer = 0;
+
+const frame = () => $("req-frame");
+
+function setTab(t) {
+  tab = t;
+  for (const b of $("req-tabs").children) b.classList.toggle("on", b.dataset.tab === t);
+  $("req-pane-render").hidden = t !== "render";
+  $("req-pane-raw").hidden = t !== "raw";
+  copyButton();
+}
+
+const copyText = () => (tab === "render" ? rendered : fullBody);
+const copyButton = () => ($("req-copy").hidden = !!ctrl || !copyText());
+
+/* shows `text` through the action's render function in the frame; null clears it */
+function render(text) {
+  rendered = "";
+  const id = ++renderId;
+  clearTimeout(renderTimer);
+  const css = getComputedStyle(document.body);
+  const job = {
+    id,
+    code: text == null ? "() => ''" : current.options.render || DEFAULT_RENDER,
+    text: text ?? "",
+    style: { color: css.color, background: css.getPropertyValue("--surface"), font: `13px/1.5 ${css.getPropertyValue("--ui")}` },
+  };
+  if (frameReady) frame().contentWindow.postMessage(job, "*");
+  else pending = job;
+  if (text != null)
+    renderTimer = setTimeout(() => id === renderId && ($("req-note").textContent = "render is still running (a loop in the function?)"), 5000);
+}
+
+function onFrameMessage(e) {
+  if (e.source !== frame().contentWindow || !e.data || typeof e.data !== "object") return;
+  const { ready, height, id, ok, text, error } = e.data;
+  if (ready) {
+    frameReady = true;
+    if (pending) frame().contentWindow.postMessage(pending, "*");
+    pending = null;
+  } else if (typeof height === "number") frame().style.height = `${Math.max(40, Math.min(height, 1e5))}px`;
+  else if (id === renderId) {
+    clearTimeout(renderTimer);
+    rendered = ok ? String(text ?? "") : "";
+    if (!ok && current) $("req-note").textContent = `render failed: ${String(error).slice(0, 200)}`;
+    copyButton();
+  }
+}
 
 function set({ status = "", kind = "", meta = "", headers = "", body = "", note = "" }) {
   $("req-status").textContent = status;
@@ -31,7 +88,7 @@ function busy(on) {
   if (on) canAllow = false;
   $("req-cancel").hidden = !on;
   $("req-repeat").hidden = on;
-  $("req-copy").hidden = on || !fullBody;
+  $("req-copy").hidden = on || !copyText();
   $("req-allow").hidden = on || !canAllow;
 }
 
@@ -48,6 +105,7 @@ function pretty(text, type) {
 async function send() {
   const { url, method, headers, body } = current.options;
   fullBody = "";
+  render(null);
   busy(true);
   set({ status: `${method} …`, meta: url });
   ctrl = new AbortController();
@@ -83,6 +141,7 @@ async function send() {
         ? `showing the first ${fmtSize(MAX_SHOWN)}; Copy takes all of it`
         : text || method === "HEAD" ? "" : size ? `binary response (${type}), not shown` : "empty response",
     });
+    if (text) render(text); // the body as it came, not pretty-printed
   } catch (e) {
     if (mine !== ctrl) return;
     const reason = mine.signal.reason;
@@ -117,6 +176,7 @@ async function failed(e) {
 
 export function runRequest(action) {
   current = action;
+  if (!dlg.open) setTab("render");
   $("req-title").textContent = `${action.name} · ${action.options.method} ${action.options.url}`;
   if (!dlg.open) dlg.showModal();
   send();
@@ -132,8 +192,11 @@ export function initRequestDialog() {
   dlg.addEventListener("close", stop);
   $("req-cancel").addEventListener("click", () => ctrl?.abort());
   $("req-repeat").addEventListener("click", () => runRequest(current));
+  for (const b of $("req-tabs").children) b.addEventListener("click", () => setTab(b.dataset.tab));
+  setTab("render");
+  addEventListener("message", onFrameMessage);
   $("req-copy").addEventListener("click", async () => {
-    await navigator.clipboard.writeText(fullBody);
+    await navigator.clipboard.writeText(copyText());
     $("req-note").textContent = "copied";
   });
   $("req-allow").addEventListener("click", async () => {

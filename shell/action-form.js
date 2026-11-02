@@ -1,7 +1,7 @@
 /* the action form (#add): one action of any kind. the "+" tile on home adds one; the actions editor edits a row
    with it (⚙). kind-specific fields carry data-for="<kind>" and show only for that kind */
 
-import { iconEl, addAction, saveAction, removeAction, newAction, optionsFor, appOf, METHODS } from "./actions.js";
+import { iconEl, addAction, saveAction, removeAction, newAction, optionsFor, appOf, METHODS, DEFAULT_RENDER } from "./actions.js";
 import { showMenu } from "../shared/menu.js";
 import { pickFile, iconFromFile } from "./icon-file.js";
 import { appById } from "./apps.js";
@@ -36,7 +36,8 @@ function action() {
   const u = url.value.trim() && fixUrl(url.value.trim());
   const options = optionsFor(kind, u);
   if (kind === "open") options.newTab = $("add-blank").checked;
-  else Object.assign(options, { method: $("add-method").value, headers: parseHeaders($("add-headers").value), body: $("add-body").value });
+  else Object.assign(options, { method: $("add-method").value, headers: parseHeaders($("add-headers").value), body: $("add-body").value,
+      render: $("add-render").value.trim() || DEFAULT_RENDER });
   return { ...(base ?? newAction()), name: name.value.trim() || nameFromUrl(url.value.trim()), icon, kind, options };
 }
 
@@ -88,6 +89,7 @@ export function openActionForm({ edit = null, onDone }) {
   $("add-method").value = o.method ?? "GET";
   $("add-headers").value = headersText(o.headers);
   $("add-body").value = o.body ?? "";
+  $("add-render").value = o.render ?? DEFAULT_RENDER;
   $("add-title").textContent = edit ? "Edit action" : "Add action";
   $("add-save").textContent = edit ? "Done" : "Add";
   msg("");

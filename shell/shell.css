@@ -249,3 +249,10 @@
 .req-headers pre, .req-text { margin: 0; padding: 8px; background: var(--surface); border: 1px solid var(--border); font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .req-headers pre { max-height: 160px; overflow: auto; margin-top: 6px; }
 .req-text { flex: 1; min-height: 0; overflow: auto; user-select: text; }
+.req-tabs { align-self: flex-start; }
+.req-tabs button { padding: 0 14px; }
+.req-pane { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.req-render { overflow: auto; background: var(--surface); border: 1px solid var(--border); }
+.req-frame { display: block; width: 100%; height: 40px; border: 0; }
+.add-render { display: flex; flex-direction: column; gap: 4px; }
+.add-render .hint { margin: 0; color: var(--muted); }

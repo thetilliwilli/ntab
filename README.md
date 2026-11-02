@@ -104,10 +104,17 @@ An action is a button of some `kind` with its `options`:
 
 - `open` `{ url, newTab }` — a route `#/<app id>` opens an app (`#/notes`, `#/tracker`, `#/board`), anything else
   is a web address;
-- `request` `{ url, method, headers, body }` — sends an HTTP request and shows the response in a window: status,
-  time, type, size, the response headers (folded) and the body as text, JSON pretty-printed (binary bodies are
-  only described). **Repeat**, **Copy**, **Cancel**, a 30 s timeout. `headers` is `{ "Name": "value" }`, `body` a
+- `request` `{ url, method, headers, body, render }` — sends an HTTP request and shows the response in a window:
+  status, time, type, size and two tabs. **render** (the default) shows what `render` makes of the body: a
+  JavaScript function as text, e.g. `x => JSON.parse(x).ip` or ``x => `<h1>${x.slice(0, 40)}</h1>` ``, that gets
+  the body as it came and returns HTML (a string with tags) or text; new requests get `x => x`. **raw** has the
+  response headers (folded) and the body as text, JSON pretty-printed (binary bodies are only described).
+  **Repeat**, **Copy** (of the open tab), **Cancel**, a 30 s timeout. `headers` is `{ "Name": "value" }`, `body` a
   string (not sent with GET and HEAD).
+
+  MV3 lets only a sandboxed page evaluate code from a string, so the function runs in `shell/render.html`
+  (`"sandbox"` in the manifest; not a permission): an iframe with its own origin, no `chrome.*` and no access to
+  the extension's data, links open in a new tab.
 
   Without a host permission the browser applies CORS, so only services that allow it answer (e.g.
   `https://api.ipify.org?format=json`). When a request fails that way, the window offers **Allow access to
@@ -157,6 +164,7 @@ Sources are plain ES modules, split by role:
   - `actions.js`, `sidebar.js`, `home.js` — the actions and their icons, the sidebar with its flyout, home tiles
   - `actions-dialog.js`, `action-form.js`, `icon-file.js` — the actions editor, the form for one action (+ Add, ⚙), icon upload
   - `request.js` — runs request actions and shows the response
+  - `render.html`, `render-frame.js` — the sandboxed frame that runs a request's render function
   - `data.js` — the Data dialog (backup export / import, text files) and the backup reminder
   - `theme.js` — applies the saved theme before the first paint
 - `apps/notes/` — `index.js` (the app), `notes.js` (open notes, autosave, session, cross-page sync),

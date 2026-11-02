@@ -188,6 +188,12 @@
         <textarea id="add-headers" class="url" data-for="request" rows="3" spellcheck="false" placeholder="Accept: application/json&#10;Authorization: Bearer …"></textarea>
         <label for="add-body" data-for="request">Body</label>
         <textarea id="add-body" class="url" data-for="request" rows="4" spellcheck="false" placeholder="not sent with GET and HEAD"></textarea>
+        <label for="add-render" data-for="request">Render</label>
+        <div class="add-render" data-for="request">
+          <textarea id="add-render" class="url" rows="3" spellcheck="false" placeholder="x => x"></textarea>
+          <span class="hint">A JavaScript function: gets the response body as text, returns what to show: HTML or text.
+            e.g. <code>x =&gt; JSON.parse(x).ip</code>, <code>x =&gt; `&lt;h1&gt;${x.slice(0, 40)}&lt;/h1&gt;`</code></span>
+        </div>
         <label for="add-name">Name</label>
         <input id="add-name" type="text" spellcheck="false" autocomplete="off">
         <span>Icon</span>
@@ -218,11 +224,20 @@
         <span id="req-status" class="req-status"></span>
         <span id="req-meta" class="req-meta"></span>
       </div>
-      <details id="req-headers" class="req-headers" hidden>
-        <summary>Response headers</summary>
-        <pre id="req-head-text"></pre>
-      </details>
-      <pre id="req-body" class="req-text"></pre>
+      <div class="seg req-tabs" id="req-tabs" role="tablist" aria-label="Response view">
+        <button type="button" data-tab="render" role="tab" title="What the action's render function makes of the body">render</button>
+        <button type="button" data-tab="raw" role="tab" title="The response as it came: headers and body">raw</button>
+      </div>
+      <div id="req-pane-render" class="req-pane req-render" role="tabpanel">
+        <iframe id="req-frame" class="req-frame" src="shell/render.html" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="Rendered response"></iframe>
+      </div>
+      <div id="req-pane-raw" class="req-pane" role="tabpanel" hidden>
+        <details id="req-headers" class="req-headers" hidden>
+          <summary>Response headers</summary>
+          <pre id="req-head-text"></pre>
+        </details>
+        <pre id="req-body" class="req-text"></pre>
+      </div>
     </div>
     <div class="dlg-foot">
       <span id="req-note" class="msg"></span>

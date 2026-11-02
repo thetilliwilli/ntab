@@ -1,6 +1,6 @@
 /* actions editor (✎ in the sidebar): form mode and raw JSON mode (like VS Code settings) */
 
-import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor } from "./actions.js";
+import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor, DEFAULT_RENDER } from "./actions.js";
 import { openActionForm } from "./action-form.js";
 import { apps, appById } from "./apps.js";
 import { $, el, hostOf, fixUrl, routeOf, sortable } from "../shared/util.js";
@@ -95,6 +95,7 @@ function normalize(a) {
           method: String(o.method || "GET").toUpperCase(),
           headers: Object.fromEntries(Object.entries(o.headers && typeof o.headers === "object" ? o.headers : {}).map(([k, v]) => [k, String(v)])),
           body: String(o.body ?? ""),
+          render: String(o.render ?? "").trim() || DEFAULT_RENDER,
         };
   return { ...a, name: String(a.name ?? "").trim(), options };
 }

@@ -20,5 +20,8 @@
   "optional_host_permissions": [
     "https://*/*",
     "http://*/*"
-  ]
+  ],
+  "sandbox": {
+    "pages": ["shell/render.html"]
+  }
 }

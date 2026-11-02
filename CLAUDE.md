@@ -58,8 +58,10 @@ save/session model, and `shell/apps.js` for the app contract.
   on load is dropped. An app loads its data when first opened on the page.
 - Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. Kinds: `open`
   `{url, newTab}` (`#/<app id>` opens an app, anything else is a web address) and `request`
-  `{url, method, headers, body}` (shows the response as text, JSON pretty-printed; no images or other binary
-  rendering, the user wants text answers). Future features are new kinds. One list in `rank` order drives home
+  `{url, method, headers, body, render}` (shows the response as text, JSON pretty-printed; no images or other binary
+  rendering, the user wants text answers). `render` is a JS function the user types (body text → HTML or text,
+  default `x => x`), shown on the default "render" tab, the response itself on "raw"; it runs only in the
+  sandboxed frame `shell/render.html` (MV3 forbids eval elsewhere); its messages are data, never trusted. Future features are new kinds. One list in `rank` order drives home
   and the sidebar, no groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full
   editor (✎); the editor's ⚙ opens the same form for a row. Right-click a tile or sidebar icon: Edit (the form),
   Delete (no confirmation, like notes).

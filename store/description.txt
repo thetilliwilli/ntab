@@ -14,6 +14,7 @@ HOME SCREEN
 REQUEST TILES
 • A tile can send an HTTP request: URL, method, headers, body
 • One click shows the answer in a window: status, time, headers, the body as text or formatted JSON
+• Pick out what you need with a small JavaScript function of your own, e.g. x => JSON.parse(x).ip, shown as text or HTML
 • Repeat, copy the answer; handy for health checks, your public IP, small APIs
 
 NOTEPAD
