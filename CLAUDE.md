@@ -75,6 +75,9 @@ save/session model, and `shell/apps.js` for the app contract.
   and the sidebar, no groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full
   editor (✎); the editor's ⚙ opens the same form for a row. Right-click a tile or sidebar icon: Edit (the form),
   Delete (no confirmation, like notes).
+- Privacy of tiles: a site opened from a tile gets no opener and no referrer (`<meta name="referrer" content="no-referrer">`
+  in newtab.html, index.html and render.html, `rel="noopener noreferrer"` on links); `test/extension.mjs` and
+  `test/web.mjs` check it.
 - Requests and CORS: `optional_host_permissions` for all sites, granted one site at a time from the result window
   ("Allow access to <site>") after a failed request; never `host_permissions` (install warning, review). Unknown kinds or
   apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`; the editor's "Embed icons" stores the cached

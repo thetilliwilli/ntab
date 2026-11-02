@@ -1,7 +1,7 @@
 /* the web version (PWA, no chrome.*): serves the repo as it is (like GitHub Pages) on its own port, then checks
    index.html → newtab.html, the web platform, the manifest, the service worker and its cache, a request that CORS
-   blocks (no "Allow access", the note points to the extension), and that the app works offline after the server
-   is gone; sw.js must be up to date (node scripts/sw.mjs). needs test/run.sh's Chrome (CDP on 9333).
+   blocks (no "Allow access", the note points to the extension), that the app works offline after the server
+   is gone, and that a site opened from a tile gets no opener and no referrer; sw.js must be up to date (node scripts/sw.mjs). needs test/run.sh's Chrome (CDP on 9333).
    run: node test/web.mjs   (SHOTS=dir for a screenshot) */
 import http from "node:http";
 import fs from "node:fs";
@@ -120,6 +120,47 @@ for (let t = 0; t < 10e3; t += 250) {
   if (after.length === 1 && after[0] === "ntab-test0release") break;
 }
 ok("a new version replaces the cache", after.length === 1 && after[0] === "ntab-test0release", JSON.stringify(after));
+
+// a site opened from a tile (another origin; a new tab, then this one) gets no opener and no referrer
+const seen = [];
+const heads = {};
+const site = http.createServer((req, res) => {
+  const u = new URL(req.url, "http://x");
+  if (u.pathname === "/report") {
+    const r = JSON.parse(u.searchParams.get("r"));
+    seen.push({ ...r, header: heads[r.tab] });
+    return res.end();
+  }
+  heads[u.searchParams.get("tab")] = req.headers.referer ?? null;
+  res.writeHead(200, { "content-type": "text/html" }).end(`<script>
+    const tab = new URLSearchParams(location.search).get("tab");
+    fetch("/report?r=" + encodeURIComponent(JSON.stringify({ tab, referrer: document.referrer, opener: window.opener !== null })));
+  </script>`);
+});
+await new Promise((r) => site.listen(0, "127.0.0.1", r));
+const land = `http://127.0.0.1:${site.address().port}/land`;
+await P.ev(inDb(`async (s) => {
+  s.actions.clear();
+  s.actions.put({ id: "a0", name: "New", icon: null, rank: 0, kind: "open", options: { url: "${land}?tab=new", newTab: true } });
+  s.actions.put({ id: "a1", name: "Same", icon: null, rank: 1, kind: "open", options: { url: "${land}?tab=same", newTab: false } });
+}`));
+await P.send("Page.reload");
+await sleep(1200);
+const clickTile = async (name) => {
+  const { x, y } = await P.ev(`(() => { const r = [...document.querySelectorAll('#home-grid .tile')].find((t) => t.textContent.includes(${JSON.stringify(name)})).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+  await P.click(x, y);
+};
+await clickTile("New");
+await sleep(1200);
+await clickTile("Same");
+await sleep(1200);
+for (const tab of ["new", "same"]) {
+  const r = seen.find((x) => x.tab === tab);
+  ok(`site opened in ${tab === "new" ? "a new tab" : "the same tab"}: no opener, no referrer`, r && !r.opener && r.referrer === "" && r.header === null, JSON.stringify(r ?? seen));
+}
+for (const t of (await (await fetch(`${CDP}/json/list`)).json()).filter((t) => t.url.startsWith(land))) await fetch(`${CDP}/json/close/${t.id}`);
+site.close();
+site.closeAllConnections?.();
 server.close();
 server.closeAllConnections?.();
 

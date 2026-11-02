@@ -75,6 +75,7 @@ export function actionEl(action, cls) {
   if (!app) {
     const a = el("a", cls);
     a.href = action.options.url;
+    a.rel = "noopener noreferrer"; // the site learns nothing of us (also <meta name="referrer"> in newtab.html)
     if (action.options.newTab) a.target = "_blank";
     return a;
   }

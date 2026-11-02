@@ -61,6 +61,7 @@ function showFlyout(a, action) {
   const link = action.kind === "open" && !appOf(action);
   if (link) fly.href = action.options.url;
   else fly.removeAttribute("href");
+  fly.rel = "noopener noreferrer";
   if (link && action.options.newTab) fly.target = "_blank";
   else fly.removeAttribute("target");
   fly.textContent = "";
