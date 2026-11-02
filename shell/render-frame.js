@@ -1,4 +1,6 @@
-/* inside the sandboxed render frame (render.html). the page sends { id, code, text, style }; the frame evaluates
+/* inside the sandboxed render frame (render.html). handshake: the frame says { ready } when it loads and again when
+   the page asks { hello } (the frame may load before the page listens, so either side can be first).
+   the page sends { id, code, text, style }; the frame evaluates
    `code` (a function source like  x => x.slice(0, 100)), calls it with the response text and shows what it returns:
    a string with tags as HTML, any other string as text, anything else as JSON. it answers { id, ok, text, error }
    and { height } whenever its content changes size */
@@ -11,6 +13,7 @@ const looksLikeHtml = (s) => /<[a-z!/][^>]*>/i.test(s);
 
 addEventListener("message", async (e) => {
   if (e.source !== parent) return;
+  if (e.data?.hello) return send({ ready: true });
   const { id, code, text, style } = e.data ?? {};
   Object.assign(document.body.style, style ?? {});
   document.body.className = "";

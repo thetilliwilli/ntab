@@ -195,6 +195,7 @@ export function initRequestDialog() {
   for (const b of $("req-tabs").children) b.addEventListener("click", () => setTab(b.dataset.tab));
   setTab("render");
   addEventListener("message", onFrameMessage);
+  frame().contentWindow.postMessage({ hello: true }, "*"); // in case the frame loaded before we listened
   $("req-copy").addEventListener("click", async () => {
     await navigator.clipboard.writeText(copyText());
     $("req-note").textContent = "copied";
