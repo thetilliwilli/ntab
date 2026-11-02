@@ -59,9 +59,10 @@ save/session model, and `shell/apps.js` for the app contract.
 - Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. Kinds: `open`
   `{url, newTab}` (`#/<app id>` opens an app, anything else is a web address) and `request`
   `{url, method, headers, body, render}` (shows the response as text, JSON pretty-printed; no images or other binary
-  rendering, the user wants text answers). `render` is a JS function the user types (body text → HTML or text,
-  default `x => x`), shown on the default "render" tab, the response itself on "raw"; it runs only in the
-  sandboxed frame `shell/render.html` (MV3 forbids eval elsewhere); its messages are data, never trusted. Future features are new kinds. One list in `rank` order drives home
+  rendering, the user wants text answers). `render` is a JS function the user types, `w => …` with
+  `w.document` (the response parsed by DOMParser), `w.text`, `w.json`, `w.url`; default `w => w.text`; its result
+  (HTML or text) is on the default "render" tab, the response itself on "raw". It runs only in the sandboxed frame
+  `shell/render.html` (MV3 forbids eval elsewhere); its messages are data, never trusted. Future features are new kinds. One list in `rank` order drives home
   and the sidebar, no groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full
   editor (✎); the editor's ⚙ opens the same form for a row. Right-click a tile or sidebar icon: Edit (the form),
   Delete (no confirmation, like notes).
@@ -107,7 +108,8 @@ were considered and declined, keep it dependency-free):
   with `stub.js` injected before `main.js`), serves it on `localhost:8765` and starts headless Chrome with CDP on
   port 9333. Re-run the copy after editing sources (or kill the server/Chrome and run it again).
 - `test/cdp.mjs` has helpers (`newPage`, `closeTab`, `ev`, `type`, `click`, `shot`, `ok`, `inDb`, `dbAll`,
-  `resetData`, `actionList`, `openApp`); `test/example.mjs` is a smoke test, `notes`, `tracker`, `board` and `data`
+  `resetData`, `actionList`, `openApp`); `test/extension.mjs` runs the real unpacked extension (its own headless
+  Chrome over a DevTools pipe) for what the localhost page can't show (CSP, the sandboxed render frame); `test/example.mjs` is a smoke test, `notes`, `tracker`, `board` and `data`
   (backup, import, reminder, routes, actions editor) cover the rest (`node test/<name>.mjs`, `SHOTS=dir` for
   screenshots; Node 22+ for the global WebSocket). A page must load once before `inDb` (it creates the database);
   `resetData()` empties it and sets the actions, reload afterwards.

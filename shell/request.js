@@ -37,10 +37,12 @@ function setTab(t) {
 }
 
 const copyText = () => (tab === "render" ? rendered : fullBody);
+/* the text of what the render tab shows (test/extension.mjs reads it: the frame is out of its reach) */
+export const renderedText = () => rendered;
 const copyButton = () => ($("req-copy").hidden = !!ctrl || !copyText());
 
 /* shows `text` through the action's render function in the frame; null clears it */
-function render(text) {
+function render(text, type = "") {
   rendered = "";
   const id = ++renderId;
   clearTimeout(renderTimer);
@@ -49,6 +51,8 @@ function render(text) {
     id,
     code: text == null ? "() => ''" : current.options.render || DEFAULT_RENDER,
     text: text ?? "",
+    type,
+    url: current.options.url,
     style: { color: css.color, background: css.getPropertyValue("--surface"), font: `13px/1.5 ${css.getPropertyValue("--ui")}` },
   };
   if (frameReady) frame().contentWindow.postMessage(job, "*");
@@ -141,7 +145,7 @@ async function send() {
         ? `showing the first ${fmtSize(MAX_SHOWN)}; Copy takes all of it`
         : text || method === "HEAD" ? "" : size ? `binary response (${type}), not shown` : "empty response",
     });
-    if (text) render(text); // the body as it came, not pretty-printed
+    if (text) render(text, type); // the body as it came, not pretty-printed
   } catch (e) {
     if (mine !== ctrl) return;
     const reason = mine.signal.reason;

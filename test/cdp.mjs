@@ -51,6 +51,12 @@ export async function newPage() {
   const target = await (await fetch(`${CDP}/json/new?${PAGE}`, { method: "PUT" })).json();
   const P = await connect(target.webSocketDebuggerUrl);
   P.id = target.id;
+  // close() closes the tab too: tabs left over from earlier runs (with their frames) slow the browser down
+  const closeWs = P.close;
+  P.close = () => {
+    closeWs();
+    return fetch(`${CDP}/json/close/${target.id}`).catch(() => {});
+  };
   return P;
 }
 

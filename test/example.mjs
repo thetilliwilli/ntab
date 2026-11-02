@@ -17,5 +17,5 @@ await sleep(800);
 const notes = await P.ev(dbAll("notes"));
 ok("typed text saved as note “new1”", notes.length === 1 && notes[0].text === "hello" && notes[0].name === "new1", JSON.stringify(notes));
 console.log("errors:", P.errors);
-P.close();
+await P.close();
 process.exit(0);

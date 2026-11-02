@@ -136,5 +136,5 @@ await sleep(300);
 ok("restored: tile back", await q(P, `document.querySelectorAll('.tr-tile').length === 3`));
 ok("title Tracker", (await q(P, `document.title`)) === "Tracker");
 console.log("errors:", P.errors, Q.errors);
-P.close(); Q.close();
+await P.close(); await Q.close();
 process.exit(0);

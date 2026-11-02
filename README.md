@@ -105,16 +105,20 @@ An action is a button of some `kind` with its `options`:
 - `open` `{ url, newTab }` — a route `#/<app id>` opens an app (`#/notes`, `#/tracker`, `#/board`), anything else
   is a web address;
 - `request` `{ url, method, headers, body, render }` — sends an HTTP request and shows the response in a window:
-  status, time, type, size and two tabs. **render** (the default) shows what `render` makes of the body: a
-  JavaScript function as text, e.g. `x => JSON.parse(x).ip` or ``x => `<h1>${x.slice(0, 40)}</h1>` ``, that gets
-  the body as it came and returns HTML (a string with tags) or text; new requests get `x => x`. **raw** has the
+  status, time, type, size and two tabs. **render** (the default) shows what `render` returns: a JavaScript
+  function as text of `w`, a window-like object: `w.document` is the response parsed as a page (DOMParser: its
+  scripts don't run, nothing loads), `w.text` the body as it came, `w.json` the body as JSON, `w.url`. E.g.
+  `w => w.document.querySelector("table").outerHTML`, `w => w.document.links.length`, `w => w.json.ip`,
+  ``w => `<h1>${w.document.title}</h1>` ``. An element (or a list) is shown as its HTML, a string with tags as
+  HTML, anything else as text; returning `w` shows the body. New requests get `w => w.text`. **raw** has the
   response headers (folded) and the body as text, JSON pretty-printed (binary bodies are only described).
   **Repeat**, **Copy** (of the open tab), **Cancel**, a 30 s timeout. `headers` is `{ "Name": "value" }`, `body` a
   string (not sent with GET and HEAD).
 
   MV3 lets only a sandboxed page evaluate code from a string, so the function runs in `shell/render.html`
   (`"sandbox"` in the manifest; not a permission): an iframe with its own origin, no `chrome.*` and no access to
-  the extension's data, links open in a new tab.
+  the extension's data, links open in a new tab. (A real window with the response would need a frame inside that
+  frame, and a frame inside a sandboxed page gets an origin of its own, out of reach; hence DOMParser.)
 
   Without a host permission the browser applies CORS, so only services that allow it answer (e.g.
   `https://api.ipify.org?format=json`). When a request fails that way, the window offers **Allow access to

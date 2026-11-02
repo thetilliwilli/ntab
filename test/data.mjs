@@ -135,6 +135,6 @@ await sleep(400);
 ok("Delete from the sidebar", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
 
 console.log("errors:", P.errors, Q.errors);
-P.close();
-Q.close();
+await P.close();
+await Q.close();
 process.exit(0);

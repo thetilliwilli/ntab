@@ -32,7 +32,7 @@ const add = async ({ name, url, method = "GET", headers = "", body = "", render 
 const run = async (name, wait = 1500) => {
   await P.ev(`[...document.querySelectorAll('#home-grid .tile')].find((t) => t.querySelector('.tile-name').textContent === ${JSON.stringify(name)}).click()`);
   // until the answer is in (the local test server is sometimes slow), then a moment for the render frame
-  for (let t = 0; t < 10e3 && (await P.ev(`document.getElementById('req-status').textContent.endsWith('…')`)); t += 100) await sleep(100);
+  for (let t = 0; t < 40e3 && (await P.ev(`document.getElementById('req-status').textContent.endsWith('…')`)); t += 100) await sleep(100);
   await sleep(Math.min(wait, 500));
   return P.ev(`({ open: document.getElementById('req').open, status: document.getElementById('req-status').textContent,
     meta: document.getElementById('req-meta').textContent, body: document.getElementById('req-body').textContent,
@@ -44,7 +44,7 @@ async function frameHtml() {
   // an out-of-process iframe: its own DevTools target
   const t = (await (await fetch(`${CDP}/json/list`)).json()).find((x) => x.type === "iframe" && x.parentId === P.id && x.url.endsWith("/shell/render.html"));
   const F = await connect(t.webSocketDebuggerUrl);
-  const html = await F.ev("document.body.innerHTML");
+  const html = await F.ev("document.getElementById('out').innerHTML");
   F.close();
   return html;
 }
@@ -54,22 +54,25 @@ await P.ev(`document.querySelector('.tile-add').click()`);
 await sleep(100);
 ok("open kind: no method/headers/body", await P.ev(`document.getElementById('add-method').hidden && document.getElementById('add-headers').hidden && !document.getElementById('add-blank').closest('label').hidden`));
 await P.ev(`document.querySelector('#add-kind [data-kind=request]').click()`);
-ok("render starts as x => x", (await P.ev(`document.getElementById('add-render').value`)) === "x => x");
+ok("render starts as w => w.text", (await P.ev(`document.getElementById('add-render').value`)) === "w => w.text");
 ok("request kind: method/headers/body, no new tab", await P.ev(`!document.getElementById('add-method').hidden && !document.getElementById('add-body').hidden && document.getElementById('add-blank').closest('label').hidden`));
 await P.ev(`document.getElementById('add-url').value = 'https://x.test'; document.getElementById('add-headers').value = 'no colon here'; document.getElementById('add-form').requestSubmit()`);
 await sleep(200);
 ok("bad header line refused", /headers, line 1/.test(await P.ev(`document.getElementById('add-msg').textContent`)));
 await P.ev(`document.getElementById('add').close()`);
 
-await add({ name: "My IP", url: "https://api.ipify.org?format=json", headers: "Accept: application/json", render: "x => `<b>${JSON.parse(x).ip}</b>`" });
-await add({ name: "Html", url: "http://localhost:8765/stub.js", render: "x => '<h1>' + x.split('\\n').length + ' lines</h1>'" });
-await add({ name: "Broken", url: "http://localhost:8765/stub.js", render: "x => x.nope()" });
+await add({ name: "My IP", url: "https://api.ipify.org?format=json", headers: "Accept: application/json", render: "w => `<b>${w.json.ip}</b>`" });
+await add({ name: "Html", url: "http://localhost:8765/stub.js", render: "w => '<h1>' + w.text.split('\\n').length + ' lines</h1>'" });
+await add({ name: "Pick", url: "http://localhost:8765/test.html", render: "w => w.document.querySelector('#req-tabs').outerHTML" });
+await add({ name: "Count", url: "http://localhost:8765/test.html", render: "w => w.document.querySelectorAll('dialog').length" });
+await add({ name: "Old", url: "http://localhost:8765/stub.js", render: "x => x" });
+await add({ name: "Broken", url: "http://localhost:8765/stub.js", render: "w => w.nope()" });
 await add({ name: "Echo", url: "http://localhost:8765/", method: "POST", headers: "Content-Type: application/json\nX-Test: 1", body: '{"a":1}' });
 await add({ name: "Text", url: "http://localhost:8765/stub.js" });
 await add({ name: "Down", url: "http://localhost:1/" });
 const recs = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
 const echo = recs.find((a) => a.name === "Echo");
-ok("request record", echo.kind === "request" && echo.options.method === "POST" && echo.options.headers["X-Test"] === "1" && echo.options.body === '{"a":1}' && echo.options.render === "x => x" && echo.rank === 4, JSON.stringify(echo));
+ok("request record", echo.kind === "request" && echo.options.method === "POST" && echo.options.headers["X-Test"] === "1" && echo.options.body === '{"a":1}' && echo.options.render === "w => w.text" && echo.rank === 7, JSON.stringify(echo));
 
 // JSON from a public service
 let r = await run("My IP", 4000);
@@ -89,6 +92,18 @@ ok("opens on the render tab again", await P.ev(`!document.getElementById('req-pa
 html = await frameHtml();
 ok("render returns HTML", /^<h1>\d+ lines<\/h1>$/.test(html), html + " " + JSON.stringify(r));
 await close();
+// the response as a document: pick an element, count elements; returning the window itself shows the text
+r = await run("Pick");
+html = await frameHtml();
+ok("querySelector(...).outerHTML rendered", /^<div class="seg req-tabs" id="req-tabs"/.test(html) && html.includes(">raw</button>"), html.slice(0, 120));
+r = await run("Count");
+html = await frameHtml();
+ok("a number as text", /^\d+$/.test(html) && +html >= 5, html);
+await close();
+r = await run("Old");
+html = await frameHtml();
+ok("x => x (the window) shows the body", html.startsWith("// test stub"), html.slice(0, 60));
+await close();
 r = await run("Broken");
 ok("broken render: error shown", /^render failed: .*nope/.test(r.note) && /render: /.test(await frameHtml()), r.note);
 await close();
@@ -97,7 +112,7 @@ await close();
 r = await run("Text");
 ok("text body", r.status.startsWith("200") && r.body.startsWith("// test stub"), r.status);
 html = await frameHtml();
-ok("x => x shows the text as text", html.startsWith("// test stub") && !html.includes("<"), html.slice(0, 80));
+ok("w => w.text shows the text as text", html.startsWith("// test stub") && !html.includes("<"), html.slice(0, 80));
 await close();
 r = await run("Echo");
 ok("POST: error status shown", r.status.startsWith("501") && (await P.ev(`document.getElementById('req-status').classList.contains('err')`)), r.status);
@@ -123,9 +138,9 @@ await close();
 // the editor: a request row has the method button; ⚙ edits it in the form
 await P.ev(`document.getElementById('links-edit').click()`);
 await sleep(200);
-ok("editor row shows the method", (await P.ev(`[...document.querySelectorAll('.sc-method')].map((b) => b.textContent).join()`)) === "GET,GET,GET,POST,GET,GET");
+ok("editor row shows the method", (await P.ev(`[...document.querySelectorAll('.sc-method')].map((b) => b.textContent).join()`)) === "GET,GET,GET,GET,GET,GET,POST,GET,GET");
 if (SHOTS) await P.shot(`${SHOTS}/request-editor.png`);
-await P.ev(`document.querySelectorAll('.sc-method')[3].click()`);
+await P.ev(`document.querySelectorAll('.sc-method')[6].click()`);
 await sleep(100);
 ok("⚙ opens the form with the request", await P.ev(`document.getElementById('add').open && document.getElementById('add-method').value === 'POST' && document.getElementById('add-headers').value === 'Content-Type: application/json\\nX-Test: 1'`));
 await P.ev(`document.getElementById('add-method').value = 'PUT'; document.getElementById('add-form').requestSubmit()`);
@@ -135,5 +150,5 @@ await sleep(400);
 ok("edited and saved", (await P.ev(dbAll("actions"))).find((a) => a.name === "Echo").options.method === "PUT");
 
 console.log("errors:", P.errors);
-P.close();
+await P.close();
 process.exit(0);

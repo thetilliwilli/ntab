@@ -110,5 +110,5 @@ await sleep(800);
 ok("text typed right before closing the tab is saved", (await byName(Q, "Shopping list"))?.text.includes("!"), JSON.stringify((await byName(Q, "Shopping list"))?.text));
 
 console.log("errors:", P.errors, Q.errors);
-Q.close();
+await Q.close();
 process.exit(0);

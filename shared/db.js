@@ -14,7 +14,8 @@
  *                     icon: an uploaded image (data URL) or null (automatic). kinds and their options:
  *                     "open" { url, newTab }  url "#/<app id>" opens an app, anything else is a web address
  *                     "request" { url, method, headers: { name: value }, body, render }  render: JS function source
- *                       (body text -> HTML or text), run in the sandboxed shell/render.html; missing = "x => x"
+ *                       (w => HTML or text; w.document, w.text, w.json), run in the sandboxed shell/render.html;
+ *                       missing = "w => w.text"
  *   meta            key -> value (not exported, except settings):
  *                     settings { theme, fontSize, wrap, tabSize }
  *                     session  { tabs, active, views, edited, created }  the notes tabs of the page used last

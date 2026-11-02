@@ -73,14 +73,20 @@ const run = (url, render) =>
     for (let i = 0; i < 50 && !document.getElementById("req-status").textContent.startsWith("200"); i++) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 700));
     return { status: document.getElementById("req-status").textContent, note: document.getElementById("req-note").textContent,
-      height: parseFloat(document.getElementById("req-frame").style.height), rendered: !document.getElementById("req-copy").hidden };
+      height: parseFloat(document.getElementById("req-frame").style.height), rendered: !document.getElementById("req-copy").hidden,
+      copy: await import("./shell/request.js").then((m) => m.renderedText?.()) };
   })()`);
 
-let r = await run(`chrome-extension://${ext}/manifest.json`, "x => JSON.parse(x).short_name");
+let r = await run(`chrome-extension://${ext}/manifest.json`, "w => w.json.short_name");
 ok("render frame answers (text)", r.status.startsWith("200") && r.rendered, JSON.stringify(r));
 const page = `<html><head><meta name="x"><link rel="stylesheet" href="a.css"></head><body>${"<div class=row><a href='/x'>match</a> <img src='p.png'></div>".repeat(500)}</body></html>`;
-r = await run(`data:text/html;base64,${Buffer.from(page).toString("base64")}`, "x => x");
-ok("a whole HTML page through x => x", r.rendered && r.height > 1000, JSON.stringify(r));
+const url = `data:text/html;base64,${Buffer.from(page).toString("base64")}`;
+r = await run(url, "w => w");
+ok("a whole HTML page (the window itself: its text)", r.rendered && r.height > 1000, r.copy.slice(0, 40));
+r = await run(url, "w => w.document.links.length + ' links, ' + w.document.body.innerText.slice(0, 5)");
+ok("the response as a document in the sandbox", r.rendered && r.copy === "500 links, match", JSON.stringify(r));
+r = await run(url, "w => w.document.querySelector('.row').outerHTML");
+ok("an element picked from it, rendered", r.rendered && r.copy.trim() === "match", JSON.stringify(r));
 
 console.log("errors:", errors);
 quit(0);

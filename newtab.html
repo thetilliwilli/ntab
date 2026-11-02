@@ -190,9 +190,12 @@
         <textarea id="add-body" class="url" data-for="request" rows="4" spellcheck="false" placeholder="not sent with GET and HEAD"></textarea>
         <label for="add-render" data-for="request">Render</label>
         <div class="add-render" data-for="request">
-          <textarea id="add-render" class="url" rows="3" spellcheck="false" placeholder="x => x"></textarea>
-          <span class="hint">A JavaScript function: gets the response body as text, returns what to show: HTML or text.
-            e.g. <code>x =&gt; JSON.parse(x).ip</code>, <code>x =&gt; `&lt;h1&gt;${x.slice(0, 40)}&lt;/h1&gt;`</code></span>
+          <textarea id="add-render" class="url" rows="3" spellcheck="false" placeholder="w => w.text"></textarea>
+          <span class="hint">A JavaScript function of <code>w</code>, a window with the response loaded as a page
+            (its scripts don't run): <code>w.document</code>, <code>w.text</code> (the body as it came),
+            <code>w.json</code>. What it returns is shown: an element or HTML as HTML, anything else as text. e.g.
+            <code>w =&gt; w.document.querySelector("table").outerHTML</code>, <code>w =&gt; w.json.ip</code>,
+            <code>w =&gt; w.document.links.length</code></span>
         </div>
         <label for="add-name">Name</label>
         <input id="add-name" type="text" spellcheck="false" autocomplete="off">

@@ -80,5 +80,5 @@ ok("concurrent creates: both saved", (await tasks(P)).length === 4, String((awai
 if (SHOTS) await P.shot(`${SHOTS}/board.png`);
 ok("title Board", (await P.ev(`document.title`)) === "Board");
 console.log("errors:", P.errors, Q.errors);
-P.close(); Q.close();
+await P.close(); await Q.close();
 process.exit(0);
