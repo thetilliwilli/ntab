@@ -14,7 +14,7 @@ await P.ev(resetData());
 await P.send("Page.reload");
 await sleep(1000);
 await openApp(P, "board");
-ok("board open with 4 columns", await P.ev(`document.querySelectorAll('.bd-col').length === 4`));
+ok("board open with 5 columns, planned after new", await P.ev(`[...document.querySelectorAll('.bd-col')].map((c) => c.dataset.status).join() === 'new,planned,work,hold,done'`));
 
 const create = async (name, desc, status = "new") => {
   await P.ev(`document.getElementById('bd-new').click()`);
@@ -36,6 +36,15 @@ ok("dialog shows the task", await P.ev(`document.getElementById('bd-name').value
 await P.ev(`document.getElementById('bd-status').value = 'hold'; document.getElementById('bd-task-form').requestSubmit()`);
 await sleep(300);
 ok("moved to hold via the dialog", JSON.stringify(await col(P, "hold")) === '["Write report"]');
+await P.ev(`document.querySelector('.bd-hold .bd-card').click()`);
+await sleep(150);
+await P.ev(`document.getElementById('bd-status').value = 'planned'; document.getElementById('bd-task-form').requestSubmit()`);
+await sleep(300);
+ok("moved to planned via the dialog", JSON.stringify(await col(P, "planned")) === '["Write report"]');
+await P.ev(`document.querySelector('.bd-planned .bd-card').click()`);
+await sleep(150);
+await P.ev(`document.getElementById('bd-status').value = 'hold'; document.getElementById('bd-task-form').requestSubmit()`);
+await sleep(300);
 
 // drag "Call bank" (new) to the work column, before "Fix bug #12"
 const from = await rect(P, ".bd-new .bd-card");

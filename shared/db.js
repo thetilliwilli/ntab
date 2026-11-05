@@ -9,7 +9,7 @@
  *                     icon: one emoji; archivedAt: null = active, a time = archived (no tile, entries stay)
  *   trackerEntries  { id, typeId, at, endAt? }
  *                     an event has no endAt; an activity has endAt: null while it runs, the end time when finished
- *   tasks           { id, name, description, status: "new" | "work" | "hold" | "done", rank, createdAt, updatedAt }
+ *   tasks           { id, name, description, status: "new" | "planned" | "work" | "hold" | "done", rank, createdAt, updatedAt }
  *   actions         { id, name, icon, rank, kind, options }
  *                     icon: an uploaded image (data URL) or null (automatic). kinds and their options:
  *                     "open" { url, newTab }  url "#/<app id>" opens an app, anything else is a web address

@@ -1,4 +1,4 @@
-/* the Board app: a kanban board (new / work / hold / done) */
+/* the Board app: a kanban board (new / planned / work / hold / done) */
 
 import * as model from "./model.js";
 import { $, el, fmtTime } from "../../shared/util.js";

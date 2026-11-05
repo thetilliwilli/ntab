@@ -4,8 +4,8 @@
 
 import * as db from "../../shared/db.js";
 
-export const STATUSES = ["new", "work", "hold", "done"];
-export const STATUS_NAMES = { new: "New", work: "Work", hold: "Hold", done: "Done" };
+export const STATUSES = ["new", "planned", "work", "hold", "done"];
+export const STATUS_NAMES = { new: "New", planned: "Planned", work: "Work", hold: "Hold", done: "Done" };
 
 const subs = new Set();
 let tasks = []; // by rank

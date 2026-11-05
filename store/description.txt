@@ -38,7 +38,7 @@ TRACKER
 • Clear the whole log in one go, your event types stay
 
 TASK BOARD
-• Columns New, Work, Hold, Done
+• Columns New, Planned, Work, Hold, Done
 • Tasks with a name and a description
 • Drag cards between columns, or change the status in the task window
 
@@ -60,7 +60,7 @@ PRIVACY
 WHAT'S NEW
 • NTab as a web app: thetilliwilli.github.io/ntab
 • Tracker: log events with one tap, time activities
-• Task board with New / Work / Hold / Done
+• Task board with New / Planned / Work / Hold / Done
 • Request tiles: send an HTTP request, see the answer
 • Everything is now kept in the browser, no folder to choose; backup export and import (adds, never deletes)
 • Your old note files: Data → Import text files. The site list starts over from the defaults

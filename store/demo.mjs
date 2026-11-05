@@ -122,7 +122,7 @@ export const tasks = [
   { name: "Prepare slides for Thursday's demo", description: "10 slides max, live demo of the new onboarding", status: "work" },
   { name: "Fix flaky login test on CI", description: "fails about once in 20 runs, timing issue in the mock server", status: "work" },
   { name: "Book the car service", description: "Saturday morning if possible", status: "new" },
-  { name: "Renew passport", description: "photos first", status: "new" },
+  { name: "Renew passport", description: "photos first", status: "planned" },
   { name: "Order a birthday gift for Kate", description: "", status: "new" },
   { name: "Conference budget", description: "waiting for Mark's answer", status: "hold" },
   { name: "Reply to Anna about the Q4 roadmap", description: "", status: "done" },

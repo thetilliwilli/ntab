@@ -6,7 +6,7 @@ screen of large action tiles and a narrow sidebar with the same actions. Actions
 - **Notes** — a tabbed plain-text notepad (think Notepad++), saved as you type, open tabs survive restarts;
 - **Tracker** — tap a tile to log that something happened (smoked, workout, called mom…), or start an
   activity that runs until you finish it;
-- **Board** — a kanban board: tasks in New / Work / Hold / Done.
+- **Board** — a kanban board: tasks in New / Planned / Work / Hold / Done.
 
 All data lives in the browser (IndexedDB); a backup is one JSON file. No dependencies, no build step.
 Requires Chrome 122+.
@@ -104,7 +104,7 @@ shows a reminder with **Export backup** and **Later** (3 days).
 
 ## Board
 
-Columns New / Work / Hold / Done. **+ task** (or `+` in New) creates a task with a name and a description;
+Columns New / Planned / Work / Hold / Done. **+ task** (or `+` in New) creates a task with a name and a description;
 click a card to edit it, change its status or delete it. Drag cards between and within columns (the mouse
 anywhere on a card, a finger by its `⋮⋮` handle). A move is one transaction that renumbers the `rank` of the
 cards it shifts.

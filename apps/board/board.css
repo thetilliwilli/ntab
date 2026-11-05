@@ -1,4 +1,4 @@
-/* the Board app: four columns of task cards, drag and drop, task dialog */
+/* the Board app: five columns of task cards, drag and drop, task dialog */
 
 #app-board {
   position: relative;
@@ -23,7 +23,7 @@
 
 .bd-cols {
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  grid-template-columns: repeat(5, minmax(200px, 1fr));
   gap: 12px;
   min-height: 0;
   padding: 12px;

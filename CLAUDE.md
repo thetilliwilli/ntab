@@ -57,7 +57,7 @@ save/session model, and `shell/apps.js` for the app contract.
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
   never deleted; undo toast, day log with start and finish time edit. "Delete all log entries…" (edit types
   dialog, confirm + undo) empties the log, types stay.
-- Board: fixed columns new / work / hold / done; drag on pointer events (works with touch), status also in the
+- Board: fixed columns new / planned / work / hold / done; drag on pointer events (works with touch), status also in the
   task dialog.
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.
