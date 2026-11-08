@@ -5,7 +5,7 @@
    the origin (thetilliwilli.github.io) is shared with other Pages sites: only our own "ntab-" caches are touched */
 
 // generated: start
-const VERSION = "1bf66f419a49";
+const VERSION = "dd353e4066cf";
 const FILES = [
   "./",
   "index.html",

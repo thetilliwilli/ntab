@@ -40,4 +40,6 @@ Site icons are fetched from Google's favicon service; offline, the tiles show le
 - A new permission with a warning disables the extension for existing users until they accept it.
 - Users keep the data of the previous version: if a store or a record format changes, the new version has to
   convert it (raise `VERSION` in `shared/db.js`, convert in `onupgradeneeded`) and accept older backup formats
-  in `shell/data.js`, or their data is lost.
+  in `shell/data.js`, or their data is lost. (Data model 2, the database `ntab2`, started over on purpose: 2.2 data
+  comes over through `scripts/migrate-backup.mjs`; see CLAUDE.md.)
+- The sync server (`server/`) and `scripts/` are not in the package (`git archive` takes only the listed folders).

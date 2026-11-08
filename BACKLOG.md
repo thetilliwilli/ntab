@@ -4,7 +4,7 @@ Plans and ideas that are not decided rules yet (those live in CLAUDE.md). Remove
 
 ## Next
 
-- **Sync server (in progress)**: one Node server (`server/`, never in the extension or the PWA) that every client
+- **Sync server (implemented; the user's steps 3–10 remain)**: one Node server (`server/`, never in the extension or the PWA) that every client
   (extension, PWA, web page) syncs all data with, in real time; offline first: a client works without it (or before
   one is set) and sends everything when it connects. Decided:
   - data model 2 (new database `ntab2`, the 2.2 `ntab` is left as it is): every record of every store has a uuid `id`
@@ -19,7 +19,7 @@ Plans and ideas that are not decided rules yet (those live in CLAUDE.md). Remove
     `*`), `--cert`/`--key` (a self-signed certificate the user makes once with openssl and trusts on each device), `--data`.
   - migration of the user's 2.2 data: `scripts/migrate-backup.mjs` turns format 1 backups (several devices) into one
     format 2 file to import.
-  - steps: (1) user exports backups ✓ (2) implementation (3) user: certificate, server (4) user: trust the certificate on
+  - steps: (1) user exports backups ✓ (2) implementation ✓ (3) user: certificate, server (4) user: trust the certificate on
     the laptop (5) user: migrate-backup (6) user: unpacked extension, import, connect (7) push (8) phone: certificate,
     connect, Replace this device (9) checks (10) store release later.
 

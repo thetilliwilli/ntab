@@ -48,7 +48,5 @@ export function updateSettings(patch) {
 window.addEventListener("pagehide", flush);
 document.addEventListener("visibilitychange", () => document.hidden && flush());
 
-db.onChange(({ store, local, remote }) => {
-  if (store !== "settings" || (local && !remote)) return;
-  loadSettings().catch(console.error);
-});
+/* any change: from another page, another device, an import (our own writes read back the same values) */
+db.onChange(({ store }) => store === "settings" && loadSettings().catch(console.error));

@@ -19,6 +19,7 @@ import path from "node:path";
 import zlib from "node:zlib";
 import { connect, sleep } from "../test/cdp.mjs";
 import * as demo from "../store/demo.mjs";
+import { SETTING_IDS, DEVICE_IDS } from "../shared/model.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const OUT = path.join(ROOT, "ignore/publish");
@@ -178,37 +179,37 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
   const at = (ago) => now - ago * 60000;
   const noteId = (name) => `note-${name}`;
   const typeId = (key) => `type-${key}`;
+  const settings = { theme, fontSize: 14, wrap, tabSize: 2 };
   const data = {
-    settings: { theme, fontSize: 14, wrap, tabSize: 2 },
+    settings: Object.entries(settings).map(([name, value]) => ({ id: SETTING_IDS[name], name, value, updatedAt: now })),
     actions: demo.actions.map(({ name, url }, rank) => ({
-      id: `action-${rank}`, name, icon: icons[url] ?? null, rank, kind: "open", options: { url, newTab: false },
+      id: `action-${rank}`, name, icon: icons[url] ?? null, rank, kind: "open", options: { url, newTab: false }, updatedAt: now,
     })),
     notes: Object.entries(demo.notes).map(([name, text], i) => ({ id: noteId(name), name, text, createdAt: at(9000 + i), updatedAt: at(60 + i * 90) })),
     trackerTypes: demo.trackerTypes.map(({ key, name, icon, kind }, rank) => ({
       id: typeId(key), name, icon, kind, rank, archivedAt: null, createdAt: at(20000), updatedAt: at(20000),
     })),
     trackerEntries: demo.trackerEntries.map(({ type, ago, minutes }, i) => {
-      const e = { id: `entry-${i}`, typeId: typeId(type), at: at(ago) };
+      const e = { id: `entry-${i}`, typeId: typeId(type), at: at(ago), updatedAt: at(ago) };
       if (minutes !== undefined) e.endAt = minutes === null ? null : at(ago - minutes);
       return e;
     }),
     tasks: demo.tasks.map((t, rank) => ({ id: `task-${rank}`, ...t, rank, createdAt: now - (rank + 2) * 864e5, updatedAt: now - (rank + 1) * 36e5 })),
   };
-  const session = { tabs: demo.openTabs.map(noteId), active: noteId(active), views: {}, edited: [], created: [] };
+  const session = { id: DEVICE_IDS.session, name: "session", tabs: demo.openTabs.map(noteId), active: noteId(active), views: {}, edited: [], created: [], updatedAt: now };
+  const backup = { id: DEVICE_IDS.backup, name: "backup", lastExportAt: now, remindAt: now + 864e6, updatedAt: now }; // no reminder on the screenshots
   await P.ev(`(async () => {
     localStorage.clear();
     sessionStorage.clear();
     localStorage.setItem("theme", ${JSON.stringify(theme)});
     const data = ${JSON.stringify(data)};
     const req = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
-    const db = await req(indexedDB.open("ntab"));
+    const db = await req(indexedDB.open("ntab2"));
     const t = db.transaction([...db.objectStoreNames], "readwrite");
     for (const name of db.objectStoreNames) t.objectStore(name).clear();
-    for (const [name, records] of Object.entries(data)) if (name !== "settings") records.forEach((r) => t.objectStore(name).put(r));
-    const meta = t.objectStore("meta");
-    meta.put(data.settings, "settings");
-    meta.put(${JSON.stringify(session)}, "session");
-    meta.put({ lastExportAt: Date.now(), remindAt: Date.now() + 864e6 }, "backup"); // no reminder on the screenshots
+    for (const [name, records] of Object.entries(data)) records.forEach((r) => t.objectStore(name).put(r));
+    t.objectStore("device").put(${JSON.stringify(session)});
+    t.objectStore("device").put(${JSON.stringify(backup)});
     await new Promise((ok) => (t.oncomplete = ok));
     db.close();
   })()`);

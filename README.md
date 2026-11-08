@@ -8,7 +8,8 @@ screen of large action tiles and a narrow sidebar with the same actions. Actions
   activity that runs until you finish it;
 - **Board** — a kanban board: tasks in New / Planned / Work / Hold / Done.
 
-All data lives in the browser (IndexedDB); a backup is one JSON file. No dependencies, no build step.
+All data lives in the browser (IndexedDB) and works offline; your own small server can sync it between your devices
+in real time (optional, see [Sync server](#sync-server)); a backup is one JSON file. No dependencies, no build step.
 Requires Chrome 122+.
 
 ## Install
@@ -30,8 +31,8 @@ open it in any browser, or install it as an app (the install icon in Chrome's ad
 
 - `platform/web.js` stands in for the extension: no favicon cache (tiles show letters or uploaded icons), and no
   access to other sites, so request actions work only with servers that allow CORS (and only `https://` ones).
-- Its data is its own (another origin than the extension): move it with a backup. The page asks the browser to keep
-  its storage persistent.
+- Its data is its own (another origin than the extension): move it with a backup, or connect both to the sync server.
+  The page asks the browser to keep its storage persistent.
 - Offline: `sw.js` caches every file per version and starts from the cache. `VERSION` and `FILES` in it are
   generated: run `node scripts/sw.mjs` after changing any file (`--check` tells whether it is stale; `test/web.mjs`
   checks it). A new version is downloaded in full in the background. The page looks for one whenever it comes back to the
@@ -51,24 +52,97 @@ set, so you can tell whether a phone has the latest). An app loads its data when
 
 ## Data
 
-One IndexedDB database, `ntab`; the model (stores and fields) is documented at the top of `shared/db.js`.
-The same rules everywhere: every record has a uuid `id`, labels are `name`, times are milliseconds in `…At`
-fields, order is a numeric `rank`, the sort of a record is `kind`. Every write is one transaction, and every page
-of the browser hears about it (BroadcastChannel), so open pages stay in sync.
+One IndexedDB database, `ntab2` (data model 2); the model (stores and fields) is documented at the top of
+`shared/db.js`. The same rules everywhere: every record of every store has a uuid `id` and `updatedAt` (its last
+change), labels are `name`, times are milliseconds in `…At` fields, order is a numeric `rank` (fractional: moving a
+record changes only that record), the sort of a record is `kind`. Synced and backed up: `notes`, `trackerTypes`,
+`trackerEntries`, `tasks`, `actions`, `settings` (one record per setting); this browser only: `device` (the open note
+tabs, the backup reminder, the sync server) and `outbox` (changes the sync server hasn't got yet). Every write is one
+transaction, and every page of the browser hears about it (BroadcastChannel), so open pages stay in sync.
 
-The **Data** button in the sidebar:
+The **Data** button in the sidebar (a small square on it: green = synced, red = the sync server can't be reached):
 
+- **Sync server** — see [Sync server](#sync-server).
 - **Export backup** downloads `ntab-backup-YYYY-MM-DD.json`:
-  `{ "app": "ntab", "format": 1, "exportedAt": …, "data": { settings, notes, trackerTypes, trackerEntries, tasks, actions } }`
+  `{ "app": "ntab", "format": 2, "exportedAt": …, "data": { notes, trackerTypes, trackerEntries, tasks, actions, settings } }`
 - **Import backup…** checks the file and adds what this browser doesn't have yet (by id): nothing is deleted or
-  changed, a record that is here already stays as it is, settings stay. To restore a backup exactly: **Delete all
-  data…**, then import it.
+  changed, a record that is here already stays as it is (the untouched default actions give way to the backup's). To
+  restore a backup exactly: **Delete all data…**, then import it. Backups of NTab 2.2 (format 1): see
+  [From NTab 2.2](#from-ntab-22).
 - **Import text files…** adds every picked file as a note named like the file.
-- **Delete all data…** deletes everything NTab keeps in this browser (the database, the cached theme) after a
-  confirm and starts fresh with the default actions; other NTab pages reload.
+- **Delete all data…** deletes everything NTab keeps in this browser (the database, the 2.2 database, the cached
+  theme) after a confirm and starts fresh with the default actions; other NTab pages reload. The sync server keeps
+  its data.
 
 When the last backup is a week old (or there was none for a week) and there is something to lose, the home screen
 shows a reminder with **Export backup** and **Later** (3 days).
+
+## Sync server
+
+Optional: one small server of your own (`server/ntab-server.mjs`, Node 22.13+, no dependencies; not part of the
+extension or the web version) that all your NTab clients sync with: the extension on each computer, the web version
+on a phone, a plain browser tab. A change on one shows on the others within a second: start an activity on the
+laptop, finish it on the phone. A client works the same without it (offline, the server down, or no server set
+yet): its changes wait and go when it connects, whatever piled up meanwhile.
+
+1. **A certificate**, once. The server speaks only HTTPS, so nobody between a device and the server can read or change
+   the traffic. Make a self-signed certificate for the address the devices will use (a LAN IP, a domain, or both:
+   `subjectAltName=IP:192.168.1.10,DNS:my.domain.com`):
+
+   ```
+   openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=ntab" -addext "subjectAltName=IP:192.168.1.10" -keyout ntab-key.pem -out ntab-cert.pem
+   ```
+
+   `ntab-key.pem` stays on the server and with nobody else. Another address needs another certificate.
+2. **Run** it (the port open in the firewall; Fedora: `sudo firewall-cmd --permanent --add-port=8443/tcp && sudo firewall-cmd --reload`):
+
+   ```
+   node server/ntab-server.mjs --token <secret> --listen 0.0.0.0:8443 --cert ntab-cert.pem --key ntab-key.pem --data ./ntab-data
+   ```
+
+   - `--token` — 16+ characters (e.g. `openssl rand -hex 24`: letters and digits keep the address simple). Every
+     request must carry it (HTTP basic auth, as the user or the password); a CORS preflight is the only exception.
+   - `--listen ip:port` — default `127.0.0.1:8443` (this computer only); `0.0.0.0:8443` for every network.
+   - `--origin` — the pages allowed to call the server, comma separated, or `*` (the default), e.g.
+     `chrome-extension://<extension id>,https://thetilliwilli.github.io`. Browsers only: the token is what keeps the
+     rest out.
+   - `--data` — where its SQLite database lives (default `./ntab-data`).
+
+   It prints the certificate's SHA-256 fingerprint to compare with what a device shows.
+3. **Trust the certificate** on every device, once (without it browsers refuse the connection, and clicking through a
+   warning would accept anyone's certificate):
+   - Chrome on a computer: `chrome://certificate-manager` → Local certificates → Custom → Import `ntab-cert.pem`,
+     trusted for websites.
+   - Android: Settings → Security & privacy → More security settings → Encryption & credentials → Install a
+     certificate → CA certificate → `ntab-cert.pem`.
+
+   Check: `https://192.168.1.10:8443/` opens without a warning and, given the token as the password, says
+   "NTab sync server: OK".
+4. **Connect** each client: **Data → Sync server** `https://<token>@192.168.1.10:8443` → **Connect**. When both the
+   server and the client have data, choose **Merge** (both sets) or **Replace this device** (the client's data goes,
+   the server's comes). A page on a public site (the web version) reaching a LAN address asks once for access to the
+   local network: allow it.
+
+How it syncs (`shared/sync.js`, `server/ntab-server.mjs`): while a server is set, every change made here also goes to
+the `outbox` (deletes too). The server gives every accepted change the next number (`rev`); a client pulls what is
+newer than the last number it saw, pushes its outbox, and keeps a stream open (`/events`) that says when to pull
+again. The newer `updatedAt` always wins (two devices edited one note offline: the later edit stays). One page per
+browser does the syncing; the others get the changes like any other change. **Disconnect** pauses: changes wait in
+the outbox until **Connect**. A server whose database is replaced is a new server for the clients: they send
+everything again.
+
+### From NTab 2.2
+
+2.2's data (the database `ntab`, backups of format 1) is not read by this version; it stays in the browser untouched.
+Export a backup on every device while it runs 2.2, then on a computer:
+
+```
+node scripts/migrate-backup.mjs laptop.json phone.json -o merged.json
+```
+
+It joins the files into one backup of format 2 (records with the same id become one, the newer wins; the first file's
+order of lists and settings come first) and prints what it did. After the update, import `merged.json` on one device
+(**Data → Import backup**), connect it to the server, then connect the others with **Replace this device**.
 
 ## Notepad
 
@@ -99,15 +173,15 @@ shows a reminder with **Export backup** and **Later** (3 days).
   to correct it, `×` deletes. Every log, finish and delete can be undone from the toast.
 - **edit types → Delete all log entries…** empties the log after a confirm (the types stay; undo from the toast),
   e.g. on a second device that got the types from a backup.
-- An entry is one record: `{ id, typeId, at }` for an event, `{ id, typeId, at, endAt }` for an activity
-  (`endAt: null` while it runs).
+- An entry is one record: `{ id, typeId, at, updatedAt }` for an event, `{ id, typeId, at, endAt, updatedAt }` for an
+  activity (`endAt: null` while it runs).
 
 ## Board
 
 Columns New / Planned / Work / Hold / Done. **+ task** (or `+` in New) creates a task with a name and a description;
 click a card to edit it, change its status or delete it. Drag cards between and within columns (the mouse
-anywhere on a card, a finger by its `⋮⋮` handle). A move is one transaction that renumbers the `rank` of the
-cards it shifts.
+anywhere on a card, a finger by its `⋮⋮` handle). A move changes only the moved card: its `rank` goes between its new
+neighbours.
 
 ## Actions
 
@@ -166,8 +240,8 @@ any image; it is scaled to a 128×128 PNG and kept in the action (`icon`, a data
 - `favicon` — reads action icons from Chrome's local favicon cache.
 - optional host permissions — asked for one site at a time, only when a request action of yours needs it.
 
-No network requests except the request actions you create; nothing else leaves the browser except the backups
-you export.
+No network requests except the request actions you create and the sync server you set (your own); nothing else
+leaves the browser except the backups you export.
 
 ## Publishing
 
@@ -188,7 +262,9 @@ Sources are plain ES modules, split by role:
   one at runtime
 - `shared/` — code every part uses:
   - `base.css` — theme tokens, controls, dialogs
-  - `db.js` — the database: the data model, transactions, change events, backup dump and restore
+  - `db.js` — the database: the data model, transactions, change events, the outbox, backup dump and restore
+  - `model.js` — fixed ids (default actions, settings, device records) and fractional ranks; node scripts use it too
+  - `sync.js` — the sync with the sync server
   - `settings.js` — settings
   - `util.js` — DOM helpers, formatting, drag-to-reorder, routes, downloads
   - `menu.js` — the right-click menu (tabs, tiles, sidebar icons)
@@ -200,14 +276,16 @@ Sources are plain ES modules, split by role:
   - `actions-dialog.js`, `action-form.js`, `icon-file.js` — the actions editor, the form for one action (+ Add, ⚙), icon upload
   - `request.js` — runs request actions and shows the response
   - `render.html`, `render-frame.js` — the sandboxed frame that runs a request's render function
-  - `data.js` — the Data dialog (backup export / import, text files) and the backup reminder
+  - `data.js` — the Data dialog (sync server, backup export / import, text files) and the backup reminder
   - `theme.js` — applies the saved theme before the first paint
   - `update.js` — the web version: reloads into a new version at a safe moment
 - `apps/notes/` — `index.js` (the app), `notes.js` (open notes, autosave, session, cross-page sync),
   `editor.js`, `tabbar.js`, `dialogs.js`
 - `apps/tracker/` — `index.js` (UI), `model.js` (types, entries, activities)
 - `apps/board/` — `index.js` (UI, drag and drop), `model.js` (tasks)
+- `server/ntab-server.mjs` — the sync server (see Sync server); not part of the package or the web version
+- `scripts/migrate-backup.mjs` — 2.2 backups (format 1) to one backup of format 2
 - `store/`, `scripts/release.mjs` — store listing sources and the release builder
 - `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board, data, request,
-  web and real-extension tests);
+  sync, web and real-extension tests);
   not part of the package

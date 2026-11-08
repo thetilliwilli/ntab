@@ -1,9 +1,9 @@
 /* the real extension, not the test page: Chrome over a DevTools pipe loads this folder unpacked
    (Extensions.loadUnpacked) and opens its newtab.html. catches what the localhost harness can't: the MV3 CSP, the
    sandboxed render frame, the load order of extension pages, what a site opened from a tile learns about us
-   (no opener, no referrer). no network needed.
+   (no opener, no referrer), the sync with a server that allows only the extension's origin. no network needed.
    run: node test/extension.mjs (starts its own headless Chrome; the harness from run.sh is not needed) */
-import { spawn } from "node:child_process";
+import { spawn, execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,12 +13,17 @@ import { ok, sleep } from "./cdp.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "ntab-ext-"));
+// a certificate for the sync server, made like README says; this Chrome trusts it
+execSync(`openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=ntab" -addext "subjectAltName=IP:127.0.0.1" -keyout key.pem -out cert.pem`, { cwd: profile, stdio: "ignore" });
+const spki = execSync(`openssl x509 -in cert.pem -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64`, { cwd: profile }).toString().trim();
 const chrome = spawn(
   "google-chrome",
-  ["--headless=new", "--remote-debugging-pipe", "--enable-unsafe-extension-debugging", `--user-data-dir=${profile}`, "--no-first-run", "about:blank"],
+  ["--headless=new", "--remote-debugging-pipe", "--enable-unsafe-extension-debugging", `--user-data-dir=${profile}/chrome`, `--ignore-certificate-errors-spki-list=${spki}`, "--no-first-run", "about:blank"],
   { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
 );
+let server = null;
 const quit = (code) => {
+  server?.kill();
   chrome.kill();
   fs.rmSync(profile, { recursive: true, force: true });
   process.exit(code);
@@ -68,6 +73,31 @@ async function open(page) {
 const ev = await open("newtab.html");
 await sleep(1500);
 ok("home with the default tiles", (await ev(`document.querySelectorAll('#home-grid .tile').length`)) >= 5);
+
+/* the sync server: the MV3 page may talk to it (CSP), and --origin lets the extension's origin in, and only it */
+const TOKEN = "extension-test-token-1234";
+const startServer = async (origin) => {
+  server?.kill();
+  server = spawn("node", [path.join(root, "server/ntab-server.mjs"), "--token", TOKEN, "--cert", "cert.pem", "--key", "key.pem", "--data", "srv", "--listen", "127.0.0.1:8448", "--origin", origin], { cwd: profile });
+  await new Promise((r) => server.stdout.once("data", r));
+};
+const connectSync = () =>
+  ev(`(async () => {
+    document.getElementById("sync-url").value = "https://${TOKEN}@127.0.0.1:8448";
+    document.getElementById("sync-form").requestSubmit();
+    for (let i = 0; i < 40 && !/^(Synced|Offline)/.test(document.getElementById("sync-status").textContent) && !/refused|reach/.test(document.getElementById("data-msg").textContent); i++)
+      await new Promise((r) => setTimeout(r, 150));
+    return document.getElementById("sync-status").textContent + " | " + document.getElementById("data-msg").textContent;
+  })()`);
+await startServer("https://elsewhere.example");
+let s = await connectSync();
+ok("sync: a server for other origins refuses the extension (the browser hides why: CORS)", s.includes("can't reach") && s.includes("--origin") && !s.startsWith("Synced"), s);
+await startServer(`chrome-extension://${ext}`);
+s = await connectSync();
+ok("sync: the extension connects to a server that allows its origin", s.startsWith("Synced with 127.0.0.1:8448"), s);
+const head = JSON.parse(execSync(`curl -s --cacert cert.pem -u ${TOKEN}: "https://127.0.0.1:8448/pull?since=0"`, { cwd: profile })).records.length;
+ok("sync: the server got the extension's data", head >= 5, String(head));
+await ev(`document.getElementById("data").close()`);
 
 /* a request through the render frame: the frame loads before the page listens, the handshake must still work */
 const run = (url, render) =>

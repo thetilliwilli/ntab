@@ -1,6 +1,6 @@
 Every new tab opens a clean home screen with your favorite sites and three small tools: a fast plain-text notepad with tabs (like Notepad++), an activity tracker and a task board.
 
-Everything is saved in your browser as you type, nothing to set up. Export a backup to one JSON file whenever you like; NTab reminds you once a week.
+Everything is saved in your browser as you type, nothing to set up. Export a backup to one JSON file whenever you like; NTab reminds you once a week. Want the same data on your laptop and your phone? Run the small sync server from the GitHub repository and connect them.
 
 HOME SCREEN
 • Big tiles for your apps and sites, plus the same icons in a slim sidebar
@@ -49,15 +49,22 @@ DATA
 • Delete all data for a fresh start
 • A gentle reminder on the home screen when the last backup is a week old
 
+SYNC (OPTIONAL)
+• Keep several computers and your phone in step through your own small server (in the GitHub repository; Node, no dependencies)
+• Changes show on the other devices within a second: start an activity on the laptop, finish it on the phone
+• Works offline as before: changes wait and go when the server is reachable again
+• HTTPS with your own certificate, a secret token of your choice
+
 • Light, dark or automatic theme
 • Also runs as a web app (works offline) in any browser: thetilliwilli.github.io/ntab
 
 PRIVACY
-• No account, no servers, no tracking; no network requests except the request tiles you create
+• No account, no servers of ours, no tracking; no network requests except the request tiles you create and the sync server you set up yourself
 • Your notes, events and tasks stay in your browser (and in the backups you export)
 • One permission: "favicon", to show site icons from Chrome's local cache. Access to a site is asked only when one of your request tiles needs it, for that site only
 
 WHAT'S NEW
+• Sync between your devices through your own server (optional)
 • NTab as a web app: thetilliwilli.github.io/ntab
 • Tracker: log events with one tap, time activities
 • Task board with New / Planned / Work / Hold / Done
