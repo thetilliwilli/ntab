@@ -7,7 +7,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { connect, CDP, sleep, ok, inDb, dbAll } from "./cdp.mjs";
+import { connect, CDP, sleep, ok, inDb, dbAll, DEVICE } from "./cdp.mjs";
 
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), "..");
 const PORT = 8767;
@@ -78,7 +78,7 @@ await P.ev(inDb(`async (s) => {
   s.actions.put({ id: "a0", name: "Notes", icon: null, rank: 0, kind: "open", options: { url: "#/notes", newTab: false } });
   s.actions.put({ id: "a1", name: "Down", icon: null, rank: 1, kind: "request",
     options: { url: "http://localhost:8768/", method: "GET", headers: {}, body: "", render: null } });
-  s.meta.put({ lastExportAt: null, remindAt: Date.now() + 864e6 }, "backup");
+  s.device.put({ id: ${JSON.stringify(DEVICE.backup)}, name: "backup", lastExportAt: null, remindAt: Date.now() + 864e6, updatedAt: 1 });
 }`));
 await P.send("Page.reload");
 await sleep(1200);

@@ -27,7 +27,7 @@ await create("Call bank", "");
 await create("Fix bug #12", "crash on start", "work");
 ok("columns", JSON.stringify([await col(P, "new"), await col(P, "work")]) === '[["Write report","Call bank"],["Fix bug #12"]]');
 let f = await tasks(P);
-ok("3 task records with fields", f.length === 3 && f[0].id && f[0].createdAt && f[0].updatedAt && f[0].description === "quarterly numbers" && f[2].status === "work" && f.map((t) => t.rank).join() === "0,1,2");
+ok("3 task records with fields", f.length === 3 && f[0].id && f[0].createdAt && f[0].updatedAt && f[0].description === "quarterly numbers" && f[2].status === "work" && f.every((t, i) => !i || t.rank > f[i - 1].rank));
 
 // change status in the dialog
 await P.ev(`document.querySelector('.bd-new .bd-card').click()`);

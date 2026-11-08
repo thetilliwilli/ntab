@@ -2,6 +2,7 @@
    read again whenever they change, here or on another page */
 
 import * as db from "../../shared/db.js";
+import { rerank, nextRank } from "../../shared/model.js";
 
 const subs = new Set();
 let types = []; // by rank
@@ -103,17 +104,13 @@ export function setTime(id, field, time) {
 
 export function addType({ name, icon, kind }) {
   const now = Date.now();
-  const rank = Math.max(-1, ...types.map((t) => t.rank)) + 1;
-  return db.put("trackerTypes", { id: db.uuid(), name, icon, kind, rank, archivedAt: null, createdAt: now, updatedAt: now });
+  return db.put("trackerTypes", { id: db.uuid(), name, icon, kind, rank: nextRank(types), archivedAt: null, createdAt: now, updatedAt: now });
 }
 
-/* the edited list, in its order: ranks follow it, changed types get a new updatedAt */
+/* the edited list, in its order: ranks follow it (a moved type gets a rank between its neighbours); only the types
+   that changed are written */
 export function saveTypes(list) {
-  const now = Date.now();
-  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  const out = list.map((t, rank) => {
-    const next = { ...t, rank };
-    return same(next, typeById(t.id)) ? next : { ...next, updatedAt: now };
-  });
-  return db.put("trackerTypes", out);
+  const same = (a, b) => JSON.stringify({ ...a, updatedAt: 0 }) === JSON.stringify({ ...b, updatedAt: 0 });
+  const out = rerank(list).filter((t) => !same(t, typeById(t.id)));
+  return out.length ? db.put("trackerTypes", out) : Promise.resolve([]);
 }

@@ -26,7 +26,7 @@ const addType = async (name, icon, span) => {
 await addType("Покурил", "🚬", false);
 await addType("Sleep", "🌙", true);
 const types = await typesOf(P);
-ok("types saved", types.length === 2 && types[0].name === "Покурил" && types[0].kind === "event" && types[1].kind === "activity" && types[1].archivedAt === null && types[1].rank === 1, JSON.stringify(types));
+ok("types saved", types.length === 2 && types[0].name === "Покурил" && types[0].kind === "event" && types[1].kind === "activity" && types[1].archivedAt === null && types[1].rank > types[0].rank, JSON.stringify(types));
 
 await P.ev(`document.querySelectorAll('.tr-tile')[0].click()`);
 await sleep(300);

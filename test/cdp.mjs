@@ -69,7 +69,7 @@ export const ok = (label, cond, extra = "") => console.log(cond ? "PASS" : "FAIL
    must have loaded once (it creates the database). req(r) turns an IDBRequest into a promise */
 export const inDb = (fn, mode = "readwrite") => `(async () => {
   const req = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
-  const db = await req(indexedDB.open("ntab"));
+  const db = await req(indexedDB.open("ntab2"));
   const t = db.transaction([...db.objectStoreNames], ${JSON.stringify(mode)});
   const s = Object.fromEntries([...db.objectStoreNames].map((n) => [n, t.objectStore(n)]));
   const out = await (${fn})(s, req);
@@ -83,14 +83,17 @@ export const dbAll = (store) => inDb(`async (s, req) => req(s.${store}.getAll())
 
 /* action records for [{ name, url, newTab? }] */
 export const actionList = (list) =>
-  list.map(({ name, url, newTab = false }, rank) => ({ id: `a${rank}`, name, icon: null, rank, kind: "open", options: { url, newTab } }));
+  list.map(({ name, url, newTab = false }, rank) => ({ id: `a${rank}`, name, icon: null, rank, kind: "open", options: { url, newTab }, updatedAt: 1 }));
+
+/* the fixed id of a "device" record (shared/model.js) */
+export const DEVICE = { session: "254e82a0-c80e-4a18-8f4e-172c2598533c", backup: "3a5add83-bf91-4fa2-bbb4-4952c23cd93b", sync: "b73a518a-ce08-4ebe-83fa-45692c84f147" };
 
 /* expression that empties every store and sets the actions (default: Notes, Tracker, Board); reload afterwards */
 export const resetData = (actions = [{ name: "Notes", url: "#/notes" }, { name: "Tracker", url: "#/tracker" }, { name: "Board", url: "#/board" }]) =>
   inDb(`async (s) => {
     for (const store of Object.values(s)) store.clear();
     for (const a of ${JSON.stringify(actionList(actions))}) s.actions.put(a);
-    s.meta.put({ lastExportAt: null, remindAt: Date.now() + 864e6 }, "backup");
+    s.device.put({ id: ${JSON.stringify(DEVICE.backup)}, name: "backup", lastExportAt: null, remindAt: Date.now() + 864e6, updatedAt: 1 });
   }`);
 
 /* opens an app from the sidebar */

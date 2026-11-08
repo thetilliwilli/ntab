@@ -1,6 +1,6 @@
 /* data scenario: backup reminder, export, import (backup and text files), routes, actions editor and add-link.
    run: node test/data.mjs */
-import { newPage, sleep, ok, resetData, dbAll, inDb, openApp } from "./cdp.mjs";
+import { newPage, sleep, ok, resetData, dbAll, inDb, openApp, DEVICE } from "./cdp.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -32,14 +32,14 @@ async function pick(files) {
 ok("no reminder without data", await P.ev(`document.getElementById('backup-bar').hidden`));
 await P.ev(inDb(`async (s) => {
   s.tasks.put({ id: "t1", name: "Task", description: "", status: "new", rank: 0, createdAt: 1, updatedAt: 1 });
-  s.meta.put({ lastExportAt: null, remindAt: Date.now() - 1 }, "backup");
+  s.device.put({ id: ${JSON.stringify(DEVICE.backup)}, name: "backup", lastExportAt: null, remindAt: Date.now() - 1, updatedAt: 1 });
 }`));
 await P.send("Page.reload");
 await sleep(1000);
 ok("reminder shows", await P.ev(`!document.getElementById('backup-bar').hidden && document.getElementById('backup-text').textContent.startsWith('No backup yet')`));
 await P.ev(`document.getElementById('backup-later').click()`);
 await sleep(300);
-const snoozed = await P.ev(inDb(`async (s, req) => req(s.meta.get("backup"))`, "readonly"));
+const snoozed = await P.ev(inDb(`async (s, req) => req(s.device.get(${JSON.stringify(DEVICE.backup)}))`, "readonly"));
 ok("Later: hidden, back in 3 days", (await P.ev(`document.getElementById('backup-bar').hidden`)) && Math.abs(snoozed.remindAt - Date.now() - 3 * 864e5) < 60e3);
 
 // export from the data dialog
@@ -50,8 +50,8 @@ await P.ev(`document.getElementById('data-export').click()`);
 await sleep(1000);
 const file = fs.readdirSync(tmp).find((f) => f.startsWith("ntab-backup-"));
 const backup = file && JSON.parse(fs.readFileSync(path.join(tmp, file), "utf8"));
-ok("backup file", backup?.app === "ntab" && backup.format === 1 && backup.data.tasks.length === 1 && backup.data.actions.length === 3 && "settings" in backup.data, file);
-const info = await P.ev(inDb(`async (s, req) => req(s.meta.get("backup"))`, "readonly"));
+ok("backup file", backup?.app === "ntab" && backup.format === 2 && backup.data.tasks.length === 1 && backup.data.actions.length === 3 && Array.isArray(backup.data.settings) && !("device" in backup.data), file);
+const info = await P.ev(inDb(`async (s, req) => req(s.device.get(${JSON.stringify(DEVICE.backup)}))`, "readonly"));
 ok("export remembered, next reminder in a week", Date.now() - info.lastExportAt < 10e3 && Math.abs(info.remindAt - Date.now() - 7 * 864e5) < 60e3);
 ok("dialog shows the last backup", (await P.ev(`document.getElementById('data-last').textContent`)).startsWith("last backup:"));
 
@@ -65,14 +65,19 @@ const notes = await P.ev(dbAll("notes"));
 ok("text files imported as notes", notes.length === 2 && notes.some((n) => n.name === "todo.md" && n.text === "# todo\n- a") && notes.some((n) => n.name === "plain"), JSON.stringify(notes.map((n) => n.name)));
 
 // import: a broken file is refused; a backup only adds what is missing (by id), nothing here changes or goes
-fs.writeFileSync(path.join(tmp, "bad.json"), JSON.stringify({ app: "ntab", format: 1, data: { settings: {}, notes: [{ id: "x" }] } }));
+fs.writeFileSync(path.join(tmp, "bad.json"), JSON.stringify({ app: "ntab", format: 2, data: { ...backup.data, notes: [{ id: "x", updatedAt: 1 }] } }));
 await P.ev(`document.getElementById('data-import').click()`);
 await pick([path.join(tmp, "bad.json")]);
 ok("broken backup refused", /bad\.json: notes\[0\]: "name" must be a string/.test(await P.ev(`document.getElementById('data-msg').textContent`)), await P.ev(`document.getElementById('data-msg').textContent`));
+fs.writeFileSync(path.join(tmp, "old.json"), JSON.stringify({ app: "ntab", format: 1, data: { settings: {}, notes: [] } }));
+await P.ev(`document.getElementById('data-import').click()`);
+await pick([path.join(tmp, "old.json")]);
+ok("a 2.2 backup: points to the migration script", (await P.ev(`document.getElementById('data-msg').textContent`)).includes("scripts/migrate-backup.mjs"));
 const Q = await newPage(); // another tab: hears about the added records
 await sleep(1000);
 await openApp(Q, "board");
-backup.data.settings = { ...backup.data.settings, fontSize: 20 };
+await P.ev(inDb(`async (s) => s.settings.put({ id: "3f5ea29e-8724-4e6d-856c-42626f763ce5", name: "fontSize", value: 15, updatedAt: 1 })`));
+backup.data.settings = [{ id: "3f5ea29e-8724-4e6d-856c-42626f763ce5", name: "fontSize", value: 20, updatedAt: 9 }, { id: "8f7c8369-14b9-4d68-bdfa-6a6ac2348608", name: "wrap", value: true, updatedAt: 9 }];
 backup.data.tasks[0].name = "Changed in the backup"; // same id as the task here: the one here stays
 backup.data.tasks.push({ id: "t2", name: "From the backup", description: "", status: "new", rank: -5, createdAt: 2, updatedAt: 2 });
 backup.data.notes.push({ id: "n9", name: "backup note", text: "x", createdAt: 2, updatedAt: 2 });
@@ -83,9 +88,10 @@ await pick([path.join(tmp, "good.json")]);
 await sleep(1000);
 const tasks = (await P.ev(dbAll("tasks"))).sort((a, b) => a.rank - b.rank);
 ok("merge: notes here stay, the new one added", (await P.ev(dbAll("notes"))).map((n) => n.name).sort().join() === "backup note,plain,todo.md");
-ok("merge: the task here unchanged, the new one after it", tasks.map((t) => `${t.id}:${t.name}:${t.rank}`).join() === "t1:Task:0,t2:From the backup:1", JSON.stringify(tasks));
-ok("merge: settings here stay", (await P.ev(inDb(`async (s, req) => req(s.meta.get("settings"))`, "readonly")))?.fontSize !== 20);
-ok("merge: the result is said", (await P.ev(`document.getElementById('data-msg').textContent`)) === "good.json: added 1 notes, 1 tasks; 4 already here, kept as they are.", await P.ev(`document.getElementById('data-msg').textContent`));
+ok("merge: the task here unchanged, the new one after it", tasks.map((t) => `${t.id}:${t.name}`).join() === "t1:Task,t2:From the backup" && tasks[1].rank > tasks[0].rank, JSON.stringify(tasks));
+const settings = Object.fromEntries((await P.ev(dbAll("settings"))).map((r) => [r.name, r.value]));
+ok("merge: a setting here stays, a missing one is added", settings.fontSize === 15 && settings.wrap === true, JSON.stringify(settings));
+ok("merge: the result is said", (await P.ev(`document.getElementById('data-msg').textContent`)) === "good.json: added 1 notes, 1 tasks, 1 settings; 5 already here, kept as they are.", await P.ev(`document.getElementById('data-msg').textContent`));
 ok("merge: the other tab shows the new task", await Q.ev(`[...document.querySelectorAll('#bd-cols .bd-card, #bd-cols [class*=card]')].some((c) => c.textContent.includes('From the backup'))`));
 await P.ev(`window.confirm = () => true`);
 await P.ev(inDb(`async (s) => { s.notes.clear(); s.tasks.delete("t2"); }`)); // the rest of the scenario starts from the old state
@@ -137,7 +143,7 @@ ok("Edit opens the form", await P.ev(`document.getElementById('add').open && doc
 await P.ev(`document.getElementById('add-name').value = 'My notes'; document.getElementById('add-form').requestSubmit()`);
 await sleep(400);
 actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
-ok("edited in place", actions.map((a) => a.name).join() === "example.com,My notes,Wiki" && actions[1].id === json[0].id && actions[1].rank === 1, JSON.stringify(actions.map((a) => [a.name, a.rank])));
+ok("edited in place", actions.map((a) => a.name).join() === "example.com,My notes,Wiki" && actions[1].id === json[0].id, JSON.stringify(actions.map((a) => [a.name, a.rank])));
 // the sidebar: the flyout covers the icon, right-click on it gives the same menu
 await P.ev(`document.querySelector('#links [aria-label=Wiki]').dispatchEvent(new MouseEvent('mouseenter'))`);
 await P.ev(`document.querySelector('.flyout').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 200 }))`);

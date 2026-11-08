@@ -24,7 +24,7 @@
       <nav class="links" id="links" aria-label="Actions"></nav>
       <button class="side-more down" id="links-down" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
-    <button class="side-btn" id="data-btn" title="Data: backup, import" aria-label="Data">
+    <button class="side-btn" id="data-btn" title="Data: backup, import, sync" aria-label="Data">
       <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg>
     </button>
     <button class="side-btn" id="theme-btn" aria-label="Theme"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
@@ -271,8 +271,26 @@
       <button id="data-x" class="dlg-x" title="Close">×</button>
     </div>
     <div class="dlg-body data-body">
-      <p class="muted">Everything is kept in this browser. A backup is one JSON file with all notes, tracker,
-        board, actions and settings.</p>
+      <p class="muted">Everything is kept in this browser, and on your sync server when one is set. A backup is one
+        JSON file with all notes, tracker, board, actions and settings.</p>
+      <form class="sync" id="sync-form" autocomplete="off">
+        <label for="sync-url">Sync server</label>
+        <div class="sync-line">
+          <input id="sync-url" class="url secret" type="text" placeholder="https://TOKEN@host:8443" spellcheck="false" required
+            title="Your NTab sync server (server/ntab-server.mjs) with its token as the user or the password">
+          <button class="primary" id="sync-connect">Connect</button>
+          <button type="button" id="sync-disconnect" hidden title="Stop syncing; changes wait here until you connect again">Disconnect</button>
+        </div>
+        <span class="muted" id="sync-status"></span>
+        <div class="sync-choice" id="sync-choice" hidden>
+          <span>The server has data, and so does this browser.</span>
+          <button type="button" class="primary" id="sync-merge">Merge</button>
+          <button type="button" id="sync-replace">Replace this device</button>
+          <button type="button" id="sync-cancel">Cancel</button>
+          <span class="muted">Merge keeps both (where a record changed on both, the newer change wins). Replace drops this
+            browser's data and takes the server's.</span>
+        </div>
+      </form>
       <div class="data-row">
         <button class="primary" id="data-export">Export backup</button>
         <span class="muted" id="data-last"></span>

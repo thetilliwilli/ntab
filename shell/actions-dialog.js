@@ -133,7 +133,7 @@ function parseJson() {
       if (a.kind === "request" && a.options.headers != null && (typeof a.options.headers !== "object" || Array.isArray(a.options.headers)))
         throw new Error(`item ${i + 1}: "options.headers" must be an object { "Name": "value" }`);
       const was = before.get(a.id);
-      return normalize({ ...newAction("", ""), icon: was?.icon ?? null, ...a, id: was ? a.id : newAction().id });
+      return normalize({ ...newAction("", ""), icon: was?.icon ?? null, rank: was?.rank ?? null, updatedAt: was?.updatedAt, ...a, id: was ? a.id : newAction().id });
     });
     const bad = list.findIndex((a) => problem(a));
     if (bad !== -1) throw new Error(`item ${bad + 1}: ${problem(list[bad])}`);

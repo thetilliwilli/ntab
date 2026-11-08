@@ -4,11 +4,11 @@
  *
  * every edit:   the note is written SAVE_DELAY after the last keystroke, at most MAX_WAIT after the first unsaved
  *               one, and at once when the page is hidden or closed.
- * other pages:  hear about writes through db.onChange and take the new name and text; a note with unsaved edits
- *               here keeps its text (it is written next, the last write wins).
+ * other pages:  hear about writes through db.onChange (other devices too, through the sync) and take the new name
+ *               and text; a note with unsaved edits here keeps its text (it is written next, the last write wins).
  * session:      each page has its own set of open tabs:
  *                 sessionStorage   this browser tab's own session (survives reload / browser restore)
- *                 meta "session"   the session of the page worked in last, for brand new tabs
+ *                 device "session" the session of the page worked in last, for brand new tabs
  */
 
 import * as db from "../../shared/db.js";
@@ -52,7 +52,7 @@ export async function list() {
 /* ---------- lifecycle ---------- */
 
 export async function start() {
-  const session = ownSession() || (await db.getMeta("session"));
+  const session = ownSession() || (await db.getDevice("session"));
   views = session?.views || {};
   for (const id of session?.tabs || []) {
     const rec = await db.get("notes", id);
@@ -266,7 +266,7 @@ function writeSession() {
     sessionStorage.setItem("session", JSON.stringify(session));
   } catch {}
   // only the page in front becomes the template for new tabs
-  if (!document.hidden) db.setMeta("session", session).catch(console.error);
+  if (!document.hidden) db.setDevice("session", session).catch(console.error);
 }
 
 /* no open tabs: the page shows the empty state instead of the editor */
@@ -279,9 +279,9 @@ function showNothing() {
 
 /* ---------- events ---------- */
 
-/* another page wrote or deleted notes: open ones follow */
-db.onChange(async ({ store, ids, local }) => {
-  if (!started || local || store !== "notes") return;
+/* another page or another device (the sync) wrote or deleted notes: open ones follow */
+db.onChange(async ({ store, ids, local, remote }) => {
+  if (!started || (local && !remote) || store !== "notes") return;
   for (const id of ids ?? [...notes.keys()]) {
     const n = notes.get(id);
     if (!n) continue;

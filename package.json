@@ -1,7 +1,8 @@
 {
   "name": "ntab",
   "private": true,
-  "description": "Chrome extension; no dependencies, package.json only holds the release scripts",
+  "type": "module",
+  "description": "Chrome extension; no dependencies, package.json only holds the release scripts (type module: node scripts import shared/*.js)",
   "scripts": {
     "release": "node scripts/release.mjs",
     "release:done": "node scripts/release.mjs done"

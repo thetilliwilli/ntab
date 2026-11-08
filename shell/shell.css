@@ -176,6 +176,24 @@
 .data-row .danger { color: var(--danger); }
 .data-row .danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
+/* sync server (Data dialog) and its state on the sidebar button: a small square, none without a server */
+.sync { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.sync label { font-weight: 600; }
+.sync-line { display: flex; gap: 8px; }
+.sync-line input { flex: 1; min-width: 0; height: 28px; font-family: var(--mono); font-size: 12px; }
+.sync-line input.secret:not(:focus) { -webkit-text-security: disc; } /* the token shows only while editing */
+.sync button { height: 28px; padding: 0 14px; border-color: var(--border); }
+.sync .primary { border-color: var(--accent); }
+.sync .muted { font-size: 12px; }
+.sync .sync-online { color: var(--ok); }
+.sync .sync-offline { color: var(--danger); }
+.sync-choice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; border-left: 3px solid var(--accent); background: var(--surface); }
+.sync-choice > span:first-child { flex-basis: 100%; }
+#data-btn { position: relative; }
+#data-btn[data-sync]:not([data-sync="off"])::after { content: ""; position: absolute; top: 9px; right: 14px; width: 6px; height: 6px; background: var(--muted); }
+#data-btn[data-sync="online"]::after { background: var(--ok); }
+#data-btn[data-sync="offline"]::after { background: var(--danger); }
+
 /* add link dialog */
 
 .add-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; padding: 14px 12px; }

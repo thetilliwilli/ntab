@@ -5,6 +5,7 @@
    headers is an object { name: value }; body is a string, not sent with GET and HEAD */
 
 import * as db from "../shared/db.js";
+import { rerank, nextRank } from "../shared/model.js";
 import * as platform from "../platform/index.js";
 import { appById } from "./apps.js";
 import { setView } from "./view.js";
@@ -21,7 +22,7 @@ export const subscribeActions = (fn) => subs.add(fn);
 export const KINDS = { open: "open", request: "request" }; // kind -> its name in the editor
 export const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"];
 
-export const newAction = (name, url, newTab = false) => ({ id: db.uuid(), name, icon: null, rank: 0, kind: "open", options: { url, newTab } });
+export const newAction = (name, url, newTab = false) => ({ id: db.uuid(), name, icon: null, rank: null, kind: "open", options: { url, newTab } });
 
 /* a request's render function when the user hasn't written one: the body as it came */
 export const DEFAULT_RENDER = "w => w.text";
@@ -54,13 +55,13 @@ export async function initActions() {
   await load();
 }
 
-/* the whole list, in this order */
-export const saveActions = (list) => db.replace("actions", list.map((a, rank) => ({ ...a, rank })));
+/* the whole list, in this order (only what changed is written: a moved action gets a rank between its neighbours) */
+export const saveActions = (list) => db.replace("actions", rerank(list));
 
 export const saveAction = (action) => db.put("actions", action);
 export const removeAction = (id) => db.remove("actions", id);
 
-export const addAction = (action) => db.put("actions", { ...action, rank: Math.max(-1, ...actions.map((a) => a.rank)) + 1 });
+export const addAction = (action) => db.put("actions", { ...action, rank: nextRank(actions) });
 
 /* a web address is a real <a>; an app is a button that switches the screen (class "app <app id>"); a request is a
    button that runs it (class "request") */
