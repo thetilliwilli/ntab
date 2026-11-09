@@ -90,14 +90,20 @@ yet): its changes wait and go when it connects, whatever piled up meanwhile.
    `subjectAltName=IP:192.168.1.10,DNS:my.domain.com`):
 
    ```
+   mkdir -p ~/ntab-sync && cd ~/ntab-sync
    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=ntab" -addext "subjectAltName=IP:192.168.1.10" -keyout ntab-key.pem -out ntab-cert.pem
    ```
 
-   `ntab-key.pem` stays on the server and with nobody else. Another address needs another certificate.
+   Several addresses and names: `subjectAltName=IP:192.168.1.10,IP:10.0.0.5,DNS:my.domain.com,DNS:*.my.domain.com`
+   (no CIDR in a certificate; a whole subnet:
+   `SAN="$(for i in $(seq 1 254); do printf 'IP:192.168.1.%s,' $i; done)DNS:my.domain.com"`, then
+   `subjectAltName=$SAN`). Keep the certificate, its key and the server's data outside this folder: an unpacked
+   extension loads the whole folder (Chrome warns about a `.pem` in it). `ntab-key.pem` stays on the server and with
+   nobody else. Another address needs another certificate.
 2. **Run** it (the port open in the firewall; Fedora: `sudo firewall-cmd --permanent --add-port=8443/tcp && sudo firewall-cmd --reload`):
 
    ```
-   node server/ntab-server.mjs --token <secret> --listen 0.0.0.0:8443 --cert ntab-cert.pem --key ntab-key.pem --data ./ntab-data
+   node server/ntab-server.mjs --token <secret> --listen 0.0.0.0:8443 --cert ~/ntab-sync/ntab-cert.pem --key ~/ntab-sync/ntab-key.pem --data ~/ntab-sync/data
    ```
 
    - `--token` — 16+ characters (e.g. `openssl rand -hex 24`: letters and digits keep the address simple). Every
@@ -115,6 +121,8 @@ yet): its changes wait and go when it connects, whatever piled up meanwhile.
      trusted for websites.
    - Android: Settings → Security & privacy → More security settings → Encryption & credentials → Install a
      certificate → CA certificate → `ntab-cert.pem`.
+   - Chrome on Linux without "Custom" in the certificate manager:
+     `certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n ntab-sync -i ntab-cert.pem`, then restart Chrome.
 
    Check: `https://192.168.1.10:8443/` opens without a warning and, given the token as the password, says
    "NTab sync server: OK".
