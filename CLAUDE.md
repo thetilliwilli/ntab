@@ -119,7 +119,8 @@ save/session model, and `shell/apps.js` for the app contract.
   `#app-<id>` in `newtab.html`; ids of its elements share a prefix (`tr-`, `bd-`).
 - MV3 CSP forbids inline scripts → `shell/theme.js` is a classic script in `<head>` that applies the saved theme
   from `localStorage` before first paint.
-- `[hidden] { display: none !important; }` is global, and `border-radius: 0 !important` on everything.
+- `[hidden] { display: none !important; }` is global, and `border-radius: 0 !important` on everything. The one
+  exception (the user's wish): the sync state dot on the Data button, round, 9px, bright green / red (not the accent blue).
 - The data model is documented at the top of `shared/db.js`; users keep their data across updates, so a change
   of stores or records needs a database `VERSION` bump with conversion (see PUBLISHING.md). The server doesn't know
   the model (a record is `{store, id, rev, updatedAt, deleted, data}`), so new stores and fields need no server change.

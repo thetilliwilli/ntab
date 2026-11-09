@@ -176,7 +176,8 @@
 .data-row .danger { color: var(--danger); }
 .data-row .danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-/* sync server (Data dialog) and its state on the sidebar button: a small square, none without a server */
+/* sync server (Data dialog) and its state on the sidebar button: a dot, none without a server (the one round thing:
+   the user's wish, a bright green that doesn't pass for the blue accent) */
 .sync { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .sync label { font-weight: 600; }
 .sync-line { display: flex; gap: 8px; }
@@ -190,10 +191,10 @@
 .sync-choice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; border-left: 3px solid var(--accent); background: var(--surface); }
 .sync-choice > span:first-child { flex-basis: 100%; }
 #data-btn { position: relative; }
-#data-btn::after { content: ""; position: absolute; top: 9px; right: 14px; width: 6px; height: 6px; background: var(--muted); }
+#data-btn::after { content: ""; position: absolute; top: 7px; right: 12px; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
 #data-btn:not([data-sync])::after, #data-btn[data-sync="off"]::after { display: none; }
-#data-btn[data-sync="online"]::after { background: var(--ok); }
-#data-btn[data-sync="offline"]::after { background: var(--danger); }
+#data-btn[data-sync="online"]::after { background: #22c55e; }
+#data-btn[data-sync="offline"]::after { background: #ef4444; }
 
 /* add link dialog */
 
