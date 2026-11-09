@@ -8,7 +8,8 @@
      ranks 1, 2, 3…
    - the default actions (Notes, Tracker, Board, Gmail, YouTube with their original addresses) get the fixed ids of
      data model 2, so a fresh device doesn't show them twice
-   - settings: one record per setting; the first file that has a setting wins */
+   - settings: one record per setting; the first file that has a setting wins
+   - an action keeps an embedded icon that any file has (when the winning version has none) */
 
 import fs from "node:fs";
 import path from "node:path";
@@ -62,6 +63,9 @@ for (const store of STORES) {
       if (differs) conflicts++;
       else same++;
       if (at > was.at) Object.assign(was, { record: r, at, file: f }); // the place in the list stays the first one's
+      // an embedded icon is never lost: the extension shows the browser's cached favicons without storing them,
+      // the web version has only the embedded ones
+      if (store === "actions" && !was.record.icon) was.record.icon = r.icon ?? was.record.icon;
     }
   }
   const records = [...merged.values()].map(({ record: r, file: f }, i) => {
