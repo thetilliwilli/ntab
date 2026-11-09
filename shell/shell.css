@@ -190,7 +190,8 @@
 .sync-choice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; border-left: 3px solid var(--accent); background: var(--surface); }
 .sync-choice > span:first-child { flex-basis: 100%; }
 #data-btn { position: relative; }
-#data-btn[data-sync]:not([data-sync="off"])::after { content: ""; position: absolute; top: 9px; right: 14px; width: 6px; height: 6px; background: var(--muted); }
+#data-btn::after { content: ""; position: absolute; top: 9px; right: 14px; width: 6px; height: 6px; background: var(--muted); }
+#data-btn:not([data-sync])::after, #data-btn[data-sync="off"]::after { display: none; }
 #data-btn[data-sync="online"]::after { background: var(--ok); }
 #data-btn[data-sync="offline"]::after { background: var(--danger); }
 
