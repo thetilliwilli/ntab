@@ -293,6 +293,7 @@ Sources are plain ES modules, split by role:
 - `apps/board/` — `index.js` (UI, drag and drop), `model.js` (tasks)
 - `server/ntab-server.mjs` — the sync server (see Sync server); not part of the package or the web version
 - `scripts/migrate-backup.mjs` — 2.2 backups (format 1) to one backup of format 2
+- `scripts/tracker-csv.mjs` — the tracker log from a backup as CSV (one row per entry, for BI): `node scripts/tracker-csv.mjs backup.json -o tracker.csv`
 - `store/`, `scripts/release.mjs` — store listing sources and the release builder
 - `test/` — headless Chrome harness (`chrome.*` stub, CDP helpers; smoke, notes, tracker, board, data, request,
   sync, web and real-extension tests);
