@@ -100,7 +100,7 @@ export function openActionForm({ edit = null, onDone }) {
 
 export const openAddDialog = () => openActionForm({ onDone: addAction });
 
-/* right-click on a tile or a sidebar icon: edit it in the form, or delete it (picking it is the confirmation) */
+/* right-click on a home tile: edit it in the form, or delete it (picking it is the confirmation) */
 export function actionMenu(e, action) {
   showMenu(e, [
     { label: "Edit", run: () => openActionForm({ edit: structuredClone(action), onDone: saveAction }) },

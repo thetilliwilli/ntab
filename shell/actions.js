@@ -1,4 +1,4 @@
-/* actions (the "actions" store, see shared/db.js): loaded once, kept in sync, drawn by the sidebar and home.
+/* actions (the "actions" store, see shared/db.js): loaded once, kept in sync, drawn by home.
    an action is a button of some kind with its options:
      "open"     { url, newTab }                 "#/<app id>" opens an app on this page, anything else a web address
      "request"  { url, method, headers, body }  sends an HTTP request and shows the response (shell/request.js)

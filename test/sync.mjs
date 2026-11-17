@@ -79,7 +79,7 @@ await A.ev(inDb(`async (s) => {
 }`));
 await reload(A);
 await run(A, `${model("board")}.remove("t2")`);
-await A.ev(`document.getElementById('theme-btn').click()`); // auto -> light
+await A.ev(`document.querySelector('#set-theme [data-value=light]').click()`); // auto -> light
 await sleep(600);
 ok("no server: nothing waits in the outbox", (await A.ev(dbAll("outbox"))).length === 0);
 ok("no server: status says so", (await status(A)).startsWith("Not set"), await status(A));
@@ -95,10 +95,10 @@ await connectTo(A, SERVER);
 ok("A online", await until(A, `document.getElementById('sync-status').textContent.startsWith('Synced with 127.0.0.1:${PORT}')`), await status(A));
 let srv = await serverData();
 ok("server got A's data", ["notes/n1", "tasks/t1", "trackerTypes/y1", "trackerEntries/e1", "actions/a0", "settings/2f389033-4033-4a9f-b7d4-4e62d13dc1ba"].every((k) => k in srv.records) && !("tasks/t2" in srv.records), Object.keys(srv.records).join());
-ok("sidebar shows the state", (await A.ev(`document.getElementById('data-btn').dataset.sync`)) === "online");
+ok("the Settings button shows the state", (await A.ev(`document.getElementById('nav-settings').dataset.sync`)) === "online");
 
 // B: a fresh device (only the default actions): connects without a question, gets A's data, its defaults go
-await B.ev(`document.getElementById('data-btn').click()`);
+await B.ev(`document.getElementById('nav-settings').click()`);
 await connectTo(B, SERVER);
 ok("B: no Merge/Replace question", await B.ev(`document.getElementById('sync-choice').hidden`));
 ok("B online", await until(B, `document.getElementById('sync-status').textContent.startsWith('Synced')`), await status(B));
@@ -118,8 +118,7 @@ ok("A sees it finished", await until(A, inDb(`async (s, req) => (await req(s.tra
 
 // notes: typed on A, shown in B's open tab
 for (const P of [A, B]) {
-  await P.ev(`document.getElementById('data').close()`);
-  await P.ev(`document.querySelector('#links .notes').click()`);
+  await P.ev(`document.querySelector('#bnav [data-view=notes]').click()`);
   await sleep(500);
   await run(P, `(await import('/apps/notes/notes.js')).open("n1")`);
   await sleep(200);
@@ -147,9 +146,9 @@ await run(A, `${model("board")}.update(${JSON.stringify(t3)}, { name: "A's name"
 await sleep(50);
 await run(B, `${model("board")}.update(${JSON.stringify(t3)}, { name: "B's name" })`);
 await run(A, `${model("board")}.add({ name: "Made offline" })`);
-await A.ev(`document.getElementById('data-btn').click()`);
+await A.ev(`document.getElementById('nav-settings').click()`);
 ok("A offline, its changes wait", await until(A, `/Offline: .*2 changes wait here/.test(document.getElementById('sync-status').textContent)`), await status(A));
-ok("sidebar: offline", (await A.ev(`document.getElementById('data-btn').dataset.sync`)) === "offline");
+ok("Settings button: offline", (await A.ev(`document.getElementById('nav-settings').dataset.sync`)) === "offline");
 await startServer();
 const taskNames = (P) => P.ev(`(${dbAll("tasks")}).then((l) => l.map((t) => t.name).sort().join())`);
 ok("back online: both agree, the later edit won", await until(B, `(${dbAll("tasks")}).then((l) => l.map((t) => t.name).sort().join() === "B's name,Made offline")`, 40000), await taskNames(B));
@@ -167,7 +166,7 @@ ok("B gets what was made while paused", await until(B, `(${dbAll("tasks")}).then
 const C = await page("http://c.localhost:8765");
 await C.ev(inDb(`async (s) => s.tasks.put({ id: "c1", name: "Only on C", description: "", status: "new", rank: 1, createdAt: 1, updatedAt: 5 })`));
 await reload(C);
-await C.ev(`document.getElementById('data-btn').click()`);
+await C.ev(`document.getElementById('nav-settings').click()`);
 await connectTo(C, SERVER);
 ok("C is asked: Merge or Replace", await C.ev(`!document.getElementById('sync-choice').hidden`));
 await C.ev(`document.getElementById('sync-replace').click()`);
@@ -178,7 +177,7 @@ ok("C's task didn't reach the server", !Object.values((await serverData()).recor
 const D = await page("http://d.localhost:8765");
 await D.ev(inDb(`async (s) => s.tasks.put({ id: "d1", name: "Only on D", description: "", status: "new", rank: 1, createdAt: 1, updatedAt: 5 })`));
 await reload(D);
-await D.ev(`document.getElementById('data-btn').click()`);
+await D.ev(`document.getElementById('nav-settings').click()`);
 await connectTo(D, SERVER);
 await D.ev(`document.getElementById('sync-merge').click()`);
 ok("Merge: D has both", await until(D, `(${dbAll("tasks")}).then((l) => l.map((t) => t.name).sort().join() === "B's name,Made offline,Only on D,While paused")`), await taskNames(D));

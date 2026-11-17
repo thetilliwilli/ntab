@@ -1,4 +1,4 @@
-/* actions editor (✎ in the sidebar): form mode and raw JSON mode (like VS Code settings) */
+/* actions editor (Edit in the bottom navigation on home): form mode and raw JSON mode (like VS Code settings) */
 
 import { getActions, iconEl, saveActions, newAction, appOf, isRoute, KINDS, METHODS, optionsFor, DEFAULT_RENDER, cachedFavicon, loadImg } from "./actions.js";
 import { iconFromImage } from "./icon-file.js";

@@ -1,4 +1,5 @@
-/* smoke test: home screen -> notepad -> type -> the note is written. run: node test/example.mjs */
+/* smoke test: home screen -> notepad -> type -> the note is written; the bottom navigation and the start screen.
+   run: node test/example.mjs */
 import { newPage, sleep, ok, resetData, dbAll, openApp } from "./cdp.mjs";
 
 const P = await newPage();
@@ -26,29 +27,55 @@ await P.type("hello");
 await sleep(800);
 const notes = await P.ev(dbAll("notes"));
 ok("typed text saved as note “new1”", notes.length === 1 && notes[0].text === "hello" && notes[0].name === "new1", JSON.stringify(notes));
-// sidebar arrows: in the flow above and below the icons, never over one; at the edge disabled, still there
-await P.ev(resetData(Array.from({ length: 20 }, (_, i) => ({ name: `Site ${i}`, url: `https://s${i}.test` }))));
+// the bottom navigation: the screen in front is lit, its own buttons come after the separator
+const nav = () => P.ev(`(() => ({
+  on: [...document.querySelectorAll('#bnav .on')].map((b) => b.dataset.view).join(),
+  ctx: [...document.querySelectorAll('#bnav [data-for]')].filter((b) => !b.hidden).map((b) => b.id).join(),
+  sep: !document.getElementById('bnav-sep').hidden, title: document.title,
+}))()`);
+let n = await nav();
+ok("nav: notes lit, no buttons of its own", n.on === "notes" && n.ctx === "" && !n.sep && n.title === "Notes", JSON.stringify(n));
+await openApp(P, "tracker");
+n = await nav();
+ok("nav: tracker lit, Types after the separator", n.on === "tracker" && n.ctx === "tr-edit" && n.sep, JSON.stringify(n));
+await openApp(P, "board");
+n = await nav();
+ok("nav: board lit, Task", n.on === "board" && n.ctx === "bd-new", JSON.stringify(n));
+await openApp(P, "home");
+n = await nav();
+ok("nav: home lit, Edit (actions)", n.on === "home" && n.ctx === "links-edit" && n.title === "new", JSON.stringify(n));
+await openApp(P, "settings");
+n = await nav();
+ok("nav: settings lit, the screen shown", n.on === "settings" && n.ctx === "" && !(await P.ev(`document.getElementById('settings').hidden`)), JSON.stringify(n));
+// the start screen of this device
+ok("start screen: auto marked", (await P.ev(`document.querySelector('#set-start .on').dataset.value`)) === "auto");
+await P.ev(`document.querySelector('#set-start [data-value=board]').click()`);
+await sleep(300);
+await P.ev(`location.hash = "#/notes"`); // a route typed into the address opens its screen
+await sleep(300);
+ok("a typed route opens its screen", (await nav()).on === "notes");
 await P.send("Page.reload");
-await sleep(1000);
-const arrows = () => P.ev(`(() => {
-  const r = (id) => document.getElementById(id).getBoundingClientRect();
-  const list = r('links'), up = r('links-up'), down = r('links-down');
-  return { up: up.height > 0, down: down.height > 0, upOff: document.getElementById('links-up').disabled,
-    downOff: document.getElementById('links-down').disabled, clear: up.bottom <= list.top && down.top >= list.bottom,
-    home: r('go-home').height };
-})()`);
-let a = await arrows();
-ok("arrows shown outside the list, up disabled at the top", a.up && a.down && a.clear && a.upOff && !a.downOff, JSON.stringify(a));
-ok("home button 48px like the icons", a.home === 48, a.home);
-for (let i = 0; i < 6; i++) await P.ev(`document.getElementById('links-down').click()`), await sleep(150);
-await sleep(600);
-a = await arrows();
-ok("at the bottom: down disabled but still in place", a.down && a.downOff && !a.upOff && a.clear, JSON.stringify(a));
-await P.ev(resetData());
+await sleep(1200);
+n = await nav();
+ok("a reload opens the chosen start screen (the address doesn't matter)", n.on === "board" && (await P.ev(`location.hash`)) === "#/board", JSON.stringify(n));
+await openApp(P, "settings");
+await P.ev(`document.querySelector('#set-start [data-value=auto]').click()`);
+await sleep(300);
+// auto: a touch screen (a phone) starts on the tracker
+await P.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+await P.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
 await P.send("Page.reload");
-await sleep(1000);
-a = await arrows();
-ok("no arrows when the icons fit", !a.up && !a.down, JSON.stringify(a));
+await sleep(1200);
+n = await nav();
+ok("auto on a phone: tracker", n.on === "tracker", JSON.stringify(n));
+const fit = await P.ev(`(() => { const r = document.getElementById('bnav').getBoundingClientRect(); return { bottom: r.bottom, h: innerHeight, w: document.documentElement.scrollWidth }; })()`);
+ok("phone: the navigation at the bottom, no sideways scroll", fit.bottom === fit.h && fit.w === 390, JSON.stringify(fit));
+if (process.env.SHOTS) await P.shot(`${process.env.SHOTS}/phone-tracker.png`);
+await P.send("Emulation.setTouchEmulationEnabled", { enabled: false });
+await P.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 700, deviceScaleFactor: 1, mobile: false });
+await P.send("Page.reload");
+await sleep(1200);
+ok("auto on a computer: home", (await nav()).on === "home");
 
 console.log("errors:", P.errors);
 await P.close();

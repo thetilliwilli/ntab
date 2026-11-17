@@ -9,17 +9,16 @@ const hms = (t) => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 const hm = (t) => hms(t).slice(0, 5);
-/* value of <input type="datetime-local"> in local time, to the minute (shown times are minutes, stored ones ms) */
-const toInput = (t) => {
+const ymd = (t) => {
   const d = new Date(t);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${hm(t)}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 const minuteOf = (t) => Math.floor(t / 60000);
 const startOfDay = (t) => new Date(t).setHours(0, 0, 0, 0);
 const DAY = 864e5;
 
 let day = startOfDay(Date.now()); // the day the log shows
-let live = null; // running activities on screen: entry id -> { dur, fill, scale, start }
+let shownMinute = 0; // the minute the log was drawn in: bars of running activities grow once a minute
 
 const report = (e) => toast(e?.message || String(e), null, "err");
 
@@ -38,54 +37,12 @@ function toast(text, undo = null, kind = "") {
   toastTimer = setTimeout(() => ($("tr-toast").hidden = true), kind === "err" ? 8000 : 6000);
 }
 
-/* ---------- running activities ---------- */
-
-const STEPS = [15, 30, 60, 120, 240, 480, 720, 1440].map((m) => m * 60000);
-const scaleFor = (ms) => STEPS.find((s) => ms < s) ?? Math.ceil((ms + 1) / DAY) * DAY;
-const fmtScale = (s) => (s >= DAY ? `${s / DAY}d` : s >= 36e5 ? `${s / 36e5}h` : `${s / 6e4}m`);
-
-function renderSpans() {
-  const box = $("tr-spans");
-  const running = model.running();
-  box.hidden = !running.length;
-  box.textContent = "";
-  live = new Map();
-  for (const s of running) {
-    const type = model.typeById(s.typeId);
-    const row = el("div", "tr-span");
-    const dur = el("span", "tr-dur");
-    const fill = el("div", "tr-fill");
-    const scale = el("span", "tr-scale");
-    const done = el("button", "primary", "Finish");
-    done.addEventListener("click", () =>
-      model
-        .finish(s.id)
-        .then((e) => e && toast(`■ ${type?.name ?? "?"} finished · ${fmtDuration(e.endAt - e.at)}`, () => model.resume(e.id).catch(report)))
-        .catch(report),
-    );
-    const track = el("div", "tr-track");
-    track.append(fill, scale);
-    const name = el("span", "tr-sname", type?.name ?? "unknown type");
-    name.append(el("small", "", `since ${hm(s.at)}`));
-    row.append(el("span", "tr-emoji", type?.icon ?? "•"), name, dur, done, track);
-    box.append(row);
-    live.set(s.id, { dur, fill, scale, start: s.at });
-  }
-  tick();
-}
-
-/* every second: durations and bars of the running activities */
+/* every second: how long the running activities run (their tiles and log rows carry data-at, the start) */
 function tick() {
-  if (!live?.size || $("app-tracker").hidden || document.hidden) return;
+  if ($("app-tracker").hidden || document.hidden) return;
   const now = Date.now();
-  for (const { dur, fill, scale, start } of live.values()) {
-    const ms = now - start;
-    const s = scaleFor(ms);
-    dur.textContent = fmtDuration(ms);
-    fill.style.width = `${(ms / s) * 100}%`;
-    scale.textContent = `scale ${fmtScale(s)}`;
-  }
-  for (const bar of document.querySelectorAll(".tr-len.running span")) bar.textContent = fmtDuration(now - Number(bar.dataset.at));
+  if (minuteOf(now) !== shownMinute && model.running().length) return renderLog();
+  for (const n of document.querySelectorAll("#app-tracker [data-at]")) n.textContent = (n.dataset.prefix ?? "") + fmtDuration(now - Number(n.dataset.at));
 }
 
 /* ---------- tiles ---------- */
@@ -93,18 +50,17 @@ function tick() {
 function renderTiles() {
   const box = $("tr-tiles");
   box.textContent = "";
+  const now = Date.now();
   for (const t of model.activeTypes()) {
     const activity = t.kind === "activity";
-    const running = activity && model.isRunning(t.id);
+    const run = activity ? model.running().find((e) => e.typeId === t.id) : null;
     const { count, last } = model.todayStat(t.id);
-    const b = el("button", `tr-tile${running ? " running" : ""}`);
+    const b = el("button", `tr-tile${run ? " running" : ""}`);
     b.type = "button";
-    b.title = activity ? `${t.name}: starts an activity` : t.name;
-    b.append(
-      el("span", "tr-emoji", t.icon),
-      el("span", "tr-tile-name", t.name),
-      el("span", "tr-tile-meta", running ? "running…" : count ? `today ×${count} · ${hm(last)}` : activity ? "▶ activity" : "today —"),
-    );
+    b.title = run ? `${t.name}: running since ${hm(run.at)}, Finish it in the log` : activity ? `${t.name}: starts an activity` : t.name;
+    const meta = el("span", "tr-tile-meta", run ? `● ${fmtDuration(now - run.at)}` : count ? `today ×${count} · ${hm(last)}` : activity ? "▶ activity" : "today —");
+    if (run) Object.assign(meta.dataset, { at: run.at, prefix: "● " });
+    b.append(el("span", "tr-emoji", t.icon), el("span", "tr-tile-name", t.name), meta);
     b.addEventListener("click", () => hit(t, b));
     box.append(b);
   }
@@ -117,6 +73,7 @@ function renderTiles() {
 }
 
 async function hit(t, node) {
+  if (t.kind === "activity" && model.isRunning(t.id)) return; // it runs: Finish is in the log
   node.classList.add("hit");
   setTimeout(() => node.classList.remove("hit"), 250);
   try {
@@ -128,24 +85,26 @@ async function hit(t, node) {
   }
 }
 
-/* ---------- log ---------- */
+/* ---------- log: the running activities on top (whatever day is shown), then the day's entries, newest first ---------- */
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const dayName = (d) => {
   const today = startOfDay(Date.now());
-  if (d === today) return "Today";
-  if (d === today - DAY) return "Yesterday";
-  return new Date(d).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "2-digit", day: "2-digit" });
+  const name = d === today ? "Today" : d === today - DAY ? "Yesterday" : WEEKDAYS[new Date(d).getDay()];
+  return `${name} · ${ymd(d)}`;
 };
 
 function renderLog() {
+  const now = Date.now();
+  shownMinute = minuteOf(now);
   $("tr-day").textContent = dayName(day);
-  $("tr-next").disabled = day >= startOfDay(Date.now());
+  $("tr-next").disabled = day >= startOfDay(now);
   const list = $("tr-log");
   list.textContent = "";
-  const entries = model.dayEntries(day).reverse();
+  const running = model.running().reverse();
+  const entries = [...running, ...model.dayEntries(day).filter((e) => e.endAt !== null).reverse()];
   if (!entries.length) return list.append(el("div", "empty", "nothing logged"));
-  // activity bars are as long as their duration, the day's longest fills the column
-  const now = Date.now();
+  // activity bars are as long as their duration, the longest one shown fills the column
   const longest = Math.max(1, ...entries.map((e) => (e.endAt === undefined ? 0 : (e.endAt ?? now) - e.at)));
   for (const e of entries) list.append(logRow(e, longest, now));
 }
@@ -153,27 +112,35 @@ function renderLog() {
 /* time of an entry that changes on click ("at" = the start, "endAt" = the end of an activity) */
 function timeButton(e, field) {
   const b = el("button", "tr-time", hm(e[field]));
-  b.title = field === "at" ? "Click to change the time" : "Click to change when it finished";
-  b.addEventListener("click", () => editTime(b, e, field));
+  b.title = `${ymd(e[field])} ${hm(e[field])}: click to change ${field === "at" ? (e.endAt === undefined ? "the time" : "when it started") : "when it finished"}`;
+  b.addEventListener("click", () => openTime(e, field));
   return b;
 }
 
-/* start | end | icon | name | duration bar (activities) | × */
+/* start | end (Finish while it runs) | icon | name | duration bar (activities) | × */
 function logRow(e, longest, now) {
   const type = model.typeById(e.typeId);
-  const row = el("div", "tr-row");
+  const row = el("div", `tr-row${e.endAt === null ? " live" : ""}`);
   const end = el("span", "tr-end");
   const bar = el("span", "tr-len");
   if (e.endAt !== undefined) {
     const ms = (e.endAt ?? now) - e.at;
     if (e.endAt === null) {
-      end.append(el("span", "tr-running", "running"));
+      const done = el("button", "tr-finish primary", "Finish");
+      done.title = "Finish it now";
+      done.addEventListener("click", () =>
+        model
+          .finish(e.id)
+          .then((f) => f && toast(`■ ${type?.name ?? "?"} finished · ${fmtDuration(f.endAt - f.at)}`, () => model.resume(f.id).catch(report)))
+          .catch(report),
+      );
+      end.append(done);
       bar.classList.add("running");
     } else end.append(timeButton(e, "endAt"));
     const fill = el("i");
     fill.style.width = `${Math.max(0, Math.min(1, ms / longest)) * 100}%`;
     const text = el("span", "", fmtDuration(ms));
-    text.dataset.at = e.at;
+    if (e.endAt === null) text.dataset.at = e.at;
     bar.append(fill, text);
   }
   const del = el("button", "fdel", "×");
@@ -193,26 +160,59 @@ function logRow(e, longest, now) {
   return row;
 }
 
-function editTime(button, e, field) {
-  const input = el("input");
-  input.type = "datetime-local";
-  input.value = toInput(e[field]);
-  let done = false;
-  const finish = (save) => {
-    if (done) return;
-    done = true;
-    const time = new Date(input.value).getTime();
+/* ---------- time editor: date YYYY-MM-DD and 24-hour time, whatever the locale ---------- */
+
+let timing = null; // { e, field }
+
+/* "2026-11-17" or "20261117"; "7:20", "07:20", "720", "0720", "7.20" -> local time in ms, NaN if it isn't one */
+function parseTime(date, time) {
+  const d = /^(\d{4})-?(\d{1,2})-?(\d{1,2})$/.exec(date.trim());
+  const t = /^(\d{1,2})[:.]?(\d{2})$/.exec(time.trim());
+  if (!d || !t) return NaN;
+  const [y, mo, da, h, mi] = [d[1], d[2], d[3], t[1], t[2]].map(Number);
+  const at = new Date(y, mo - 1, da, h, mi);
+  return at.getFullYear() === y && at.getMonth() === mo - 1 && at.getDate() === da && h < 24 && mi < 60 ? at.getTime() : NaN;
+}
+
+const timeMsg = (t) => ($("tr-time-msg").textContent = t);
+
+function fillTime(t) {
+  $("tr-time-date").value = ymd(t);
+  $("tr-time-hm").value = hm(t);
+}
+
+function openTime(e, field) {
+  timing = { e, field };
+  const type = model.typeById(e.typeId);
+  $("tr-time-title").textContent = `${type?.icon ?? "•"} ${type?.name ?? "unknown type"} · ${field === "endAt" ? "finish" : e.endAt === undefined ? "time" : "start"}`;
+  fillTime(e[field]);
+  timeMsg("");
+  $("tr-time").showModal();
+  // a phone would open its keyboard over the sheet: there the field is focused only when tapped
+  if (!matchMedia("(pointer: coarse)").matches) $("tr-time-hm").select();
+  else $("tr-time-form").querySelector("button[type=submit]").focus();
+}
+
+async function saveTime(ev) {
+  ev.preventDefault();
+  const { e, field } = timing;
+  const time = parseTime($("tr-time-date").value, $("tr-time-hm").value);
+  if (!Number.isFinite(time)) return timeMsg("date YYYY-MM-DD, time HH:MM (24 hours)");
+  try {
     // an unchanged minute keeps the stored seconds
-    if (save && Number.isFinite(time) && minuteOf(time) !== minuteOf(e[field])) model.setTime(e.id, field, time).catch(report).finally(renderLog);
-    else renderLog();
-  };
-  input.addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter") finish(true);
-    if (ev.key === "Escape") finish(false);
-  });
-  input.addEventListener("blur", () => finish(true));
-  button.replaceWith(input);
-  input.focus();
+    if (minuteOf(time) !== minuteOf(e[field])) await model.setTime(e.id, field, time);
+    $("tr-time").close();
+  } catch (err) {
+    timeMsg(err.message);
+  }
+}
+
+/* −15 / −5 / now / +5 / +15 minutes from what the fields say */
+function nudge(step) {
+  const cur = parseTime($("tr-time-date").value, $("tr-time-hm").value);
+  const base = Number.isFinite(cur) ? cur : timing.e[timing.field];
+  fillTime(step === "now" ? Date.now() : base + Number(step) * 60000);
+  timeMsg("");
 }
 
 /* ---------- new type dialog ---------- */
@@ -319,7 +319,7 @@ async function submitNew(e) {
   }
 }
 
-/* ---------- edit types dialog ---------- */
+/* ---------- types dialog (Types in the navigation) ---------- */
 
 let draft = [];
 
@@ -415,7 +415,6 @@ async function clearLog() {
 /* ---------- app ---------- */
 
 function render() {
-  renderSpans();
   renderTiles();
   renderLog();
 }
@@ -456,6 +455,11 @@ export default {
     $("tr-types-cancel").addEventListener("click", () => $("tr-types").close());
     $("tr-types-save").addEventListener("click", saveTypes);
     $("tr-clear").addEventListener("click", clearLog);
+    $("tr-time-form").addEventListener("submit", saveTime);
+    $("tr-time-cancel").addEventListener("click", () => $("tr-time").close());
+    $("tr-time-x").addEventListener("click", () => $("tr-time").close());
+    $("tr-time-quick").addEventListener("click", (e) => e.target.dataset.min && nudge(e.target.dataset.min));
+    $("tr-time").addEventListener("close", () => (timing = null));
 
     const go = (d) => {
       day = startOfDay(d);

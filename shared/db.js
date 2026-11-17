@@ -28,6 +28,7 @@
  *                     "session" { tabs, active, views, edited, created }  the notes tabs of the page used last
  *                     "backup"  { lastExportAt, remindAt }
  *                     "sync"    { url, serverId, lastRev, paused }  the sync server (shared/sync.js); url has the token
+ *                     "start"   { value }  the screen a page load opens: "auto" (none = auto), "home" or an app id
  *   outbox          { id, store, updatedAt, deleted }  a record changed (or deleted) here that the server hasn't got
  *                     yet; kept only while a sync server is set (device "sync" has a url)
  *

@@ -1,50 +1,17 @@
-/* the Tracker app: running activities, event type tiles, day log, undo toast, type dialogs */
+/* the Tracker app: event type tiles, the log (running activities on top), undo toast, time editor, type dialogs */
 
 #app-tracker {
   position: relative;
   display: grid;
-  grid-template-rows: var(--bar-h) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
 }
 
-.tr-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px 0 12px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-}
-
-.tr-title { flex: 1; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
-.tr-bar button { height: 24px; border-color: var(--border); }
-
 .tr-body { overflow: auto; padding: 20px 24px 60px; background: var(--bg); }
 .tr-body > section { max-width: 1000px; margin: 0 auto 24px; }
 
-/* running activities */
-.tr-spans { display: flex; flex-direction: column; gap: 8px; }
-
-.tr-span {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 4px 12px;
-  padding: 8px 10px;
-  background: var(--surface);
-  border: 1px solid var(--accent);
-}
-
 .tr-emoji { font-size: 22px; line-height: 1; text-align: center; font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", var(--ui); }
-.tr-sname { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.tr-sname small { margin-left: 8px; color: var(--muted); font-weight: 400; }
-.tr-dur { font-family: var(--mono); font-size: 18px; }
-.tr-span button { height: 28px; padding: 0 14px; border-color: var(--accent); }
-.tr-track { position: relative; grid-column: 1 / -1; height: 8px; background: var(--panel); }
-.tr-fill { height: 100%; background: var(--accent); }
-.tr-scale { position: absolute; right: 0; top: 10px; color: var(--muted); font-size: 11px; }
-.tr-span { padding-bottom: 22px; }
 
 /* type tiles */
 .tr-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; }
@@ -67,7 +34,8 @@
 .tr-tile .tr-emoji, .tr-preview .tr-emoji { font-size: 34px; }
 .tr-tile-name { max-width: 100%; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .tr-tile-meta { color: var(--muted); font-size: 11px; }
-.tr-tile.running { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); opacity: 0.6; cursor: default; }
+.tr-tile.running { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); cursor: default; }
+.tr-tile.running .tr-tile-meta { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
 .tr-tile.hit { background: var(--accent); border-color: var(--accent); }
 .tr-tile.hit * { color: var(--accent-fg); }
 .tr-tile.add { border-style: dashed; border-color: var(--border-strong); color: var(--muted); }
@@ -97,11 +65,9 @@
 .tr-time:hover { border-color: var(--border-strong); }
 .tr-start, .tr-end { position: relative; }
 /* the time editor is wider than its column: it floats over the row */
-.tr-row input[type="datetime-local"] {
-  position: absolute; z-index: 2; top: 50%; left: 0; height: 44px; transform: translateY(-50%);
-  background: var(--surface); font-family: var(--mono); font-size: 22px;
-}
-.tr-running { padding: 0 7px; color: var(--accent); font-size: 18px; }
+/* a running activity: on top of the log, Finish where its end time will be */
+.tr-row.live { background: var(--hover); box-shadow: inset 3px 0 0 var(--accent); }
+.tr-finish { justify-self: start; height: 40px; padding: 0 14px; font-size: 18px; font-weight: 600; }
 .tr-len { position: relative; display: flex; align-items: center; height: 40px; }
 .tr-len i { position: absolute; inset: 0 auto 0 0; min-width: 2px; background: var(--accent); opacity: 0.25; }
 .tr-len.running i { opacity: 0.45; }
@@ -130,6 +96,15 @@
 
 .tr-toast button { height: 26px; border-color: currentColor; }
 .tr-toast.err { background: var(--danger); color: #fff; }
+
+/* time editor: always YYYY-MM-DD and 24-hour HH:MM (a datetime-local input follows the locale: 12-hour on some phones) */
+.tr-time-dlg { width: min(340px, 94vw); }
+.tr-time-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; padding: 14px 12px; }
+.tr-time-body > label { color: var(--muted); }
+.tr-time-body input { height: 44px; padding: 0 10px; font: 20px var(--mono); }
+.tr-time-quick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tr-time-quick button { height: 40px; border-color: var(--border); font-family: var(--mono); }
+.tr-time-dlg .dlg-foot button { height: 36px; }
 
 /* dialogs */
 .tr-new-dlg { width: min(600px, 94vw); }
@@ -198,6 +173,12 @@
   .tr-len span { font-size: 15px; }
   .tr-row .fdel { grid-area: del; height: 40px; font-size: 20px; }
   .tr-time { height: 40px; padding: 0 4px; font-size: 17px; }
-  .tr-running { padding: 0 4px; font-size: 14px; }
-  .tr-row input[type="datetime-local"] { font-size: 16px; height: 40px; }
+  .tr-finish { height: 36px; padding: 0 8px; font-size: 14px; }
+  .tr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tr-tile { min-height: 84px; gap: 4px; padding: 6px 4px; }
+  .tr-tile .tr-emoji { font-size: 28px; }
+  .tr-tile-name { font-size: 12px; }
+  .tr-log-head button { height: 36px; min-width: 40px; }
+  /* the time editor: a sheet at the bottom, over the navigation */
+  .tr-time-dlg { inset: auto 0 0 0 !important; width: 100%; max-width: none; margin: 0; border-width: 2px 0 0; border-top-color: var(--accent); }
 }

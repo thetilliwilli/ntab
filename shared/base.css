@@ -18,7 +18,7 @@
 
   --mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --side-w: 60px;
+  --nav-h: 56px;
   --bar-h: 32px;
   --status-h: 26px;
 }
@@ -77,8 +77,9 @@ html, body { height: 100%; }
 body {
   margin: 0;
   display: grid;
-  grid-template-columns: var(--side-w) minmax(0, 1fr);
-  height: 100vh;
+  grid-template-rows: minmax(0, 1fr) var(--nav-h);
+  grid-template-columns: minmax(0, 1fr);
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
   color: var(--fg);

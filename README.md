@@ -1,7 +1,7 @@
 # NTab: Notepad New Tab
 
 Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a home
-screen of large action tiles and a narrow sidebar with the same actions. Actions are links and apps:
+screen of large action tiles and a navigation bar at the bottom. Actions are links and apps:
 
 - **Notes** — a tabbed plain-text notepad (think Notepad++), saved as you type, open tabs survive restarts;
 - **Tracker** — tap a tile to log that something happened (smoked, workout, called mom…), or start an
@@ -41,12 +41,18 @@ open it in any browser, or install it as an app (the install icon in Chrome's ad
   (`shell/update.js`).
 - The origin `thetilliwilli.github.io` is shared by every Pages site of the account: any of them could read this data.
 
-## Home screen
+## Home screen and navigation
 
-Every new tab, reload and browser restart starts at the home screen, so notes never appear on screen by
-themselves (handy when sharing the screen). An app opens from its tile or its sidebar icon; the
-house button at the top of the sidebar goes back home. The address shows the screen as a route (`#/notes`);
-switching screens replaces it instead of adding browser history. The top right corner of the home screen links to
+The bar at the bottom switches screens: **Home**, **Notes**, **Tracker**, **Board**, **Settings** (the lit one is in
+front; a dot on Settings shows the sync state: green = synced, red = the sync server can't be reached). After a
+separator come the buttons of the screen in front: **Edit** (the actions editor) on Home, **Types** in the tracker,
+**Task** on the board. An app also opens from its home tile.
+
+Every new tab, reload and browser restart opens the start screen of this device (**Settings → Start screen**):
+**Auto** (the default) is the tracker on a touch screen (a phone) and home otherwise; or always Home, Notes, Tracker or
+Board. With Home, notes never appear on screen by themselves (handy when sharing the screen). The choice is kept in this
+browser only (device record "start"). The address shows the screen as a route (`#/notes`); switching screens replaces
+it instead of adding browser history, and a route in the address on load is dropped for the start screen. The top right corner of the home screen links to
 the GitHub repository and shows the version (`manifest.json`; the web version adds its build, the id of the cached file
 set, so you can tell whether a phone has the latest). An app loads its data when it is first opened.
 
@@ -60,7 +66,7 @@ record changes only that record), the sort of a record is `kind`. Synced and bac
 tabs, the backup reminder, the sync server) and `outbox` (changes the sync server hasn't got yet). Every write is one
 transaction, and every page of the browser hears about it (BroadcastChannel), so open pages stay in sync.
 
-The **Data** button in the sidebar (a small square on it: green = synced, red = the sync server can't be reached):
+**Settings** has the start screen, the theme (auto / light / dark) and the data:
 
 - **Sync server** — see [Sync server](#sync-server).
 - **Export backup** downloads `ntab-backup-YYYY-MM-DD.json`:
@@ -126,7 +132,7 @@ yet): its changes wait and go when it connects, whatever piled up meanwhile.
 
    Check: `https://192.168.1.10:8443/` opens without a warning and, given the token as the password, says
    "NTab sync server: OK".
-4. **Connect** each client: **Data → Sync server** `https://<token>@192.168.1.10:8443` → **Connect**. When both the
+4. **Connect** each client: **Settings → Sync server** `https://<token>@192.168.1.10:8443` → **Connect**. When both the
    server and the client have data, choose **Merge** (both sets) or **Replace this device** (the client's data goes,
    the server's comes). A page on a public site (the web version) reaching a LAN address asks once for access to the
    local network: allow it.
@@ -150,7 +156,7 @@ node scripts/migrate-backup.mjs laptop.json phone.json -o merged.json
 
 It joins the files into one backup of format 2 (records with the same id become one, the newer wins; the first file's
 order of lists and settings come first) and prints what it did. After the update, import `merged.json` on one device
-(**Data → Import backup**), connect it to the server, then connect the others with **Replace this device**.
+(**Settings → Import backup**), connect it to the server, then connect the others with **Replace this device**.
 
 ## Notepad
 
@@ -174,33 +180,37 @@ order of lists and settings come first) and prints what it did. After the update
 - An **event type** has an emoji, a name and a kind: an **event** (a tap logs the moment) or an **activity**
   (a tap starts it, **Finish** ends it). **+ new type** adds one: pick the icon from the suggestions or from
   **all emoji…** (every single-character emoji the browser knows, found at runtime, no emoji data shipped, so no
-  search), or paste one; **edit types** renames, reorders, switches event ⇄ activity and archives (an archived
+  search), or paste one; **Types** (in the navigation) renames, reorders, switches event ⇄ activity and archives (an archived
   type loses its tile, its entries keep their name in the log).
-- A running activity shows on top with its running time, a growing bar and **Finish**.
-- The day log below (◀ ▶ today) lists the entries of a day; click a time (the start, or an activity's finish)
-  to correct it, `×` deletes. Every log, finish and delete can be undone from the toast.
-- **edit types → Delete all log entries…** empties the log after a confirm (the types stay; undo from the toast),
+- A running activity's tile shows its running time; the activity itself is on top of the log (whatever day is
+  shown) with **Finish** where its finish time will be.
+- The log (◀ ▶ today) lists the entries of a day below the running ones; click a time (the start, or an activity's
+  finish) to correct it in a small editor: the date as `YYYY-MM-DD`, the time as 24-hour `HH:MM` (whatever the
+  locale; `0720` and `20261117` work too), −15 / −5 / now / +5 / +15 minutes; on a phone it is a sheet at the bottom.
+  `×` deletes. Every log, finish and delete can be undone from the toast.
+- **Types → Delete all log entries…** empties the log after a confirm (the types stay; undo from the toast),
   e.g. on a second device that got the types from a backup.
 - An entry is one record: `{ id, typeId, at, updatedAt }` for an event, `{ id, typeId, at, endAt, updatedAt }` for an
   activity (`endAt: null` while it runs).
 
 ## Board
 
-Columns New / Planned / Work / Hold / Done. **+ task** (or `+` in New) creates a task with a name and a description;
+Columns New / Planned / Work / Hold / Done (on a phone one at a time, picked by tabs above it). **Task** in the
+navigation (or `+` in New) creates a task with a name and a description;
 click a card to edit it, change its status or delete it. Drag cards between and within columns (the mouse
 anywhere on a card, a finger by its `⋮⋮` handle). A move changes only the moved card: its `rank` goes between its new
 neighbours.
 
 ## Actions
 
-One list drives both the home tiles and the sidebar, in the same order. The dashed **+ Add** tile at the end
+One list drives the home tiles, in its order. The dashed **+ Add** tile at the end
 opens the action form for a new action of any kind (URL, name — defaults to the host or app name —, icon upload,
 new tab or the request's method, headers as `Name: value` lines and body); it is added at the end of the list.
-In the editor, ⚙ (or the method button) on a row opens the same form for that row. Right-click a tile or a
-sidebar icon → **Edit** (the same form) or **Delete** (at once, without asking). Hovering a sidebar icon shows a flyout with its full name and address; when the icons don't fit, arrows above and below them scroll by a page. In the editor, **Embed icons** stores every
+In the editor, ⚙ (or the method button) on a row opens the same form for that row. Right-click a tile → **Edit**
+(the same form) or **Delete** (at once, without asking). In the editor, **Embed icons** stores every
 favicon the browser has cached for your sites in the actions (so a backup carries them, e.g. to the web version,
 which has no favicon cache), **Reset icons** sets every action back to its automatic icon, ↺ on a row only that one; **Save** keeps them. Edit with
-✎ at the bottom of the sidebar (above it: **Data** and the theme switch auto / light / dark) — a form or raw JSON:
+**Edit** in the navigation on the home screen — a form or raw JSON:
 
 ```json
 [
@@ -275,16 +285,16 @@ Sources are plain ES modules, split by role:
   - `sync.js` — the sync with the sync server
   - `settings.js` — settings
   - `util.js` — DOM helpers, formatting, drag-to-reorder, routes, downloads
-  - `menu.js` — the right-click menu (tabs, tiles, sidebar icons)
+  - `menu.js` — the right-click menu (tabs, tiles)
 - `shell/` — the frame around the apps:
-  - `main.js` — entry point: theme, screens
+  - `main.js` — entry point: theme, start screen, screens, the bottom navigation
   - `apps.js` — the app registry and the app contract
-  - `view.js` — current screen (home / an app id) and its route
-  - `actions.js`, `sidebar.js`, `home.js` — the actions and their icons, the sidebar with its flyout, home tiles
+  - `view.js` — current screen (home / settings / an app id) and its route
+  - `actions.js`, `home.js` — the actions and their icons, home tiles
   - `actions-dialog.js`, `action-form.js`, `icon-file.js` — the actions editor, the form for one action (+ Add, ⚙), icon upload
   - `request.js` — runs request actions and shows the response
   - `render.html`, `render-frame.js` — the sandboxed frame that runs a request's render function
-  - `data.js` — the Data dialog (sync server, backup export / import, text files) and the backup reminder
+  - `data.js` — the Data part of Settings (sync server, backup export / import, text files) and the backup reminder
   - `theme.js` — applies the saved theme before the first paint
   - `update.js` — the web version: reloads into a new version at a safe moment
 - `apps/notes/` — `index.js` (the app), `notes.js` (open notes, autosave, session, cross-page sync),

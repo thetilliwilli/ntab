@@ -1,5 +1,5 @@
 /*
- * the Data dialog (sidebar button): the sync server, backup export / import, text files as notes; and the backup
+ * the Data part of the Settings screen: the sync server, backup export / import, text files as notes; and the backup
  * reminder on home.
  *
  * a backup is one JSON file: { app: "ntab", format: 2, exportedAt, data: { notes, trackerTypes, trackerEntries, tasks,
@@ -29,7 +29,6 @@ const REQUIRED = {
   settings: { name: "string" },
 };
 
-const dlg = $("data");
 let flushApps = async () => {};
 
 const msg = (text, kind = "") => {
@@ -143,12 +142,6 @@ const guard = (fn) => () => fn().catch((e) => msg(e.message || String(e), "err")
 /* flush: writes the apps' pending changes before a backup is taken or replaced */
 export function initData({ flush }) {
   flushApps = flush;
-  $("data-btn").addEventListener("click", () => {
-    msg("");
-    refresh();
-    dlg.showModal();
-  });
-  $("data-x").addEventListener("click", () => dlg.close());
   $("data-export").addEventListener("click", guard(exportAll));
   $("data-import").addEventListener("click", guard(importBackup));
   $("data-text").addEventListener("click", guard(importText));
@@ -179,8 +172,8 @@ function showSync(s) {
   $("sync-status").textContent = STATES[s.state](s) + waiting;
   $("sync-status").className = `muted sync-${s.state}`;
   $("sync-disconnect").hidden = s.state === "off" || s.state === "paused";
-  $("data-btn").dataset.sync = s.state;
-  $("data-btn").title = `Data: backup, import, sync (${s.state === "off" ? "no sync server" : STATES[s.state](s).replace(/\.$/, "")})`;
+  $("nav-settings").dataset.sync = s.state;
+  $("nav-settings").title = `Settings: start screen, theme, backup, sync (${s.state === "off" ? "no sync server" : STATES[s.state](s).replace(/\.$/, "")})`;
 }
 
 async function initSync() {
@@ -213,5 +206,5 @@ async function initSync() {
   }));
 }
 
-/* home came to the front: the reminder may be due by now */
+/* home or settings came to the front: the reminder may be due by now, the last backup is shown */
 export const checkReminder = () => refresh().catch(console.error);

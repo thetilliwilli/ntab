@@ -42,10 +42,10 @@ await sleep(300);
 const snoozed = await P.ev(inDb(`async (s, req) => req(s.device.get(${JSON.stringify(DEVICE.backup)}))`, "readonly"));
 ok("Later: hidden, back in 3 days", (await P.ev(`document.getElementById('backup-bar').hidden`)) && Math.abs(snoozed.remindAt - Date.now() - 3 * 864e5) < 60e3);
 
-// export from the data dialog
-await P.ev(`document.getElementById('data-btn').click()`);
+// export from Settings (the Data part)
+await P.ev(`document.getElementById('nav-settings').click()`);
 await sleep(200);
-ok("data dialog: no backup yet", (await P.ev(`document.getElementById('data-last').textContent`)) === "no backup yet");
+ok("settings: no backup yet", (await P.ev(`document.getElementById('data-last').textContent`)) === "no backup yet");
 await P.ev(`document.getElementById('data-export').click()`);
 await sleep(1000);
 const file = fs.readdirSync(tmp).find((f) => f.startsWith("ntab-backup-"));
@@ -102,7 +102,7 @@ await sleep(1000);
 await P.ev(`location.hash = '#/board'`);
 await sleep(500);
 ok("#/board opens the board", await P.ev(`!document.getElementById('app-board').hidden && document.title === 'Board'`));
-await P.ev(`document.getElementById('go-home').click()`);
+await P.ev(`document.getElementById('nav-home').click()`);
 await sleep(200);
 ok("home clears the route", await P.ev(`location.hash === '' && !document.getElementById('home').hidden`));
 ok("home: one list, no groups", await P.ev(`!document.querySelector('.home-head') && document.querySelectorAll('#home-grid .tile').length === 4`));
@@ -131,7 +131,7 @@ await setJson([json[3], { ...json[0], name: "Notepad" }, { name: "Wiki", kind: "
 await sleep(400);
 actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
 ok("saved in the new order", actions.map((a) => a.name).join() === "example.com,Notepad,Wiki" && actions[1].id === json[0].id && actions[2].options.url === "https://en.wikipedia.org" && actions[2].icon === null, JSON.stringify(actions));
-ok("sidebar follows", (await P.ev(`[...document.querySelectorAll('#links > *')].map((n) => n.getAttribute('aria-label')).join()`)) === "example.com,Notepad,Wiki");
+ok("home follows", (await P.ev(`[...document.querySelectorAll('#home-grid .tile:not(.tile-add) .tile-name')].map((n) => n.textContent).join()`)) === "example.com,Notepad,Wiki");
 
 // right-click on a tile: Edit opens the form with the action, saving keeps its id and place; Delete removes it
 const tileNamed = (n) => `[...document.querySelectorAll('#home-grid .tile')].find((t) => t.querySelector('.tile-name')?.textContent === ${JSON.stringify(n)})`;
@@ -144,12 +144,10 @@ await P.ev(`document.getElementById('add-name').value = 'My notes'; document.get
 await sleep(400);
 actions = (await P.ev(dbAll("actions"))).sort((a, b) => a.rank - b.rank);
 ok("edited in place", actions.map((a) => a.name).join() === "example.com,My notes,Wiki" && actions[1].id === json[0].id, JSON.stringify(actions.map((a) => [a.name, a.rank])));
-// the sidebar: the flyout covers the icon, right-click on it gives the same menu
-await P.ev(`document.querySelector('#links [aria-label=Wiki]').dispatchEvent(new MouseEvent('mouseenter'))`);
-await P.ev(`document.querySelector('.flyout').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 200 }))`);
+await P.ev(`${tileNamed("Wiki")}.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 200 }))`);
 await P.ev(`document.querySelector('.ctx-menu .danger').click()`);
 await sleep(400);
-ok("Delete from the sidebar", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
+ok("Delete from the tile menu", (await P.ev(dbAll("actions"))).map((a) => a.name).sort().join() === "My notes,example.com" && (await P.ev(`!${tileNamed("Wiki")}`)));
 
 // Embed icons: cached favicons go into the actions (the stub's cache has one for s1.test); Reset icons drops them all
 await P.ev(resetData([{ name: "Notes", url: "#/notes" }, { name: "One", url: "https://s1.test/" }, { name: "Two", url: "https://s2.test/" }]));
@@ -188,7 +186,7 @@ await Q.send("Page.reload");
 await sleep(1000);
 await Q.ev(`window.marker = 1`);
 const before = (await P.ev(dbAll("notes"))).length + (await P.ev(dbAll("actions"))).length;
-await P.ev(`document.getElementById('data-btn').click()`);
+await P.ev(`document.getElementById('nav-settings').click()`);
 await P.ev(`window.confirm = () => false; document.getElementById('data-wipe').click()`);
 await sleep(300);
 ok("wipe: declined keeps the data", (await P.ev(dbAll("notes"))).length + (await P.ev(dbAll("actions"))).length === before && before > 0);

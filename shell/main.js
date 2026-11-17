@@ -1,27 +1,27 @@
-/* entry point: theme, screens (home / apps); apps live in apps/<id>/ (see apps.js), data in shared/db.js */
+/* entry point: theme, screens (home / settings / apps) and the bottom navigation; apps live in apps/<id>/ (see
+   apps.js), data in shared/db.js */
 
+import * as db from "../shared/db.js";
 import * as settings from "../shared/settings.js";
 import { apps, appById } from "./apps.js";
 import { initActions } from "./actions.js";
-import { initSidebar } from "./sidebar.js";
 import { initHome } from "./home.js";
 import { initActionsDialog } from "./actions-dialog.js";
 import { initActionForm } from "./action-form.js";
 import { initRequestDialog } from "./request.js";
 import { initData, checkReminder } from "./data.js";
-import { getView, onView } from "./view.js";
+import { getView, setView, onView, setViews, isView } from "./view.js";
 import { initUpdate } from "./update.js";
 import { $ } from "../shared/util.js";
 import { startSync } from "../shared/sync.js";
 
-/* ---------- theme ---------- */
+setViews(["home", "settings", ...apps.map((a) => a.id)]);
 
-const THEMES = ["auto", "light", "dark"];
-const THEME_ICONS = {
-  auto: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
-  light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
-  dark: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>',
-};
+/* a segmented control in Settings: marks the button of the value */
+const markSeg = (id, value) => $(id).querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.value === value));
+const onSeg = (id, fn) => $(id).addEventListener("click", (e) => e.target.closest("button[data-value]") && fn(e.target.closest("button").dataset.value));
+
+/* ---------- theme ---------- */
 
 function applyTheme({ theme }) {
   if (theme === "auto") delete document.documentElement.dataset.theme;
@@ -29,51 +29,69 @@ function applyTheme({ theme }) {
   try {
     localStorage.setItem("theme", theme); // shell/theme.js applies it before the first paint next time
   } catch {}
-  const btn = $("theme-btn");
-  btn.title = `Theme: ${theme} (click to switch)`;
-  btn.firstElementChild.innerHTML = THEME_ICONS[theme] || THEME_ICONS.auto;
+  markSeg("set-theme", theme);
 }
 
 settings.subscribeSettings(applyTheme);
-$("theme-btn").addEventListener("click", () => {
-  const { theme } = settings.getSettings();
-  settings.updateSettings({ theme: THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] });
-});
+onSeg("set-theme", (theme) => settings.updateSettings({ theme }));
 
-/* ---------- screens: home / an app; an app loads its data when it is first opened on the page ---------- */
+/* ---------- start screen (this device): "auto" = the tracker on a touch screen (a phone), home otherwise ---------- */
+
+const startPref = async () => (await db.getDevice("start"))?.value ?? "auto";
+const resolveStart = (pref) => (pref === "auto" ? (matchMedia("(pointer: coarse)").matches ? "tracker" : "home") : isView(pref) ? pref : "home");
+
+onSeg("set-start", (value) => {
+  markSeg("set-start", value);
+  db.setDevice("start", { value }).catch(console.error);
+});
+db.onChange(({ store }) => store === "device" && startPref().then((v) => markSeg("set-start", v), console.error));
+
+/* ---------- screens; an app loads its data when it is first opened on the page ---------- */
 
 const started = new Map(); // app -> promise of its start()
 
-function show() {
-  const app = appById(getView());
-  $("home").hidden = !!app;
+function show(view) {
+  const app = appById(view);
+  $("home").hidden = view !== "home";
+  $("settings").hidden = view !== "settings";
   for (const a of apps) $(`app-${a.id}`).hidden = a !== app;
+  // the bottom navigation: the screen in front is lit, its own buttons follow the separator
+  for (const b of $("bnav").querySelectorAll("[data-view]")) b.classList.toggle("on", b.dataset.view === view);
+  let ctx = 0;
+  for (const b of $("bnav").querySelectorAll("[data-for]")) ctx += !(b.hidden = b.dataset.for !== view);
+  $("bnav-sep").hidden = !ctx;
 }
 
-async function enter() {
-  const app = appById(getView());
-  if (!app) return checkReminder();
+async function enter(view) {
+  const app = appById(view);
+  if (!app) return checkReminder(); // home: the backup reminder may be due; settings: the last backup
   if (!started.has(app)) started.set(app, app.start().catch((e) => (started.delete(app), Promise.reject(e))));
   await started.get(app);
   if (app === appById(getView())) app.show();
 }
 
 onView((view) => {
-  document.title = appById(view)?.name ?? "new"; // "new" is also the static <title>
-  show();
-  enter().catch(console.error);
+  document.title = view === "home" ? "new" : view === "settings" ? "Settings" : appById(view).name; // "new" is also the static <title>
+  show(view);
+  enter(view).catch(console.error);
+});
+
+$("bnav").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-view]");
+  if (b) setView(b.dataset.view);
 });
 
 /* ---------- start ---------- */
 
 for (const app of apps) app.init();
-initSidebar();
 initHome();
 initActionsDialog();
 initActionForm();
 initRequestDialog();
 initUpdate();
 initData({ flush: () => Promise.all([...started.keys()].map((a) => a.flush?.())) });
-await settings.loadSettings();
+const [pref] = await Promise.all([startPref().catch(() => "auto"), settings.loadSettings()]);
+markSeg("set-start", pref);
+setView(resolveStart(pref));
 initActions().catch(console.error);
 startSync();

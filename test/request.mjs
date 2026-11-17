@@ -127,14 +127,6 @@ r = await P.ev(`({ allow: !document.getElementById('req-allow').hidden, note: do
 ok("granted, sent again: just unreachable", !r.allow && /could not be reached\.$/.test(r.note) && (await P.ev(`chrome.permissions.granted.has('http://localhost/*')`)), JSON.stringify(r));
 await close();
 
-// the sidebar flyout runs it too
-await P.ev(`[...document.querySelectorAll('#links .link')].find((n) => n.getAttribute('aria-label') === 'Text').dispatchEvent(new MouseEvent('mouseenter'))`);
-ok("flyout says method and URL", (await P.ev(`document.querySelector('.flyout .fly-url').textContent`)) === "GET http://localhost:8765/stub.js");
-await P.ev(`document.querySelector('.flyout').click()`);
-await sleep(1000);
-ok("flyout click runs it", await P.ev(`document.getElementById('req').open && document.getElementById('req-status').textContent.startsWith('200')`));
-await close();
-
 // the editor: a request row has the method button; ⚙ edits it in the form
 await P.ev(`document.getElementById('links-edit').click()`);
 await sleep(200);

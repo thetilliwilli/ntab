@@ -14,6 +14,7 @@ const report = (e) => {
 /* ---------- columns and cards ---------- */
 
 let drag = null; // { id, card, ghost, x, y, dx, dy, active, status, before }
+let shown = "new"; // on a phone one column at a time: the tab picked above them
 let dirty = false; // changes that arrived during a drag, drawn when it ends
 
 function render() {
@@ -21,9 +22,19 @@ function render() {
   dirty = false;
   const cols = $("bd-cols");
   cols.textContent = "";
+  $("bd-tabs").textContent = "";
   for (const status of model.STATUSES) {
     const tasks = model.inColumn(status);
-    const col = el("section", `bd-col bd-${status}`);
+    const tab = el("button", status === shown ? "on" : "", `${model.STATUS_NAMES[status]} ${tasks.length}`);
+    tab.type = "button";
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-selected", status === shown);
+    tab.addEventListener("click", () => {
+      shown = status;
+      render();
+    });
+    $("bd-tabs").append(tab);
+    const col = el("section", `bd-col bd-${status}${status === shown ? " on" : ""}`);
     col.dataset.status = status;
     const head = el("div", "bd-head");
     head.append(el("span", "bd-col-name", model.STATUS_NAMES[status]), el("span", "bd-count", String(tasks.length)));

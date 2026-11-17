@@ -30,6 +30,7 @@ export const DEVICE_IDS = {
   session: "254e82a0-c80e-4a18-8f4e-172c2598533c",
   backup: "3a5add83-bf91-4fa2-bbb4-4952c23cd93b",
   sync: "b73a518a-ce08-4ebe-83fa-45692c84f147",
+  start: "922dc70d-3be6-4fe2-8634-96370c3d05c1", // the start screen of this device { value: "auto" | "home" | <app id> }
 };
 
 /* ---------- ranks ---------- */

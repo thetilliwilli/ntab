@@ -3,23 +3,13 @@
 #app-board {
   position: relative;
   display: grid;
-  grid-template-rows: var(--bar-h) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
 }
 
-.bd-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px 0 12px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-}
-
-.bd-title { flex: 1; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
-.bd-bar button { height: 24px; border-color: var(--border); }
-.bd-bar .primary { border-color: var(--accent); }
+/* column tabs: only on a phone, where one column shows at a time */
+.bd-tabs { display: none; }
 
 .bd-cols {
   display: grid;
@@ -99,3 +89,12 @@ body.bd-dragging, body.bd-dragging * { cursor: grabbing !important; }
 .bd-desc-in { min-height: 140px; padding: 8px; resize: vertical; background: var(--surface); border: 1px solid var(--border); }
 .bd-del { color: var(--danger); }
 .bd-del:hover { background: var(--danger); color: #fff; }
+
+/* phones: one column at a time, picked by the tabs (a card moves to another column through its Status) */
+@media (max-width: 600px) {
+  .bd-tabs { display: flex; margin: 10px 10px 0; background: var(--surface); }
+  .bd-tabs button { flex: 1; min-width: 0; height: 36px; padding: 0 2px; border-right: 1px solid var(--border); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+  .bd-tabs button:last-child { border-right: 0; }
+  .bd-cols { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .bd-col:not(.on) { display: none; }
+}

@@ -164,11 +164,11 @@ async function screenshots(icons) {
   await openApp(P, "board");
   await shot(4, { label: "task board" });
 
-  // 5. wrapped text, sidebar flyout
+  // 5. wrapped text
   P = await prepare(P, icons, { theme: "light", active: "meeting-notes.txt", wrap: true });
   await openApp(P, "notes");
   await caret(P, "decision by next Tuesday");
-  await shot(5, { label: "flyout", hover: "#links .link:nth-child(7)" });
+  await shot(5, { label: "wrapped text" });
   await closePage(P);
 }
 
@@ -222,7 +222,7 @@ async function prepare(P, icons, { theme, active, wrap = false }) {
 }
 
 async function openApp(P, id) {
-  await P.ev(`document.querySelector('#links .${id}').click()`);
+  await P.ev(`document.querySelector('#bnav [data-view=${id}]').click()`);
   await sleep(500);
 }
 

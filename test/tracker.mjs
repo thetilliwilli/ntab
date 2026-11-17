@@ -38,21 +38,22 @@ await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`); // already runni
 await sleep(300);
 let ev = await entries(P);
 ok("3 entries (2 events + 1 running activity)", ev.length === 3 && !("endAt" in ev[0]) && ev[2].endAt === null && ev[2].typeId === types[1].id, JSON.stringify(ev));
-ok("running span shown", await q(P, `!document.getElementById('tr-spans').hidden && document.querySelectorAll('.tr-span').length === 1`));
+ok("running activity on top of the log with Finish", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && document.querySelector('#tr-log .tr-row').classList.contains('live') && !!document.querySelector('.tr-row.live .tr-finish')`));
+ok("one list: the running activity is not twice", await q(P, `document.querySelectorAll('#tr-log .tr-row').length === 3`));
 ok("tile says ×2", await q(P, `document.querySelector('.tr-tile .tr-tile-meta').textContent.includes('×2')`));
 await sleep(1500);
-const dur1 = await q(P, `[document.querySelector('.tr-dur').textContent, parseFloat(document.querySelector('.tr-span .tr-fill').style.width)]`);
-ok("duration in minutes, the bar ticks", dur1[0] === "0m" && dur1[1] > 0, JSON.stringify(dur1));
+const dur1 = await q(P, `[document.querySelector('.tr-row.live .tr-len span').textContent, parseFloat(document.querySelector('.tr-row.live .tr-len i').style.width), document.querySelector('.tr-tile.running .tr-tile-meta').textContent]`);
+ok("duration in minutes in the row and on the tile", dur1[0] === "0m" && dur1[1] > 0 && dur1[2] === "● 0m", JSON.stringify(dur1));
 if (SHOTS) await P.shot(`${SHOTS}/tracker.png`);
 
 // second page sees it, finishes it
 const Q = await newPage();
 await sleep(1200);
 await openApp(Q, "tracker");
-ok("page 2 shows running span", await q(Q, `document.querySelectorAll('.tr-span').length === 1`));
-await Q.ev(`document.querySelector('.tr-span button').click()`);
+ok("page 2 shows the running activity", await q(Q, `document.querySelectorAll('.tr-row.live').length === 1`));
+await Q.ev(`document.querySelector('.tr-row.live .tr-finish').click()`);
 await sleep(600);
-ok("page 1 sees it finished (sync)", await q(P, `document.getElementById('tr-spans').hidden`));
+ok("page 1 sees it finished (sync)", await q(P, `!document.querySelector('.tr-row.live') && !document.querySelector('.tr-tile.running')`));
 ev = await entries(P);
 ok("the activity got its end", ev.length === 3 && ev[2].endAt >= ev[2].at);
 
@@ -81,18 +82,32 @@ await P.ev(`document.getElementById('tr-toast-undo').click()`);
 await sleep(300);
 ok("restored", (await entries(P)).length === 5);
 
-// edit time of the newest row: one hour earlier
-// shown to the minute; opening the editor and pressing Enter keeps the stored milliseconds
+// edit time of the newest row: one hour earlier, in the time editor (YYYY-MM-DD and 24-hour HH:MM)
+// shown to the minute; opening the editor and saving keeps the stored milliseconds
+const setFields = (t) => `(() => { const d = new Date(${t}); const p = (n) => String(n).padStart(2, '0');
+  document.getElementById('tr-time-date').value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  document.getElementById('tr-time-hm').value = p(d.getHours()) + ':' + p(d.getMinutes()); })()`;
+const save = () => P.ev(`document.getElementById('tr-time-form').requestSubmit()`);
 const before = (await entries(P)).map((e) => e.at).join();
 ok("log time to the minute", /^\d\d:\d\d$/.test(await q(P, `document.querySelector('.tr-row .tr-time').textContent`)));
 await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
 await sleep(100);
-await P.ev(`document.querySelector('.tr-row input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))`);
+const shown = await q(P, `[document.getElementById('tr-time').open, document.getElementById('tr-time-date').value, document.getElementById('tr-time-hm').value]`);
+ok("editor: ISO date, 24-hour time", shown[0] && /^\d{4}-\d\d-\d\d$/.test(shown[1]) && /^([01]\d|2[0-3]):\d\d$/.test(shown[2]), JSON.stringify(shown));
+if (SHOTS) await P.shot(`${SHOTS}/tracker-time.png`);
+await save();
 await sleep(300);
-ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before);
+ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before && !(await q(P, `document.getElementById('tr-time').open`)));
 await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
 await sleep(100);
-await P.ev(`(() => { const i = document.querySelector('.tr-row input'); const d = new Date(Math.max(new Date(i.value).getTime() - 3600e3, new Date().setHours(0, 0, 1, 0))); /* back, but still today */ const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
+await P.ev(`document.getElementById('tr-time-hm').value = '25:00'`);
+await save();
+await sleep(200);
+ok("a wrong time is refused", await q(P, `document.getElementById('tr-time').open && document.getElementById('tr-time-msg').textContent.includes('HH:MM')`));
+const newest = (await entries(P)).at(-1);
+await P.ev(setFields(`Math.max(${newest.at} - 3600e3, new Date().setHours(0, 0, 1, 0))`)); // back, but still today
+await P.ev(`document.querySelector('#tr-time-quick [data-min="-5"]').click(); document.querySelector('#tr-time-quick [data-min="5"]').click()`); // −5 +5: the same
+await save();
 await sleep(400);
 ev = await entries(P);
 ok("time changed: one entry moved back", ev.length === 5 && Date.now() - ev[0].at > 30e3, JSON.stringify(ev[0]));
@@ -101,9 +116,11 @@ ok("time changed: one entry moved back", ev.length === 5 && Date.now() - ev[0].a
 const act = ev.find((e) => e.endAt);
 await P.ev(`[...document.querySelectorAll('.tr-end .tr-time')][0].click()`);
 await sleep(100);
-await P.ev(`(() => { const i = document.querySelector('.tr-end input'); const d = new Date(${act.at} - 60e3); const p = (n) => String(n).padStart(2, '0'); i.value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); })()`);
+await P.ev(setFields(`${act.at} - 120e3`));
+await save();
 await sleep(300);
-ok("end before start refused", (await entries(P)).find((e) => e.id === act.id).endAt === act.endAt && (await q(P, `document.getElementById('tr-toast').classList.contains('err')`)));
+ok("end before start refused", (await entries(P)).find((e) => e.id === act.id).endAt === act.endAt && (await q(P, `document.getElementById('tr-time-msg').textContent.includes("can't end")`)));
+await P.ev(`document.getElementById('tr-time-cancel').click()`);
 
 // edit types: rename, reorder survives reload
 await P.send("Page.reload");

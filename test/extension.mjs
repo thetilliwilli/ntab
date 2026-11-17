@@ -97,7 +97,8 @@ s = await connectSync();
 ok("sync: the extension connects to a server that allows its origin", s.startsWith("Synced with 127.0.0.1:8448"), s);
 const head = JSON.parse(execSync(`curl -s --cacert cert.pem -u ${TOKEN}: "https://127.0.0.1:8448/pull?since=0"`, { cwd: profile })).records.length;
 ok("sync: the server got the extension's data", head >= 5, String(head));
-await ev(`document.getElementById("data").close()`);
+// leave Settings (it was a dialog before)
+await ev(`document.getElementById("nav-home").click()`);
 
 /* a request through the render frame: the frame loads before the page listens, the handshake must still work */
 const run = (url, render) =>

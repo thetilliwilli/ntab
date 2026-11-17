@@ -66,22 +66,33 @@ save/session model, and `shell/apps.js` for the app contract.
   file set per `VERSION`, `skipWaiting` (the next load gets the new set, never a mix); the page calls `reg.update()` when it becomes visible and
   `shell/update.js` reloads into a new version on home with no dialog open or when hidden, else shows a Reload bar; run `node scripts/sw.mjs`
   before every commit that changes app files. Web-only files stay out of the extension zip (`release.mjs`). Target:
-  desktop first; mobile layout is later (Android only, iOS is not supported).
+  desktop and phones (the bottom navigation; Android only, iOS is not supported).
 - Apps: notes, tracker, board (`apps/<id>/`, registered in `shell/apps.js`). The extension name stays
   "NTab: Notepad New Tab".
 - Tracker decisions: an entry is one record `{id, typeId, at, endAt?, updatedAt}` (event: no `endAt`; activity: `endAt` null
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
-  never deleted; undo toast, day log with start and finish time edit. "Delete all log entries…" (edit types
-  dialog, confirm + undo) empties the log, types stay.
+  never deleted; undo toast. One list (the user's wish, no separate panel): running activities on top of the log
+  whatever day is shown, with Finish in the row; the running tile shows the live duration. Start and finish times are
+  edited in a small dialog (a sheet at the bottom on phones): date `YYYY-MM-DD` and 24-hour `HH:MM` text fields, never
+  `datetime-local` (it follows the locale: 12-hour on phones). "Delete all log entries…" (Types dialog, confirm +
+  undo) empties the log, types stay.
 - Board: fixed columns new / planned / work / hold / done; drag on pointer events (works with touch), status also in the
-  task dialog.
+  task dialog. Under 600px one column at a time, picked by tabs.
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.
 - Theme colors stay our own tokens: Chrome has no API to read its theme colors (only light/dark is known);
   matching the default Chrome palette was offered and declined.
-- Home screen: every page load (new tab, reload, restart) starts at home, so notes never show by themselves
-  (screen sharing). Screens are hash routes (`#/notes`), replaced, never added to history; a route in the address
-  on load is dropped. An app loads its data when first opened on the page.
+- Start screen: every page load (new tab, reload, restart) opens the start screen of this device (Settings; the
+  `device` record "start", not synced): "auto" (default) = the tracker on a touch screen (`pointer: coarse`, a phone),
+  home otherwise; or home / notes / tracker / board (notes allowed too, the user's choice for uniformity; with home,
+  notes never show by themselves when sharing the screen). Screens are hash routes (`#/notes`, `#/settings`),
+  replaced, never added to history; a route in the address on load is dropped. An app loads its data when first
+  opened on the page.
+- Bottom navigation (replaced the sidebar, which the user didn't use): Home, Notes, Tracker, Board, Settings (fixed,
+  icon + label, the screen in front lit in the accent with a bar on top), then a "|" separator and the buttons of the
+  screen in front only: Edit (actions editor) on home, Types in the tracker, Task on the board. Same bar on desktop
+  (centered) and phones. No title bars in the apps (the lit button says where you are). Settings is a screen: start
+  screen, theme (auto / light / dark), data (sync, backup, import, delete all).
 - Home screen corner: a GitHub corner (octocat triangle, top right, new tab) to the repository and the version beside it,
   both `position: fixed` out of the layout (they never change sizes or add scroll; only the triangle takes clicks)
   (`manifest.json` version; the web version adds "build <sw VERSION>").
@@ -91,10 +102,9 @@ save/session model, and `shell/apps.js` for the app contract.
   rendering, the user wants text answers). `render` is a JS function the user types, `w => …` with
   `w.document` (the response parsed by DOMParser), `w.text`, `w.json`, `w.url`; default `w => w.text`; its result
   (HTML or text) is on the default "render" tab, the response itself on "raw". It runs only in the sandboxed frame
-  `shell/render.html` (MV3 forbids eval elsewhere); its messages are data, never trusted. Future features are new kinds. One list in `rank` order drives home
-  and the sidebar, no groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full
-  editor (✎); the editor's ⚙ opens the same form for a row. Right-click a tile or sidebar icon: Edit (the form),
-  Delete (no confirmation, like notes).
+  `shell/render.html` (MV3 forbids eval elsewhere); its messages are data, never trusted. Future features are new kinds. One list in `rank` order drives home, no
+  groups. The "+ Add" tile (last) opens the action form (`#add`) for any kind, not the full editor (Edit); the
+  editor's ⚙ opens the same form for a row. Right-click a tile: Edit (the form), Delete (no confirmation, like notes).
 - Privacy of tiles: a site opened from a tile gets no opener and no referrer (`<meta name="referrer" content="no-referrer">`
   in newtab.html, index.html and render.html, `rel="noopener noreferrer"` on links); `test/extension.mjs` and
   `test/web.mjs` check it.
@@ -102,9 +112,6 @@ save/session model, and `shell/apps.js` for the app contract.
   ("Allow access to <site>") after a failed request; never `host_permissions` (install warning, review). Unknown kinds or
   apps are hidden and kept. Uploaded icons are 128×128 PNG data URLs in the action's `icon`; the editor's "Embed icons" stores the cached
   favicons the same way (so a backup carries them to the web version), "Reset icons" drops all, ↺ on a row drops one; all in the draft (Save).
-- Sidebar: always narrow (60px), icons 32px, hover flyout with name + URL, arrows above and below the
-  icons when they don't fit: in the flow (never over an icon, so repeated clicks can't hit an action), the one at the
-  edge disabled, not hidden. Home button on top, 48px like the icons; Data, theme toggle (auto → light → dark) and ✎ (actions editor) at the bottom.
 - Tab right-click menu: "Download" and "Delete note"; delete removes note + tab immediately, no confirmation
   (choosing it is the confirmation). The × in the `[+]` note list keeps its `confirm()` (small target, easy to
   misclick). Deletion is permanent; a trash was offered and not requested.
@@ -115,12 +122,12 @@ save/session model, and `shell/apps.js` for the app contract.
 ## Code notes
 
 - Structure: `platform/` is the only place with `chrome.*`; `shared/` is used by everything; `shell/` is the frame
-  (screens, sidebar, home, actions editor, data dialog); `apps/<id>/` holds an app with its own CSS. An app's screen is
+  (screens, bottom navigation, home, settings, actions editor); `apps/<id>/` holds an app with its own CSS. An app's screen is
   `#app-<id>` in `newtab.html`; ids of its elements share a prefix (`tr-`, `bd-`).
 - MV3 CSP forbids inline scripts → `shell/theme.js` is a classic script in `<head>` that applies the saved theme
   from `localStorage` before first paint.
 - `[hidden] { display: none !important; }` is global, and `border-radius: 0 !important` on everything. The one
-  exception (the user's wish): the sync state dot on the Data button, round, 9px, bright green / red (not the accent blue).
+  exception (the user's wish): the sync state dot on the Settings button, round, 9px, bright green / red (not the accent blue).
 - The data model is documented at the top of `shared/db.js`; users keep their data across updates, so a change
   of stores or records needs a database `VERSION` bump with conversion (see PUBLISHING.md). The server doesn't know
   the model (a record is `{store, id, rev, updatedAt, deleted, data}`), so new stores and fields need no server change.
@@ -156,10 +163,11 @@ were considered and declined, keep it dependency-free):
   (backup, import, reminder, routes, actions editor) cover the rest (`node test/<name>.mjs`, `SHOTS=dir` for
   screenshots; Node 22+ for the global WebSocket). A page must load once before `inDb` (it creates the database);
   `resetData()` empties it and sets the actions, reload afterwards.
-- Pages start at home; click `#links .<app id>` (or `openApp(P, id)`) to open an app. File pickers: catch the
+- Pages start at home (auto start screen, no touch); click `#bnav [data-view=<id>]` (or `openApp(P, id)`, also "home"
+  and "settings") to open a screen. File pickers: catch the
   `<input type=file>` and feed it with `DOM.setFileInputFiles` (see `test/data.mjs`). Background pages run timers
   about once a second, so allow 1.5 s for their saves. Use two pages for cross-tab sync tests. The stub's favicon cache is `/fav/<host>.png` (run.sh puts one for `s1.test`); other sites fall back to
   letters in the harness.
 - Scenarios covered earlier by throwaway scripts (before 2.2.0's storage, rewrite as needed): autosave max-wait,
-  drag reorder (tabs and actions), wrap gutter alignment and typing speed, flyout, theme cycle and persistence,
-  actions editor (add it back, save warning), sidebar wheel scroll under the flyout and edge arrows.
+  drag reorder (tabs and actions), wrap gutter alignment and typing speed, theme persistence,
+  actions editor (add it back, save warning).

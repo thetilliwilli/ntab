@@ -86,7 +86,7 @@ export const actionList = (list) =>
   list.map(({ name, url, newTab = false }, rank) => ({ id: `a${rank}`, name, icon: null, rank, kind: "open", options: { url, newTab }, updatedAt: 1 }));
 
 /* the fixed id of a "device" record (shared/model.js) */
-export const DEVICE = { session: "254e82a0-c80e-4a18-8f4e-172c2598533c", backup: "3a5add83-bf91-4fa2-bbb4-4952c23cd93b", sync: "b73a518a-ce08-4ebe-83fa-45692c84f147" };
+export const DEVICE = { session: "254e82a0-c80e-4a18-8f4e-172c2598533c", backup: "3a5add83-bf91-4fa2-bbb4-4952c23cd93b", sync: "b73a518a-ce08-4ebe-83fa-45692c84f147", start: "922dc70d-3be6-4fe2-8634-96370c3d05c1" };
 
 /* expression that empties every store and sets the actions (default: Notes, Tracker, Board); reload afterwards */
 export const resetData = (actions = [{ name: "Notes", url: "#/notes" }, { name: "Tracker", url: "#/tracker" }, { name: "Board", url: "#/board" }]) =>
@@ -96,8 +96,8 @@ export const resetData = (actions = [{ name: "Notes", url: "#/notes" }, { name: 
     s.device.put({ id: ${JSON.stringify(DEVICE.backup)}, name: "backup", lastExportAt: null, remindAt: Date.now() + 864e6, updatedAt: 1 });
   }`);
 
-/* opens an app from the sidebar */
+/* opens a screen (an app id, "home" or "settings") from the bottom navigation */
 export async function openApp(P, id) {
-  await P.ev(`document.querySelector('#links .${id}').click()`);
+  await P.ev(`document.querySelector('#bnav [data-view=${id}]').click()`);
   await sleep(500);
 }
