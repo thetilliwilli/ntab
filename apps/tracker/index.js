@@ -57,9 +57,9 @@ function renderTiles() {
     const { count, last } = model.todayStat(t.id);
     const b = el("button", `tr-tile${run ? " running" : ""}`);
     b.type = "button";
-    b.title = run ? `${t.name}: running since ${hm(run.at)}, Finish it in the log` : activity ? `${t.name}: starts an activity` : t.name;
-    const meta = el("span", "tr-tile-meta", run ? `● ${fmtDuration(now - run.at)}` : count ? `today ×${count} · ${hm(last)}` : activity ? "▶ activity" : "today —");
-    if (run) Object.assign(meta.dataset, { at: run.at, prefix: "● " });
+    b.title = run ? `${t.name}: running since ${hm(run.at)}, click to finish it` : activity ? `${t.name}: starts an activity` : t.name;
+    const meta = el("span", "tr-tile-meta", run ? `■ ${fmtDuration(now - run.at)}` : count ? `today ×${count} · ${hm(last)}` : activity ? "▶ activity" : "today —");
+    if (run) Object.assign(meta.dataset, { at: run.at, prefix: "■ " });
     b.append(el("span", "tr-emoji", t.icon), el("span", "tr-tile-name", t.name), meta);
     b.addEventListener("click", () => hit(t, b));
     box.append(b);
@@ -72,11 +72,13 @@ function renderTiles() {
   box.append(add);
 }
 
+/* an event is logged; an activity starts, or finishes when it runs (the same tile) */
 async function hit(t, node) {
-  if (t.kind === "activity" && model.isRunning(t.id)) return; // it runs: Finish is in the log
   node.classList.add("hit");
   setTimeout(() => node.classList.remove("hit"), 250);
   try {
+    const run = t.kind === "activity" ? model.running().find((e) => e.typeId === t.id) : null;
+    if (run) return finish(run);
     const e = await model.log(t.id);
     if (!e) return;
     toast(`${t.icon} ${t.name} ${e.endAt === null ? "started" : "logged"} · ${hm(e.at)}`, () => model.remove(e.id).catch(report));
@@ -85,7 +87,13 @@ async function hit(t, node) {
   }
 }
 
-/* ---------- log: the running activities on top (whatever day is shown), then the day's entries, newest first ---------- */
+async function finish(run) {
+  const f = await model.finish(run.id);
+  const type = model.typeById(run.typeId);
+  if (f) toast(`■ ${type?.icon ?? ""} ${type?.name ?? "?"} finished · ${fmtDuration(f.endAt - f.at)}`, () => model.resume(f.id).catch(report));
+}
+
+/* ---------- log: the day's entries by their start, newest first (a running activity among them, marked) ---------- */
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const dayName = (d) => {
@@ -101,8 +109,7 @@ function renderLog() {
   $("tr-next").disabled = day >= startOfDay(now);
   const list = $("tr-log");
   list.textContent = "";
-  const running = model.running().reverse();
-  const entries = [...running, ...model.dayEntries(day).filter((e) => e.endAt !== null).reverse()];
+  const entries = model.dayEntries(day).sort((a, b) => b.at - a.at);
   if (!entries.length) return list.append(el("div", "empty", "nothing logged"));
   // activity bars are as long as their duration, the longest one shown fills the column
   const longest = Math.max(1, ...entries.map((e) => (e.endAt === undefined ? 0 : (e.endAt ?? now) - e.at)));
@@ -117,7 +124,7 @@ function timeButton(e, field) {
   return b;
 }
 
-/* start | end (Finish while it runs) | icon | name | duration bar (activities) | × */
+/* start | end ("now" while it runs; the tile finishes it) | icon | name | duration bar (activities) | × */
 function logRow(e, longest, now) {
   const type = model.typeById(e.typeId);
   const row = el("div", `tr-row${e.endAt === null ? " live" : ""}`);
@@ -126,15 +133,14 @@ function logRow(e, longest, now) {
   if (e.endAt !== undefined) {
     const ms = (e.endAt ?? now) - e.at;
     if (e.endAt === null) {
-      const done = el("button", "tr-finish primary", "Finish");
-      done.title = "Finish it now";
-      done.addEventListener("click", () =>
-        model
-          .finish(e.id)
-          .then((f) => f && toast(`■ ${type?.name ?? "?"} finished · ${fmtDuration(f.endAt - f.at)}`, () => model.resume(f.id).catch(report)))
-          .catch(report),
-      );
-      end.append(done);
+      if (type && type.archivedAt == null) end.append(el("span", "tr-now", "now"));
+      else {
+        // no tile to finish it with (its type is archived)
+        const done = el("button", "tr-finish primary", "Finish");
+        done.title = "Finish it now";
+        done.addEventListener("click", () => finish(e).catch(report));
+        end.append(done);
+      }
       bar.classList.add("running");
     } else end.append(timeButton(e, "endAt"));
     const fill = el("i");

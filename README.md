@@ -178,13 +178,13 @@ order of lists and settings come first) and prints what it did. After the update
 ## Tracker
 
 - An **event type** has an emoji, a name and a kind: an **event** (a tap logs the moment) or an **activity**
-  (a tap starts it, **Finish** ends it). **+ new type** adds one: pick the icon from the suggestions or from
+  (a tap starts it, a tap on the same tile finishes it). **+ new type** adds one: pick the icon from the suggestions or from
   **all emoji…** (every single-character emoji the browser knows, found at runtime, no emoji data shipped, so no
   search), or paste one; **Types** (in the navigation) renames, reorders, switches event ⇄ activity and archives (an archived
   type loses its tile, its entries keep their name in the log).
-- A running activity's tile shows its running time; the activity itself is on top of the log (whatever day is
-  shown) with **Finish** where its finish time will be.
-- The log (◀ ▶ today) lists the entries of a day below the running ones; click a time (the start, or an activity's
+- A running activity's tile is filled with the accent color and shows its running time; in the log it is marked,
+  with "now" where its finish time will be.
+- The log (◀ ▶ today) lists the entries of a day by time, newest first; click a time (the start, or an activity's
   finish) to correct it in a small editor: the date as `YYYY-MM-DD`, the time as 24-hour `HH:MM` (whatever the
   locale; `0720` and `20261117` work too), −15 / −5 / now / +5 / +15 minutes; the calendar and clock buttons open the
   system picker (it looks the way the phone or browser does, e.g. a 24-hour clock only if the phone uses one), and what

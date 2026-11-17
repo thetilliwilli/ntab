@@ -71,8 +71,10 @@ save/session model, and `shell/apps.js` for the app contract.
   "NTab: Notepad New Tab".
 - Tracker decisions: an entry is one record `{id, typeId, at, endAt?, updatedAt}` (event: no `endAt`; activity: `endAt` null
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
-  never deleted; undo toast. One list (the user's wish, no separate panel): running activities on top of the log
-  whatever day is shown, with Finish in the row; the running tile shows the live duration. Start and finish times are
+  never deleted; undo toast. The tile that started an activity finishes it (a tap again; undo in the toast); the
+  running tile is filled with the accent and shows the live duration. One log list (the user's wish, no separate
+  panel), strictly by time, newest first: a running activity stays in its place (by its start), marked, "now" for
+  its end; Finish in the row only when its type is archived (no tile). Start and finish times are
   edited in a small dialog (a sheet at the bottom on phones): date `YYYY-MM-DD` and 24-hour `HH:MM` text fields, never
   `datetime-local` (it follows the locale: 12-hour on phones; its display format can't be set from a page). Beside
   each field a button opens the system picker (`showPicker()` of a hidden `date` / `time` input), the picked value

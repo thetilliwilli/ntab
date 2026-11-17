@@ -34,16 +34,15 @@ await P.ev(`document.querySelectorAll('.tr-tile')[0].click()`);
 await sleep(300);
 await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`);
 await sleep(300);
-await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`); // already running: ignored
-await sleep(300);
 let ev = await entries(P);
 ok("3 entries (2 events + 1 running activity)", ev.length === 3 && !("endAt" in ev[0]) && ev[2].endAt === null && ev[2].typeId === types[1].id, JSON.stringify(ev));
-ok("running activity on top of the log with Finish", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && document.querySelector('#tr-log .tr-row').classList.contains('live') && !!document.querySelector('.tr-row.live .tr-finish')`));
+ok("running activity marked in the log, no Finish button there (the tile finishes it)", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && document.querySelector('.tr-row.live .tr-now')?.textContent === 'now' && !document.querySelector('.tr-row .tr-finish')`));
+ok("running tile filled with the accent", await q(P, `(() => { const t = document.querySelector('.tr-tile.running'), b = document.querySelector('.tr-tile:not(.running)'); return !!t && getComputedStyle(t).backgroundColor !== getComputedStyle(b).backgroundColor; })()`));
 ok("one list: the running activity is not twice", await q(P, `document.querySelectorAll('#tr-log .tr-row').length === 3`));
 ok("tile says ×2", await q(P, `document.querySelector('.tr-tile .tr-tile-meta').textContent.includes('×2')`));
 await sleep(1500);
 const dur1 = await q(P, `[document.querySelector('.tr-row.live .tr-len span').textContent, parseFloat(document.querySelector('.tr-row.live .tr-len i').style.width), document.querySelector('.tr-tile.running .tr-tile-meta').textContent]`);
-ok("duration in minutes in the row and on the tile", dur1[0] === "0m" && dur1[1] > 0 && dur1[2] === "● 0m", JSON.stringify(dur1));
+ok("duration in minutes in the row and on the tile", dur1[0] === "0m" && dur1[1] > 0 && dur1[2] === "■ 0m", JSON.stringify(dur1));
 if (SHOTS) await P.shot(`${SHOTS}/tracker.png`);
 
 // second page sees it, finishes it
@@ -51,11 +50,28 @@ const Q = await newPage();
 await sleep(1200);
 await openApp(Q, "tracker");
 ok("page 2 shows the running activity", await q(Q, `document.querySelectorAll('.tr-row.live').length === 1`));
-await Q.ev(`document.querySelector('.tr-row.live .tr-finish').click()`);
+await Q.ev(`document.querySelector('.tr-tile.running').click()`); // the same tile finishes it
 await sleep(600);
 ok("page 1 sees it finished (sync)", await q(P, `!document.querySelector('.tr-row.live') && !document.querySelector('.tr-tile.running')`));
 ev = await entries(P);
 ok("the activity got its end", ev.length === 3 && ev[2].endAt >= ev[2].at);
+await P.ev(`document.querySelectorAll('.tr-tile')[0].click()`); // an event after it: the log is by time only
+await sleep(400);
+ok("one list by time, newest first", await q(P, `(() => { const r = [...document.querySelectorAll('#tr-log .tr-row')]; return r.length === 4 && r[0].querySelector('.tr-what').textContent === 'Покурил' && r[1].querySelector('.tr-what').textContent === 'Sleep'; })()`));
+await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`); // starts again: the newest, on top by time
+await sleep(400);
+ok("started again: on top because it is the newest", await q(P, `document.querySelector('#tr-log .tr-row').classList.contains('live')`));
+await P.ev(`document.querySelector('.tr-tile.running').click()`);
+await sleep(400);
+await P.ev(`document.getElementById('tr-toast-undo').click()`); // undo the finish: runs again
+await sleep(400);
+ok("undo of a finish from the tile: runs again", await q(P, `!!document.querySelector('.tr-tile.running')`));
+await P.ev(`document.querySelector('.tr-tile.running').click()`);
+await sleep(400);
+const extra = (await entries(P)).slice(3).map((e) => e.id); // back to the 3 entries the steps below count on
+await P.ev(`import('/shared/db.js').then((db) => db.remove('trackerEntries', ${JSON.stringify(extra)}))`);
+await sleep(400);
+ok("cleanup: 3 entries again", (await entries(P)).length === 3);
 
 // concurrent appends from both pages keep all lines
 await Promise.all([

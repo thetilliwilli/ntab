@@ -1,4 +1,4 @@
-/* the Tracker app: event type tiles, the log (running activities on top), undo toast, time editor, type dialogs */
+/* the Tracker app: event type tiles, the log, undo toast, time editor, type dialogs */
 
 #app-tracker {
   position: relative;
@@ -34,8 +34,10 @@
 .tr-tile .tr-emoji, .tr-preview .tr-emoji { font-size: 34px; }
 .tr-tile-name { max-width: 100%; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .tr-tile-meta { color: var(--muted); font-size: 11px; }
-.tr-tile.running { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); cursor: default; }
-.tr-tile.running .tr-tile-meta { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* a running activity: filled, seen at a glance; a click finishes it */
+.tr-tile.running, .tr-tile.running:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tr-tile.running:hover { filter: brightness(1.1); }
+.tr-tile.running .tr-tile-meta { color: var(--accent-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 .tr-tile.hit { background: var(--accent); border-color: var(--accent); }
 .tr-tile.hit * { color: var(--accent-fg); }
 .tr-tile.add { border-style: dashed; border-color: var(--border-strong); color: var(--muted); }
@@ -65,8 +67,9 @@
 .tr-time:hover { border-color: var(--border-strong); }
 .tr-start, .tr-end { position: relative; }
 /* the time editor is wider than its column: it floats over the row */
-/* a running activity: on top of the log, Finish where its end time will be */
-.tr-row.live { background: var(--hover); box-shadow: inset 3px 0 0 var(--accent); }
+/* a running activity: in its place in the log, marked; "now" where its end time will be */
+.tr-row.live { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--accent); }
+.tr-now { padding: 0 6px; color: var(--accent); font-family: var(--mono); font-weight: 600; }
 .tr-finish { justify-self: start; height: 40px; padding: 0 14px; font-size: 18px; font-weight: 600; }
 .tr-len { position: relative; display: flex; align-items: center; height: 40px; }
 .tr-len i { position: absolute; inset: 0 auto 0 0; min-width: 2px; background: var(--accent); opacity: 0.25; }
@@ -179,6 +182,7 @@
   .tr-row .fdel { grid-area: del; height: 40px; font-size: 20px; }
   .tr-time { height: 40px; padding: 0 4px; font-size: 17px; }
   .tr-finish { height: 36px; padding: 0 8px; font-size: 14px; }
+  .tr-now { padding: 0 4px; }
   .tr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .tr-tile { min-height: 84px; gap: 4px; padding: 6px 4px; }
   .tr-tile .tr-emoji { font-size: 28px; }

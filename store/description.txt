@@ -35,7 +35,7 @@ NOTEPAD
 TRACKER
 • One tap logs that something happened: woke up, workout, coffee, called mom…
 • Your own event types with an emoji
-• Activities with a start and a finish: a live timer on the tile, and on top of the log with its Finish button
+• Activities with a start and a finish: tap the tile to start, tap it again to finish; a running tile is lit with a live timer
 • Today's count and last time on every tile
 • Day log: fix a start or finish time (always YYYY-MM-DD and 24-hour time), delete, undo
 • Clear the whole log in one go, your event types stay
@@ -69,7 +69,7 @@ PRIVACY
 
 WHAT'S NEW
 • Navigation bar at the bottom instead of the sidebar, made for phones too; Settings with the start screen and the theme
-• Tracker: running activities on top of the log with Finish; times always as YYYY-MM-DD and 24 hours
+• Tracker: the same tile starts and finishes an activity, a running one is lit; one log by time; times always as YYYY-MM-DD and 24 hours
 • Sync between your devices through your own server (optional)
 • NTab as a web app: thetilliwilli.github.io/ntab
 • Tracker: log events with one tap, time activities
