@@ -54,7 +54,8 @@ Board. With Home, notes never appear on screen by themselves (handy when sharing
 browser only (device record "start"). The address shows the screen as a route (`#/notes`); switching screens replaces
 it instead of adding browser history, and a route in the address on load is dropped for the start screen. **Settings → About** shows the version
 (`manifest.json`; the web version adds its build, the id of the cached file set, so you can tell whether a phone has
-the latest) and links to the GitHub repository. An app loads its data when it is first opened.
+the latest) and links to the GitHub repository; in the web app **Check for updates** looks for a new version right
+away and reloads into it. An app loads its data when it is first opened.
 
 ## Data
 

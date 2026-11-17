@@ -64,7 +64,8 @@ save/session model, and `shell/apps.js` for the app contract.
 - Web version (PWA) on GitHub Pages, served from `master` root (`.nojekyll`): https://thetilliwilli.github.io/ntab/.
   `platform/web.js` (no favicons, no site access: request "Allow access" is hidden). `sw.js`: cache-first, the whole
   file set per `VERSION`, `skipWaiting` (the next load gets the new set, never a mix); the page calls `reg.update()` when it becomes visible and
-  `shell/update.js` reloads into a new version on home with no dialog open or when hidden, else shows a Reload bar; run `node scripts/sw.mjs`
+  `shell/update.js` reloads into a new version on home with no dialog open or when hidden, else shows a Reload bar; Settings → About → "Check for updates" (the web app only) looks now and reloads into a new
+  version at once, on any screen (`platform.checkUpdate`); run `node scripts/sw.mjs`
   before every commit that changes app files. Web-only files stay out of the extension zip (`release.mjs`). Target:
   desktop and phones (the bottom navigation; Android only, iOS is not supported).
 - Apps: notes, tracker, board (`apps/<id>/`, registered in `shell/apps.js`). The extension name stays

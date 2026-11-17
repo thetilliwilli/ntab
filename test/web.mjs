@@ -142,6 +142,21 @@ await sleep(1500);
 ok("on the home screen: reloads by itself", after?.[0] === "ntab-test2release" && (await reloaded()) && (await P.ev(`document.getElementById('update-bar').hidden`)));
 ok("the note survived the reloads", (await P.ev(dbAll("notes")))[0]?.text === "offline");
 
+// Settings → Check for updates: the latest says so; a new one is taken and the page reloads into it at once, on any screen
+await P.ev(`document.getElementById('nav-settings').click()`);
+await sleep(300);
+ok("check for updates: shown in the web app", await P.ev(`!document.getElementById('app-update-row').hidden`));
+await P.ev(`window.marker = 1; document.getElementById('app-update').click()`);
+for (let t = 0; t < 10e3 && (await P.ev(`document.getElementById('app-update-msg').textContent`)) === "Checking…"; t += 100) await sleep(100);
+ok("check for updates: the latest", !(await reloaded()) && /^This is the latest build/.test(await P.ev(`document.getElementById('app-update-msg').textContent`)), await P.ev(`document.getElementById('app-update-msg').textContent`));
+swVersion = "test3release";
+await P.ev(`window.marker = 1; document.getElementById('app-update').click()`);
+after = await waitCache("ntab-test3release");
+await sleep(1500);
+ok("check for updates: a new version, reloaded into it on Settings", after?.[0] === "ntab-test3release" && (await reloaded()), JSON.stringify(after));
+await P.ev(`document.getElementById('nav-home').click()`);
+await sleep(300);
+
 // a site opened from a tile (another origin; a new tab, then this one) gets no opener and no referrer
 const seen = [];
 const heads = {};

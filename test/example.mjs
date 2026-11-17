@@ -12,7 +12,7 @@ await sleep(1000);
 ok("starts on home", await P.ev(`!document.getElementById('home').hidden`));
 // home: no corner link, the tiles near the top; the version is in Settings → About
 ok("home: tiles near the top, no corner", (await P.ev(`document.querySelector('#home-grid .tile').getBoundingClientRect().top`)) < 40 && !(await P.ev(`document.querySelector('.gh-corner')`)));
-ok("about: version (no build outside the web version), GitHub link", /^v\d+\.\d+\.\d+$/.test(await P.ev(`document.getElementById('app-ver').textContent`)) && (await P.ev(`document.getElementById('app-build').hidden`)) && (await P.ev(`(() => { const a = document.getElementById('app-repo'); return a.href + ' ' + a.target + ' ' + a.rel; })()`)) === "https://github.com/thetilliwilli/ntab _blank noopener noreferrer", await P.ev(`document.getElementById('app-ver').textContent`));
+ok("about: version, GitHub link (the extension: no build, no Check for updates)", /^v\d+\.\d+\.\d+$/.test(await P.ev(`document.getElementById('app-ver').textContent`)) && (await P.ev(`document.getElementById('app-build').hidden`)) && (await P.ev(`document.getElementById('app-update-row').hidden`)) && (await P.ev(`(() => { const a = document.getElementById('app-repo'); return a.href + ' ' + a.target + ' ' + a.rel; })()`)) === "https://github.com/thetilliwilli/ntab _blank noopener noreferrer", await P.ev(`document.getElementById('app-ver').textContent`));
 await openApp(P, "notes");
 await P.ev(`document.getElementById('nothing-new').click()`);
 await sleep(500);

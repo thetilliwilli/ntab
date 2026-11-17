@@ -13,6 +13,7 @@ import { initData, checkReminder } from "./data.js";
 import { getView, setView, onView, setViews, isView } from "./view.js";
 import { initUpdate } from "./update.js";
 import { $, isTouch } from "../shared/util.js";
+import * as platform from "../platform/index.js";
 import { startSync } from "../shared/sync.js";
 
 setViews(["home", "settings", ...apps.map((a) => a.id)]);
@@ -55,6 +56,27 @@ async function showVersion() {
     const build = navigator.serviceWorker?.controller && (await caches.keys()).find((k) => k.startsWith("ntab-"));
     if (build) Object.assign($("app-build"), { textContent: `build ${build.slice(5)}`, hidden: false });
   } catch {} // offline before the first cache, or no manifest: no version shown
+}
+
+/* the web app: look for a new version now and switch to it at once (no waiting for a safe moment: asked for) */
+if (platform.checkUpdate) {
+  $("app-update-row").hidden = false;
+  $("app-update").addEventListener("click", async () => {
+    const say = (t) => ($("app-update-msg").textContent = t);
+    $("app-update").disabled = true;
+    say("Checking…");
+    try {
+      if ((await platform.checkUpdate()) === "updated") {
+        say("New version: reloading…");
+        location.reload();
+        return;
+      }
+      say(`This is the latest build (checked ${new Date().toTimeString().slice(0, 5)}).`);
+    } catch (e) {
+      say(`Couldn't check: ${e.message || e}`);
+    }
+    $("app-update").disabled = false;
+  });
 }
 
 /* ---------- screens; an app loads its data when it is first opened on the page ---------- */
