@@ -52,9 +52,9 @@ Every new tab, reload and browser restart opens the start screen of this device 
 **Auto** (the default) is the tracker on a touch screen (a phone) and home otherwise; or always Home, Notes, Tracker or
 Board. With Home, notes never appear on screen by themselves (handy when sharing the screen). The choice is kept in this
 browser only (device record "start"). The address shows the screen as a route (`#/notes`); switching screens replaces
-it instead of adding browser history, and a route in the address on load is dropped for the start screen. The top right corner of the home screen links to
-the GitHub repository and shows the version (`manifest.json`; the web version adds its build, the id of the cached file
-set, so you can tell whether a phone has the latest). An app loads its data when it is first opened.
+it instead of adding browser history, and a route in the address on load is dropped for the start screen. **Settings → About** shows the version
+(`manifest.json`; the web version adds its build, the id of the cached file set, so you can tell whether a phone has
+the latest) and links to the GitHub repository. An app loads its data when it is first opened.
 
 ## Data
 

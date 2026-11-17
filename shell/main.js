@@ -46,6 +46,17 @@ onSeg("set-start", (value) => {
 });
 db.onChange(({ store }) => store === "device" && startPref().then((v) => markSeg("set-start", v), console.error));
 
+/* ---------- about (Settings): the version (manifest.json) and, on the web, the build (the cache of sw.js the page came
+   from) ---------- */
+
+async function showVersion() {
+  try {
+    $("app-ver").textContent = `v${(await (await fetch("manifest.json")).json()).version}`;
+    const build = navigator.serviceWorker?.controller && (await caches.keys()).find((k) => k.startsWith("ntab-"));
+    if (build) Object.assign($("app-build"), { textContent: `build ${build.slice(5)}`, hidden: false });
+  } catch {} // offline before the first cache, or no manifest: no version shown
+}
+
 /* ---------- screens; an app loads its data when it is first opened on the page ---------- */
 
 const started = new Map(); // app -> promise of its start()
@@ -92,4 +103,5 @@ const [pref] = await Promise.all([startPref().catch(() => "auto"), settings.load
 markSeg("set-start", pref);
 setView(resolveStart(pref));
 initActions().catch(console.error);
+showVersion();
 startSync();

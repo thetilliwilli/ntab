@@ -60,16 +60,6 @@
 
 .home { overflow: auto; background: var(--bg); }
 
-/* the GitHub corner (the repository) and the version beside it: fixed over the page, out of the layout (no size, no
-   scroll); only the painted triangle takes clicks, the transparent half of its box lets them through */
-.gh-corner { position: fixed; z-index: 1; top: 0; right: 0; width: 64px; height: 64px; pointer-events: none; }
-.gh-corner path { pointer-events: auto; }
-.gh-corner svg { display: block; width: 100%; height: 100%; }
-.gh-bg { fill: var(--fg); }
-.gh-cat { fill: var(--bg); }
-.gh-corner:hover .gh-bg { fill: var(--accent); }
-.app-ver { position: fixed; top: 8px; right: 72px; pointer-events: none; color: var(--muted); font: 11px var(--mono); white-space: nowrap; }
-
 .home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, 132px);
@@ -77,7 +67,7 @@
   gap: 20px;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 56px 24px;
+  padding: 24px;
 }
 
 .tile {
@@ -111,7 +101,7 @@
   gap: 8px;
   width: calc(100% - 48px);
   max-width: 1072px;
-  margin: 24px auto -32px;
+  margin: 16px auto -8px;
   padding: 8px 8px 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -131,6 +121,8 @@
 .seg.set-seg button { flex: 1; height: 34px; border-right: 1px solid var(--border); }
 .seg.set-seg button:last-child { border-right: 0; }
 .set-hint { font-size: 12px; }
+.about-line { display: flex; flex-wrap: wrap; gap: 4px 12px; font-family: var(--mono); }
+.about a { justify-self: start; color: var(--accent); }
 .data-body p { margin: 0; }
 .data-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
 .data-row .muted { font-size: 12px; }
@@ -269,10 +261,10 @@
 
 /* phones */
 @media (max-width: 600px) {
-  .home-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 72px 10px 24px; }
+  .home-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 10px 24px; }
   .tile { gap: 8px; }
   .tile .ico { --s: 40px; }
-  .backup-bar { width: calc(100% - 20px); margin: 72px auto -60px; flex-wrap: wrap; }
+  .backup-bar { width: calc(100% - 20px); margin: 10px auto 0; flex-wrap: wrap; }
   .data-row { grid-template-columns: 1fr; gap: 4px; }
   .sync-line { flex-wrap: wrap; }
 }

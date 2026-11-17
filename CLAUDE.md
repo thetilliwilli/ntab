@@ -101,9 +101,9 @@ save/session model, and `shell/apps.js` for the app contract.
   always there (empty on Notes / Settings): nothing in the bar ever moves when switching screens. Same bar on desktop
   (centered) and phones. No title bars in the apps (the lit button says where you are). Settings is a screen: start
   screen, theme (auto / light / dark), data (sync, backup, import, delete all).
-- Home screen corner: a GitHub corner (octocat triangle, top right, new tab) to the repository and the version beside it,
-  both `position: fixed` out of the layout (they never change sizes or add scroll; only the triangle takes clicks)
-  (`manifest.json` version; the web version adds "build <sw VERSION>").
+- About (the last section of Settings): the version (`manifest.json`), on the web the build (sw `VERSION`, to tell
+  whether a phone has the latest) and a plain link to the GitHub repository (new tab). The home screen has no corner
+  link (the octocat triangle was dropped on the user's wish); its tiles start near the top.
 - Actions (the user's concept): every tile is a button = `kind` + `options`; no link/app split. Kinds: `open`
   `{url, newTab}` (`#/<app id>` opens an app, anything else is a web address) and `request`
   `{url, method, headers, body, render}` (shows the response as text, JSON pretty-printed; no images or other binary

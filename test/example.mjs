@@ -10,16 +10,9 @@ await P.ev(resetData());
 await P.send("Page.reload");
 await sleep(1000);
 ok("starts on home", await P.ev(`!document.getElementById('home').hidden`));
-// the GitHub corner and the version are out of the layout: no scroll from them; the transparent half takes no clicks
-await P.ev(`document.querySelector('.home').scrollTop = 0`);
-const corner = await P.ev(`(() => {
-  const home = document.getElementById('home'), r = document.querySelector('.gh-corner').getBoundingClientRect();
-  return { scroll: home.scrollHeight - home.clientHeight, fixed: getComputedStyle(document.querySelector('.gh-corner')).position,
-    painted: !!document.elementFromPoint(innerWidth - 4, 4)?.closest('.gh-corner'),
-    through: !document.elementFromPoint(r.left + 4, r.bottom - 4)?.closest('.gh-corner') };
-})()`);
-ok("corner: fixed, no scroll on home, only the triangle clicks", corner.scroll <= 0 && corner.fixed === "fixed" && corner.painted && corner.through, JSON.stringify(corner));
-ok("version shown (no build outside the web version)", /^v\d+\.\d+\.\d+$/.test(await P.ev(`document.getElementById('app-ver').textContent`)), await P.ev(`document.getElementById('app-ver').textContent`));
+// home: no corner link, the tiles near the top; the version is in Settings → About
+ok("home: tiles near the top, no corner", (await P.ev(`document.querySelector('#home-grid .tile').getBoundingClientRect().top`)) < 40 && !(await P.ev(`document.querySelector('.gh-corner')`)));
+ok("about: version (no build outside the web version), GitHub link", /^v\d+\.\d+\.\d+$/.test(await P.ev(`document.getElementById('app-ver').textContent`)) && (await P.ev(`document.getElementById('app-build').hidden`)) && (await P.ev(`(() => { const a = document.getElementById('app-repo'); return a.href + ' ' + a.target + ' ' + a.rel; })()`)) === "https://github.com/thetilliwilli/ntab _blank noopener noreferrer", await P.ev(`document.getElementById('app-ver').textContent`));
 await openApp(P, "notes");
 await P.ev(`document.getElementById('nothing-new').click()`);
 await sleep(500);
