@@ -74,7 +74,9 @@ save/session model, and `shell/apps.js` for the app contract.
   never deleted; undo toast. One list (the user's wish, no separate panel): running activities on top of the log
   whatever day is shown, with Finish in the row; the running tile shows the live duration. Start and finish times are
   edited in a small dialog (a sheet at the bottom on phones): date `YYYY-MM-DD` and 24-hour `HH:MM` text fields, never
-  `datetime-local` (it follows the locale: 12-hour on phones). "Delete all log entries…" (Types dialog, confirm +
+  `datetime-local` (it follows the locale: 12-hour on phones; its display format can't be set from a page). Beside
+  each field a button opens the system picker (`showPicker()` of a hidden `date` / `time` input), the picked value
+  goes into our field (the user's choice: the system control for picking, our format for showing). "Delete all log entries…" (Types dialog, confirm +
   undo) empties the log, types stay.
 - Board: fixed columns new / planned / work / hold / done; drag on pointer events (works with touch), status also in the
   task dialog. Under 600px one column at a time, picked by tabs.

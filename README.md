@@ -186,7 +186,9 @@ order of lists and settings come first) and prints what it did. After the update
   shown) with **Finish** where its finish time will be.
 - The log (◀ ▶ today) lists the entries of a day below the running ones; click a time (the start, or an activity's
   finish) to correct it in a small editor: the date as `YYYY-MM-DD`, the time as 24-hour `HH:MM` (whatever the
-  locale; `0720` and `20261117` work too), −15 / −5 / now / +5 / +15 minutes; on a phone it is a sheet at the bottom.
+  locale; `0720` and `20261117` work too), −15 / −5 / now / +5 / +15 minutes; the calendar and clock buttons open the
+  system picker (it looks the way the phone or browser does, e.g. a 24-hour clock only if the phone uses one), and what
+  it picks goes into the fields in this format; on a phone it is a sheet at the bottom.
   `×` deletes. Every log, finish and delete can be undone from the toast.
 - **Types → Delete all log entries…** empties the log after a confirm (the types stay; undo from the toast),
   e.g. on a second device that got the types from a backup.

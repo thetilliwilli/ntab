@@ -207,6 +207,24 @@ async function saveTime(ev) {
   }
 }
 
+/* the system picker of a field (a calendar, a clock: whatever the phone or the browser has); what it picks goes
+   into the field in our format (the picker itself follows the locale, e.g. a 24-hour clock only if the phone uses one) */
+function systemPicker(field, sys, toSys, fromSys) {
+  $(sys).addEventListener("change", () => {
+    if (!$(sys).value) return;
+    $(field).value = fromSys($(sys).value);
+    timeMsg("");
+  });
+  $(`${field}-pick`).addEventListener("click", () => {
+    $(sys).value = toSys($(field).value.trim()) ?? "";
+    try {
+      $(sys).showPicker();
+    } catch {
+      $(sys).focus(); // no showPicker: the input itself
+    }
+  });
+}
+
 /* −15 / −5 / now / +5 / +15 minutes from what the fields say */
 function nudge(step) {
   const cur = parseTime($("tr-time-date").value, $("tr-time-hm").value);
@@ -459,6 +477,9 @@ export default {
     $("tr-time-cancel").addEventListener("click", () => $("tr-time").close());
     $("tr-time-x").addEventListener("click", () => $("tr-time").close());
     $("tr-time-quick").addEventListener("click", (e) => e.target.dataset.min && nudge(e.target.dataset.min));
+    const ok = (t) => (Number.isFinite(t) ? t : null);
+    systemPicker("tr-time-date", "tr-time-date-sys", (v) => (ok(parseTime(v, "00:00")) === null ? null : ymd(parseTime(v, "00:00"))), (v) => v);
+    systemPicker("tr-time-hm", "tr-time-hm-sys", (v) => (ok(parseTime("2000-01-01", v)) === null ? null : hm(parseTime("2000-01-01", v))), (v) => v.slice(0, 5));
     $("tr-time").addEventListener("close", () => (timing = null));
 
     const go = (d) => {

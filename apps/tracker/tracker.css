@@ -99,10 +99,15 @@
 
 /* time editor: always YYYY-MM-DD and 24-hour HH:MM (a datetime-local input follows the locale: 12-hour on some phones) */
 .tr-time-dlg { width: min(340px, 94vw); }
-.tr-time-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; padding: 14px 12px; }
+.tr-time-body { display: grid; grid-template-columns: auto minmax(0, 1fr) 44px; gap: 10px 8px; align-items: center; padding: 14px 12px; }
 .tr-time-body > label { color: var(--muted); }
 .tr-time-body input { height: 44px; padding: 0 10px; font: 20px var(--mono); }
 .tr-time-quick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+/* the system picker (calendar, clock): its input stays invisible under the button, the fields show what it picked */
+.tr-pick-sys { position: relative; }
+.tr-pick-sys button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-color: var(--border); }
+.tr-pick-sys svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.tr-pick-sys input { position: absolute; left: 0; bottom: 0; width: 44px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
 .tr-time-quick button { height: 40px; border-color: var(--border); font-family: var(--mono); }
 .tr-time-dlg .dlg-foot button { height: 36px; }
 

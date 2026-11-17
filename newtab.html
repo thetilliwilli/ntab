@@ -369,8 +369,16 @@
       <div class="dlg-body tr-time-body">
         <label for="tr-time-date">Date</label>
         <input id="tr-time-date" placeholder="YYYY-MM-DD" inputmode="numeric" autocomplete="off" spellcheck="false">
+        <span class="tr-pick-sys">
+          <button type="button" id="tr-time-date-pick" title="Pick a date" aria-label="Pick a date"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3.5v4M16 3.5v4"/></svg></button>
+          <input type="date" id="tr-time-date-sys" tabindex="-1" aria-hidden="true">
+        </span>
         <label for="tr-time-hm">Time</label>
         <input id="tr-time-hm" placeholder="HH:MM" inputmode="numeric" autocomplete="off" spellcheck="false">
+        <span class="tr-pick-sys">
+          <button type="button" id="tr-time-hm-pick" title="Pick a time" aria-label="Pick a time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></button>
+          <input type="time" id="tr-time-hm-sys" tabindex="-1" aria-hidden="true">
+        </span>
         <div class="tr-time-quick" id="tr-time-quick">
           <button type="button" data-min="-15">−15</button>
           <button type="button" data-min="-5">−5</button>

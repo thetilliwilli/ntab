@@ -95,6 +95,14 @@ await sleep(100);
 const shown = await q(P, `[document.getElementById('tr-time').open, document.getElementById('tr-time-date').value, document.getElementById('tr-time-hm').value]`);
 ok("editor: ISO date, 24-hour time", shown[0] && /^\d{4}-\d\d-\d\d$/.test(shown[1]) && /^([01]\d|2[0-3]):\d\d$/.test(shown[2]), JSON.stringify(shown));
 if (SHOTS) await P.shot(`${SHOTS}/tracker-time.png`);
+// the system pickers: the button hands the field's value to a native date / time input, what it picks comes back in our format
+await P.ev(`document.getElementById('tr-time-hm-pick').click(); document.getElementById('tr-time-date-pick').click()`);
+const sys = await q(P, `[document.getElementById('tr-time-date-sys').value, document.getElementById('tr-time-hm-sys').value]`);
+ok("picker gets the field's value", sys[0] === shown[1] && sys[1] === shown[2], JSON.stringify(sys));
+await P.ev(`(() => { const d = document.getElementById('tr-time-date-sys'), t = document.getElementById('tr-time-hm-sys');
+  d.value = '2026-01-02'; d.dispatchEvent(new Event('change')); t.value = '21:05'; t.dispatchEvent(new Event('change')); })()`);
+ok("picked values in the fields: ISO date, 24 hours", (await q(P, `document.getElementById('tr-time-date').value + ' ' + document.getElementById('tr-time-hm').value`)) === "2026-01-02 21:05");
+await P.ev(`document.getElementById('tr-time-date').value = ${JSON.stringify(shown[1])}; document.getElementById('tr-time-hm').value = ${JSON.stringify(shown[2])}`);
 await save();
 await sleep(300);
 ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before && !(await q(P, `document.getElementById('tr-time').open`)));
