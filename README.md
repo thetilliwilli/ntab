@@ -198,7 +198,7 @@ order of lists and settings come first) and prints what it did. After the update
 ## Board
 
 Columns New / Planned / Work / Hold / Done (on a phone one at a time, picked by tabs above it). **New** in the
-navigation (or `+` in New) creates a task with a name and a description;
+navigation (or `+` in New) creates a task with a name and a description, on top of its column;
 click a card to edit it, change its status or delete it. **Clone** (to split a task: finish one part, keep the other)
 saves it and puts a copy right after it, open for editing. Drag cards between and within columns (the mouse
 anywhere on a card, a finger by its `⋮⋮` handle). A move changes only the moved card: its `rank` goes between its new

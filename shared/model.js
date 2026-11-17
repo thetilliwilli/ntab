@@ -82,5 +82,8 @@ function longestRun(nums) {
   return keep;
 }
 
+/* a rank before all of these records */
+export const firstRank = (records) => (records.length ? Math.floor(Math.min(...records.map((r) => r.rank ?? 0))) - 1 : 1);
+
 /* a rank after all of these records */
 export const nextRank = (records) => Math.floor(Math.max(0, ...records.map((r) => r.rank ?? 0))) + 1;

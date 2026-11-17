@@ -22,12 +22,12 @@ const create = async (name, desc, status = "new") => {
   await P.ev(`document.getElementById('bd-name').value = ${JSON.stringify(name)}; document.getElementById('bd-desc').value = ${JSON.stringify(desc)}; document.getElementById('bd-status').value = ${JSON.stringify(status)}; document.getElementById('bd-task-form').requestSubmit()`);
   await sleep(300);
 };
-await create("Write report", "quarterly numbers");
 await create("Call bank", "");
+await create("Write report", "quarterly numbers"); // a new task goes on top
 await create("Fix bug #12", "crash on start", "work");
 ok("columns", JSON.stringify([await col(P, "new"), await col(P, "work")]) === '[["Write report","Call bank"],["Fix bug #12"]]');
 let f = await tasks(P);
-ok("3 task records with fields", f.length === 3 && f[0].id && f[0].createdAt && f[0].updatedAt && f[0].description === "quarterly numbers" && f[2].status === "work" && f.every((t, i) => !i || t.rank > f[i - 1].rank));
+ok("3 task records with fields", f.length === 3 && f.every((t) => t.id && t.createdAt && t.updatedAt) && f.map((t) => t.name).join() === "Fix bug #12,Write report,Call bank" && f[1].description === "quarterly numbers", JSON.stringify(f.map((t) => [t.name, t.rank])));
 
 // change status in the dialog
 await P.ev(`document.querySelector('.bd-new .bd-card').click()`);

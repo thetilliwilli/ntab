@@ -85,7 +85,7 @@ save/session model, and `shell/apps.js` for the app contract.
   goes into our field (the user's choice: the system control for picking, our format for showing). "Delete all log entries…" (Types dialog, confirm +
   undo) empties the log, types stay.
 - Board: fixed columns new / planned / work / hold / done; drag on pointer events (works with touch), status also in the
-  task dialog. Under 600px one column at a time, picked by tabs. Clone in the task dialog (to split a task): saves the
+  task dialog. Under 600px one column at a time, picked by tabs. A new task goes on top of its column. Clone in the task dialog (to split a task): saves the
   form, puts a copy right after it (same column) and opens the copy.
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.

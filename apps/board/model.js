@@ -3,7 +3,7 @@
    changes, here or on another page; a move is one transaction over the store as it is at that moment */
 
 import * as db from "../../shared/db.js";
-import { rerank, nextRank } from "../../shared/model.js";
+import { rerank, firstRank } from "../../shared/model.js";
 
 export const STATUSES = ["new", "planned", "work", "hold", "done"];
 export const STATUS_NAMES = { new: "New", planned: "Planned", work: "Work", hold: "Hold", done: "Done" };
@@ -31,9 +31,10 @@ export async function start() {
 
 db.onChange(({ store }) => started && store === "tasks" && reload().catch(console.error));
 
+/* a new task goes on top of its column */
 export function add({ name, description = "", status = "new" }) {
   const now = Date.now();
-  return db.put("tasks", { id: db.uuid(), name, description, status, rank: nextRank(tasks), createdAt: now, updatedAt: now });
+  return db.put("tasks", { id: db.uuid(), name, description, status, rank: firstRank(tasks), createdAt: now, updatedAt: now });
 }
 
 export const update = (id, patch) => db.update("tasks", id, (t) => t && { ...t, ...patch, updatedAt: Date.now() });
