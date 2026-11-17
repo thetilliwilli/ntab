@@ -74,12 +74,16 @@
 
 html, body { height: 100%; }
 
+/* the page is exactly the visible window: pinned to its edges (position: fixed, inset 0), not sized by 100dvh / 100vh,
+   which an installed app on Android may get wrong after location.reload() (taller than the screen: the bottom
+   navigation ends up below it until the app is restarted) */
 body {
+  position: fixed;
+  inset: 0;
   margin: 0;
   display: grid;
   grid-template-rows: minmax(0, 1fr) var(--nav-h);
   grid-template-columns: minmax(0, 1fr);
-  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
   color: var(--fg);
