@@ -87,7 +87,23 @@ await Promise.all(["A", "B"].map((n, i) => [P, Q][i].ev(`(async () => { document
 await sleep(800);
 ok("concurrent creates: both saved", (await tasks(P)).length === 4, String((await tasks(P)).length));
 if (SHOTS) await P.shot(`${SHOTS}/board.png`);
-ok("title Board", (await P.ev(`document.title`)) === "Board");
+ok("title Task", (await P.ev(`document.title`)) === "Task");
+
+// clone (to split a task): the form is saved, a copy goes right after it in the same column and opens; it is its own task
+await P.ev(`document.querySelector('.bd-done .bd-card').click()`);
+await sleep(150);
+await P.ev(`document.getElementById('bd-desc').value = 'both parts'; document.getElementById('bd-clone').click()`);
+await sleep(500);
+let cl = await tasks(P);
+const parts = cl.filter((t) => t.name === "Call bank");
+ok("clone: a copy right after the original, the edit saved on both", parts.length === 2 && parts.every((t) => t.status === "done" && t.description === "both parts") && JSON.stringify(await col(P, "done")) === '["Call bank","Call bank"]', JSON.stringify(parts));
+ok("clone: the copy is open", await P.ev(`document.getElementById('bd-task').open && document.getElementById('bd-task-title').textContent.includes('copy')`));
+await P.ev(`document.getElementById('bd-name').value = 'Call bank: part 2'; document.getElementById('bd-status').value = 'work'; document.getElementById('bd-task-form').requestSubmit()`);
+await sleep(500);
+cl = await tasks(P);
+ok("clone: the copy changed, the original not", JSON.stringify(await col(P, "done")) === '["Call bank"]' && JSON.stringify(await col(P, "work")) === '["Call bank: part 2"]' && cl.length === 5, JSON.stringify(cl.map((t) => [t.name, t.status])));
+ok("clone: no button for a new task", await P.ev(`(document.getElementById('bd-new').click(), document.getElementById('bd-clone').hidden)`));
+await P.ev(`document.getElementById('bd-task').close()`);
 console.log("errors:", P.errors, Q.errors);
 await P.close(); await Q.close();
 process.exit(0);

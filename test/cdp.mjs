@@ -89,7 +89,7 @@ export const actionList = (list) =>
 export const DEVICE = { session: "254e82a0-c80e-4a18-8f4e-172c2598533c", backup: "3a5add83-bf91-4fa2-bbb4-4952c23cd93b", sync: "b73a518a-ce08-4ebe-83fa-45692c84f147", start: "922dc70d-3be6-4fe2-8634-96370c3d05c1" };
 
 /* expression that empties every store and sets the actions (default: Notes, Tracker, Board); reload afterwards */
-export const resetData = (actions = [{ name: "Notes", url: "#/notes" }, { name: "Tracker", url: "#/tracker" }, { name: "Board", url: "#/board" }]) =>
+export const resetData = (actions = [{ name: "Note", url: "#/notes" }, { name: "Track", url: "#/tracker" }, { name: "Task", url: "#/board" }]) =>
   inDb(`async (s) => {
     for (const store of Object.values(s)) store.clear();
     for (const a of ${JSON.stringify(actionList(actions))}) s.actions.put(a);

@@ -29,7 +29,7 @@ function applySettings(s) {
 
 export default {
   id: "notes",
-  name: "Notes",
+  name: "Note",
   what: "notepad",
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path stroke="#fff" stroke-width="2.4" d="M10 10h12M10 15.5h12M10 21h7"/></svg>`,
 

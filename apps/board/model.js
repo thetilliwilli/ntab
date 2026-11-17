@@ -40,6 +40,24 @@ export const update = (id, patch) => db.update("tasks", id, (t) => t && { ...t, 
 
 export const remove = (id) => db.remove("tasks", id);
 
+/* a copy of the task right after it (same column, the next place); returns the copy */
+export async function clone(id) {
+  let copy = null;
+  await db.change("tasks", (all) => {
+    all.sort(byRank);
+    const at = all.findIndex((t) => t.id === id);
+    if (at === -1) return [];
+    const now = Date.now();
+    copy = { ...all[at], id: db.uuid(), rank: null, createdAt: now, updatedAt: now };
+    const list = [...all.slice(0, at + 1), copy, ...all.slice(at + 1)];
+    const ranks = new Map(all.map((t) => [t.id, t.rank]));
+    const out = rerank(list);
+    copy = out[at + 1];
+    return out.filter((t) => t.id === copy.id || ranks.get(t.id) !== t.rank);
+  });
+  return copy;
+}
+
 /* puts the task into a column before another task (null = at the end of the column); writes the task (a rank
    between its new neighbours; all of them only when the numbers run out of room) */
 export const move = (id, status, beforeId = null) =>

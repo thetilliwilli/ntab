@@ -15,7 +15,7 @@ let icon = null; // uploaded icon, data URL
 let base = null; // the action being edited (keeps id and rank), null = a new one
 let done = null; // called with the finished action
 
-/* default name from the URL: "https://www.github.com/x" -> "github.com", "#/notes" -> "Notes" */
+/* default name from the URL: "https://www.github.com/x" -> "github.com", "#/notes" -> "Note" */
 const nameFromUrl = (u) => appById(routeOf(u))?.name ?? (hostOf(fixUrl(u)) || "").replace(/^www\./, "");
 
 /* "Name: value" lines <-> { name: value } */

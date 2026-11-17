@@ -85,7 +85,8 @@ save/session model, and `shell/apps.js` for the app contract.
   goes into our field (the user's choice: the system control for picking, our format for showing). "Delete all log entries…" (Types dialog, confirm +
   undo) empties the log, types stay.
 - Board: fixed columns new / planned / work / hold / done; drag on pointer events (works with touch), status also in the
-  task dialog. Under 600px one column at a time, picked by tabs.
+  task dialog. Under 600px one column at a time, picked by tabs. Clone in the task dialog (to split a task): saves the
+  form, puts a copy right after it (same column) and opens the copy.
 - No keyboard shortcuts (hotkeys) for now.
 - No warning for large files.
 - Theme colors stay our own tokens: Chrome has no API to read its theme colors (only light/dark is known);
@@ -96,9 +97,12 @@ save/session model, and `shell/apps.js` for the app contract.
   notes never show by themselves when sharing the screen). Screens are hash routes (`#/notes`, `#/settings`),
   replaced, never added to history; a route in the address on load is dropped. An app loads its data when first
   opened on the page.
-- Bottom navigation (replaced the sidebar, which the user didn't use): Home, Notes, Tracker, Board, Settings (fixed,
+- Names shown (the user's choice: the home screen is the Action app among the others): Action (home), Note (notes),
+  Track (tracker), Task (board), in the navigation, the start screen choice, page titles and the default tiles. Ids,
+  routes (`#/notes`, `#/tracker`, `#/board`), code and data keep the old names.
+- Bottom navigation (replaced the sidebar, which the user didn't use): Action, Note, Track, Task, Settings (fixed,
   icon + label, the screen in front lit in the accent with a bar on top), then a "|" separator and the buttons of the
-  screen in front only: Edit (actions editor) on home, Types in the tracker, Task on the board, in a slot that is
+  screen in front only: Edit (actions editor) on home, Types in the tracker, New on the board, in a slot that is
   always there (empty on Notes / Settings): nothing in the bar ever moves when switching screens. Same bar on desktop
   (centered) and phones. No title bars in the apps (the lit button says where you are). Settings is a screen: start
   screen, theme (auto / light / dark), data (sync, backup, import, delete all).

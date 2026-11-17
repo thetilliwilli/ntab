@@ -209,7 +209,7 @@ await P.ev(`document.querySelector('.tr-type-row button').click()`);
 await P.ev(`document.getElementById('tr-types-save').click()`);
 await sleep(300);
 ok("restored: tile back", await q(P, `document.querySelectorAll('.tr-tile').length === 3`));
-ok("title Tracker", (await q(P, `document.title`)) === "Tracker");
+ok("title Track", (await q(P, `document.title`)) === "Track");
 
 // delete all log entries (the types stay), after a confirm; the other page follows; undo brings them back
 const logged = (await entries(P)).length;

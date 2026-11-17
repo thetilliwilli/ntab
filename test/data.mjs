@@ -101,7 +101,7 @@ await sleep(1000);
 // routes: an app is "#/<id>"; typing one in the address opens it
 await P.ev(`location.hash = '#/board'`);
 await sleep(500);
-ok("#/board opens the board", await P.ev(`!document.getElementById('app-board').hidden && document.title === 'Board'`));
+ok("#/board opens the board", await P.ev(`!document.getElementById('app-board').hidden && document.title === 'Task'`));
 await P.ev(`document.getElementById('nav-home').click()`);
 await sleep(200);
 ok("home clears the route", await P.ev(`location.hash === '' && !document.getElementById('home').hidden`));

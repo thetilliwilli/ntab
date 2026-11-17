@@ -459,7 +459,7 @@ function render() {
 
 export default {
   id: "tracker",
-  name: "Tracker",
+  name: "Track",
   what: "tracker",
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path fill="none" stroke="#fff" stroke-width="2.4" d="M9 10l2 2 4-4M9 20l2 2 4-4M19 11h5M19 21h5"/></svg>`,
 

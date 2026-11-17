@@ -3,9 +3,9 @@
    subdomains (mail., drive., …) all get a generic "G" */
 
 export const actions = [
-  { name: "Notes", url: "#/notes" },
-  { name: "Tracker", url: "#/tracker" },
-  { name: "Board", url: "#/board" },
+  { name: "Note", url: "#/notes" },
+  { name: "Track", url: "#/tracker" },
+  { name: "Task", url: "#/board" },
   { name: "GitHub", url: "https://github.com" },
   { name: "Stack Overflow", url: "https://stackoverflow.com" },
   { name: "ChatGPT", url: "https://chatgpt.com" },

@@ -7,9 +7,9 @@ export const SYNCED = ["notes", "trackerTypes", "trackerEntries", "tasks", "acti
 /* the actions of a first start. fixed ids: every device has the same records, so they never come twice.
    updatedAt 0 = untouched: they give way to the actions of a server or a backup (shared/db.js merge) */
 export const DEFAULT_ACTIONS = [
-  { id: "2a83fa35-86d2-403c-8ff8-4ee7f8445958", name: "Notes", url: "#/notes" },
-  { id: "500845be-5790-42fa-95e6-c23f81c08207", name: "Tracker", url: "#/tracker" },
-  { id: "62978d54-09a1-4c8b-9cda-25db0ec9060e", name: "Board", url: "#/board" },
+  { id: "2a83fa35-86d2-403c-8ff8-4ee7f8445958", name: "Note", url: "#/notes" },
+  { id: "500845be-5790-42fa-95e6-c23f81c08207", name: "Track", url: "#/tracker" },
+  { id: "62978d54-09a1-4c8b-9cda-25db0ec9060e", name: "Task", url: "#/board" },
   { id: "a2824a87-c877-40e7-9dbe-cec1c2722790", name: "Gmail", url: "https://mail.google.com" },
   { id: "24fd736d-0684-456a-b25f-eee02d8fa04a", name: "YouTube", url: "https://www.youtube.com" },
 ];

@@ -15,7 +15,7 @@
   <script src="shell/theme.js"></script>
 </head>
 <body>
-  <section class="home" id="home" aria-label="Home" hidden>
+  <section class="home" id="home" aria-label="Actions" hidden>
     <div class="backup-bar" id="backup-bar" hidden>
       <span id="backup-text"></span>
       <button class="primary" id="backup-export">Export backup</button>
@@ -112,12 +112,12 @@
         <h2>Start screen <span class="muted">· this device</span></h2>
         <div class="seg set-seg" id="set-start" role="group" aria-label="Start screen">
           <button type="button" data-value="auto">Auto</button>
-          <button type="button" data-value="home">Home</button>
-          <button type="button" data-value="notes">Notes</button>
-          <button type="button" data-value="tracker">Tracker</button>
-          <button type="button" data-value="board">Board</button>
+          <button type="button" data-value="home">Action</button>
+          <button type="button" data-value="notes">Note</button>
+          <button type="button" data-value="tracker">Track</button>
+          <button type="button" data-value="board">Task</button>
         </div>
-        <span class="muted set-hint">What a new tab, a reload or a restart opens. Auto: Tracker on a touch screen (a phone), Home otherwise.</span>
+        <span class="muted set-hint">What a new tab, a reload or a restart opens. Auto: Track on a touch screen (a phone), Action otherwise.</span>
       </div>
       <div class="set-grp">
         <h2>Theme</h2>
@@ -184,16 +184,16 @@
 
   <!-- ===== bottom navigation: the screens, then the buttons of the screen in front ===== -->
   <nav class="bnav" id="bnav" aria-label="Screens">
-    <button class="bnav-btn" data-view="home" id="nav-home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5"/></svg><span>Home</span></button>
-    <button class="bnav-btn" data-view="notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 3h13v18h-13zM9 8h6M9 12h6M9 16h4"/></svg><span>Notes</span></button>
-    <button class="bnav-btn" data-view="tracker"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Tracker</span></button>
-    <button class="bnav-btn" data-view="board"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h17v15h-17zM9.2 4.5v15M14.8 4.5v15"/></svg><span>Board</span></button>
+    <button class="bnav-btn" data-view="home" id="nav-home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5"/></svg><span>Action</span></button>
+    <button class="bnav-btn" data-view="notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 3h13v18h-13zM9 8h6M9 12h6M9 16h4"/></svg><span>Note</span></button>
+    <button class="bnav-btn" data-view="tracker"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Track</span></button>
+    <button class="bnav-btn" data-view="board"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h17v15h-17zM9.2 4.5v15M14.8 4.5v15"/></svg><span>Task</span></button>
     <button class="bnav-btn" data-view="settings" id="nav-settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7h17M3.5 17h17"/><path class="knob" d="M13 4.5h4v5h-4zM7 14.5h4v5H7z"/></svg><span>Settings</span></button>
     <span class="bnav-sep"></span>
     <div class="bnav-ctx" id="bnav-ctx"><!-- a fixed slot: the bar never moves when its button changes -->
       <button class="bnav-btn ctx" id="links-edit" data-for="home" title="Edit actions" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Edit</span></button>
       <button class="bnav-btn ctx" id="tr-edit" data-for="tracker" title="Rename, reorder or archive event types" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Types</span></button>
-      <button class="bnav-btn ctx" id="bd-new" data-for="board" title="New task" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Task</span></button>
+      <button class="bnav-btn ctx" id="bd-new" data-for="board" title="New task" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New</span></button>
     </div>
   </nav>
 
@@ -455,6 +455,7 @@
       </div>
       <div class="dlg-foot">
         <button type="button" id="bd-del" class="bd-del">Delete</button>
+        <button type="button" id="bd-clone" title="Save this task and add a copy right after it (to split it: finish one part, keep the other)">Clone</button>
         <span id="bd-task-msg" class="msg"></span>
         <button type="button" id="bd-task-cancel">Cancel</button>
         <button type="submit" class="primary">Save</button>

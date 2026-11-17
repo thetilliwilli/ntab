@@ -144,16 +144,16 @@ function openTask(task) {
   $("bd-name").value = task?.name ?? "";
   $("bd-desc").value = task?.description ?? "";
   $("bd-status").value = task?.status ?? "new";
-  $("bd-del").hidden = !task;
+  $("bd-del").hidden = $("bd-clone").hidden = !task;
   $("bd-task-msg").textContent = task ? `created ${fmtTime(task.createdAt)}` : "";
-  $("bd-task").showModal();
+  if (!$("bd-task").open) $("bd-task").showModal();
   $("bd-name").focus();
 }
 
-async function saveTask(e) {
-  e?.preventDefault();
+/* writes the form; false (with the reason shown) if it can't */
+async function writeTask() {
   const name = $("bd-name").value.trim();
-  if (!name) return ($("bd-task-msg").textContent = "enter a name");
+  if (!name) return !($("bd-task-msg").textContent = "enter a name");
   const next = { name, description: $("bd-desc").value.trim(), status: $("bd-status").value };
   try {
     if (!editing) await model.add(next);
@@ -161,7 +161,25 @@ async function saveTask(e) {
       await model.update(editing.id, { name, description: next.description });
       await model.move(editing.id, next.status);
     } else await model.update(editing.id, next);
-    $("bd-task").close();
+    return true;
+  } catch (err) {
+    return !($("bd-task-msg").textContent = err.message);
+  }
+}
+
+async function saveTask(e) {
+  e?.preventDefault();
+  if (await writeTask()) $("bd-task").close();
+}
+
+/* splitting a task: this one is saved as the form says, a copy goes right after it and opens for editing */
+async function cloneTask() {
+  if (!(await writeTask())) return;
+  try {
+    const copy = await model.clone(editing.id);
+    openTask(copy);
+    $("bd-task-title").textContent = "Task (the copy)";
+    $("bd-task-msg").textContent = "a copy: change it, or close";
   } catch (err) {
     $("bd-task-msg").textContent = err.message;
   }
@@ -171,7 +189,7 @@ async function saveTask(e) {
 
 export default {
   id: "board",
-  name: "Board",
+  name: "Task",
   what: "task board",
   icon: `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M5 3h22v26H5z"/><path stroke="#fff" stroke-width="2.4" d="M10 9v14M16 9v9M22 9v5"/></svg>`,
 
@@ -179,6 +197,7 @@ export default {
     for (const s of model.STATUSES) $("bd-status").append(new Option(model.STATUS_NAMES[s], s));
     $("bd-new").addEventListener("click", () => openTask(null));
     $("bd-task-form").addEventListener("submit", saveTask);
+    $("bd-clone").addEventListener("click", cloneTask);
     $("bd-desc").addEventListener("keydown", (e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && saveTask(e));
     $("bd-task-cancel").addEventListener("click", () => $("bd-task").close());
     $("bd-task-x").addEventListener("click", () => $("bd-task").close());

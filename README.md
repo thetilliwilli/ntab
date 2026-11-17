@@ -3,10 +3,10 @@
 Chrome extension that replaces the new tab page (Ctrl+T, `+` button, `chrome://newtab`) with a home
 screen of large action tiles and a navigation bar at the bottom. Actions are links and apps:
 
-- **Notes** — a tabbed plain-text notepad (think Notepad++), saved as you type, open tabs survive restarts;
-- **Tracker** — tap a tile to log that something happened (smoked, workout, called mom…), or start an
+- **Note** (notes) — a tabbed plain-text notepad (think Notepad++), saved as you type, open tabs survive restarts;
+- **Track** (tracker) — tap a tile to log that something happened (smoked, workout, called mom…), or start an
   activity that runs until you finish it;
-- **Board** — a kanban board: tasks in New / Planned / Work / Hold / Done.
+- **Task** (board) — a kanban board: tasks in New / Planned / Work / Hold / Done.
 
 All data lives in the browser (IndexedDB) and works offline; your own small server can sync it between your devices
 in real time (optional, see [Sync server](#sync-server)); a backup is one JSON file. No dependencies, no build step.
@@ -43,14 +43,14 @@ open it in any browser, or install it as an app (the install icon in Chrome's ad
 
 ## Home screen and navigation
 
-The bar at the bottom switches screens: **Home**, **Notes**, **Tracker**, **Board**, **Settings** (the lit one is in
+The bar at the bottom switches screens: **Action** (the home screen with the action tiles), **Note**, **Track**, **Task**, **Settings** (the lit one is in
 front; a dot on Settings shows the sync state: green = synced, red = the sync server can't be reached). After a
-separator come the buttons of the screen in front: **Edit** (the actions editor) on Home, **Types** in the tracker,
-**Task** on the board. An app also opens from its home tile.
+separator come the buttons of the screen in front: **Edit** (the actions editor) on Action, **Types** in the tracker,
+**New** on the board. An app also opens from its home tile.
 
 Every new tab, reload and browser restart opens the start screen of this device (**Settings → Start screen**):
-**Auto** (the default) is the tracker on a touch screen (a phone) and home otherwise; or always Home, Notes, Tracker or
-Board. With Home, notes never appear on screen by themselves (handy when sharing the screen). The choice is kept in this
+**Auto** (the default) is the tracker on a touch screen (a phone) and home otherwise; or always Action, Note, Track or
+Task. With Action, notes never appear on screen by themselves (handy when sharing the screen). The choice is kept in this
 browser only (device record "start"). The address shows the screen as a route (`#/notes`); switching screens replaces
 it instead of adding browser history, and a route in the address on load is dropped for the start screen. **Settings → About** shows the version
 (`manifest.json`; the web version adds its build, the id of the cached file set, so you can tell whether a phone has
@@ -197,9 +197,10 @@ order of lists and settings come first) and prints what it did. After the update
 
 ## Board
 
-Columns New / Planned / Work / Hold / Done (on a phone one at a time, picked by tabs above it). **Task** in the
+Columns New / Planned / Work / Hold / Done (on a phone one at a time, picked by tabs above it). **New** in the
 navigation (or `+` in New) creates a task with a name and a description;
-click a card to edit it, change its status or delete it. Drag cards between and within columns (the mouse
+click a card to edit it, change its status or delete it. **Clone** (to split a task: finish one part, keep the other)
+saves it and puts a copy right after it, open for editing. Drag cards between and within columns (the mouse
 anywhere on a card, a finger by its `⋮⋮` handle). A move changes only the moved card: its `rank` goes between its new
 neighbours.
 
@@ -216,7 +217,7 @@ which has no favicon cache), **Reset icons** sets every action back to its autom
 
 ```json
 [
-  { "id": "…", "name": "Notes", "kind": "open", "options": { "url": "#/notes", "newTab": false } },
+  { "id": "…", "name": "Note", "kind": "open", "options": { "url": "#/notes", "newTab": false } },
   { "id": "…", "name": "Gmail", "kind": "open", "options": { "url": "https://mail.google.com", "newTab": true } }
 ]
 ```
@@ -247,7 +248,7 @@ An action is a button of some `kind` with its `options`:
   nothing is asked at install), then sends it again.
 
 New features of this sort are new values of `kind`. Actions of a kind or an app this version doesn't know (from a backup of a
-newer version) are kept and not shown. The default list (made on the first start): Notes, Tracker, Board, Gmail,
+newer version) are kept and not shown. The default list (made on the first start): Note, Track, Task, Gmail,
 YouTube. The editor's **+ notepad / + tracker / + task board** buttons add an app that isn't in the list; without
 the notepad it shows **add it back** and asks before saving.
 

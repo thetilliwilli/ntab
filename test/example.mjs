@@ -30,7 +30,7 @@ const nav = () => P.ev(`(() => ({
 let n = await nav();
 const pos0 = n.pos;
 const still = (n) => ok("nav: nothing in the bar moves", n.pos === pos0, n.pos + " / " + pos0);
-ok("nav: notes lit, no buttons of its own", n.on === "notes" && n.ctx === "" && n.title === "Notes", JSON.stringify(n));
+ok("nav: notes lit, no buttons of its own", n.on === "notes" && n.ctx === "" && n.title === "Note", JSON.stringify(n));
 await openApp(P, "tracker");
 n = await nav();
 ok("nav: tracker lit, Types after the separator", n.on === "tracker" && n.ctx === "tr-edit", JSON.stringify(n));
