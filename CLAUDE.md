@@ -72,7 +72,8 @@ save/session model, and `shell/apps.js` for the app contract.
 - Tracker decisions: an entry is one record `{id, typeId, at, endAt?, updatedAt}` (event: no `endAt`; activity: `endAt` null
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
   never deleted; undo toast. The tile that started an activity finishes it (a tap again; undo in the toast); the
-  running tile is filled with the accent and shows the live duration. One log list (the user's wish, no separate
+  running tile shows the live duration; running is its own color, a soft green tint with a green border (`--run`
+  in tracker.css: not the accent blue of the duration bars, not a full fill, the user found that too bright). One log list (the user's wish, no separate
   panel), strictly by time, newest first: a running activity stays in its place (by its start), lit like its tile.
   A row is start | duration | icon | name | × (no finish time, no Finish button), the same layout on every screen
   size (sizes in em, a phone only sets a smaller font; the user wants one layout and one code). A click on a row

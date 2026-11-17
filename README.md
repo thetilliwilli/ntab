@@ -182,7 +182,7 @@ order of lists and settings come first) and prints what it did. After the update
   **all emoji…** (every single-character emoji the browser knows, found at runtime, no emoji data shipped, so no
   search), or paste one; **Types** (in the navigation) renames, reorders, switches event ⇄ activity and archives (an archived
   type loses its tile, its entries keep their name in the log).
-- A running activity's tile is filled with the accent color and shows its running time; its log row is lit the same way.
+- A running activity's tile is lit green and shows its running time; its log row is lit the same way.
 - The log (◀ ▶ today) lists the entries of a day by time, newest first; a row shows the start, the duration (a bar as long as it is),
   the icon and the name; click it (anywhere but `×`) to correct the start and an activity's finish in a small editor: the date as `YYYY-MM-DD`, the time as 24-hour `HH:MM` (whatever the
   locale; `0720` and `20261117` work too), −15 / −5 / now / +5 / +15 minutes; the calendar and clock buttons open the

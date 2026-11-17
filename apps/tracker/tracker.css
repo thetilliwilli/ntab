@@ -34,10 +34,11 @@
 .tr-tile .tr-emoji, .tr-preview .tr-emoji { font-size: 34px; }
 .tr-tile-name { max-width: 100%; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .tr-tile-meta { color: var(--muted); font-size: 11px; }
-/* a running activity: filled, seen at a glance; a click finishes it */
-.tr-tile.running, .tr-tile.running:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
-.tr-tile.running:hover { filter: brightness(1.1); }
-.tr-tile.running .tr-tile-meta { color: var(--accent-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* a running activity: its own color (green, "going"), apart from the blue duration bars; a soft tint, not a fill,
+   the same on its tile and its log row. a click on the tile finishes it */
+#app-tracker { --run: #1f9d55; --run-bg: color-mix(in srgb, var(--run) 13%, var(--surface)); --run-fg: color-mix(in srgb, var(--run) 80%, var(--fg)); }
+.tr-tile.running, .tr-tile.running:hover { background: var(--run-bg); border-color: var(--run); box-shadow: inset 0 0 0 1px var(--run); }
+.tr-tile.running .tr-tile-meta { color: var(--run-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 .tr-tile.hit { background: var(--accent); border-color: var(--accent); }
 .tr-tile.hit * { color: var(--accent-fg); }
 .tr-tile.add { border-style: dashed; border-color: var(--border-strong); color: var(--muted); }
@@ -77,11 +78,9 @@
 .tr-row .fdel { align-self: stretch; height: auto; margin: 4px 0; padding: 0; font-size: 1em; }
 .tr-row .fdel:hover { background: var(--danger); color: #fff; }
 /* a running activity: lit like its tile */
-.tr-row.live, .tr-row.live:hover { background: var(--accent); color: var(--accent-fg); }
-.tr-row.live:hover { filter: brightness(1.1); }
-.tr-row.live .tr-len i { background: currentColor; opacity: 0.3; }
-.tr-row.live .tr-len span { font-weight: 600; }
-.tr-row.live .tr-what.gone, .tr-row.live .fdel { color: inherit; }
+.tr-row.live, .tr-row.live:hover { background: var(--run-bg); box-shadow: inset 4px 0 0 var(--run); }
+.tr-row.live .tr-len i { background: var(--run); opacity: 0.3; }
+.tr-row.live .tr-len span { color: var(--run-fg); font-weight: 600; }
 
 /* time editor: always YYYY-MM-DD and 24-hour HH:MM (a datetime-local input follows the locale: 12-hour on some phones);
    the start, and the finish of an activity: date [calendar] time [clock], then −15 −5 now +5 +15 */

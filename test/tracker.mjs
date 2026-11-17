@@ -37,7 +37,7 @@ await sleep(300);
 let ev = await entries(P);
 ok("3 entries (2 events + 1 running activity)", ev.length === 3 && !("endAt" in ev[0]) && ev[2].endAt === null && ev[2].typeId === types[1].id, JSON.stringify(ev));
 ok("running activity in the log, no Finish button (the tile finishes it)", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && !document.querySelector('.tr-row button:not(.fdel)')`));
-ok("running tile and row lit alike, with the accent", await q(P, `(() => { const t = document.querySelector('.tr-tile.running'), b = document.querySelector('.tr-tile:not(.running)'), r = document.querySelector('.tr-row.live'), bg = (n) => getComputedStyle(n).backgroundColor;
+ok("running tile and row lit alike (green, not the accent)", await q(P, `(() => { const t = document.querySelector('.tr-tile.running'), b = document.querySelector('.tr-tile:not(.running)'), r = document.querySelector('.tr-row.live'), bg = (n) => getComputedStyle(n).backgroundColor;
   return !!t && bg(t) !== bg(b) && bg(r) === bg(t) && getComputedStyle(r).color === getComputedStyle(t).color; })()`));
 ok("one list: the running activity is not twice", await q(P, `document.querySelectorAll('#tr-log .tr-row').length === 3`));
 ok("tile says ×2", await q(P, `document.querySelector('.tr-tile .tr-tile-meta').textContent.includes('×2')`));
