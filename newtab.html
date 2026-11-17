@@ -181,10 +181,12 @@
     <button class="bnav-btn" data-view="tracker"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Tracker</span></button>
     <button class="bnav-btn" data-view="board"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h17v15h-17zM9.2 4.5v15M14.8 4.5v15"/></svg><span>Board</span></button>
     <button class="bnav-btn" data-view="settings" id="nav-settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7h17M3.5 17h17"/><path class="knob" d="M13 4.5h4v5h-4zM7 14.5h4v5H7z"/></svg><span>Settings</span></button>
-    <span class="bnav-sep" id="bnav-sep" hidden></span>
-    <button class="bnav-btn ctx" id="links-edit" data-for="home" title="Edit actions" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Edit</span></button>
-    <button class="bnav-btn ctx" id="tr-edit" data-for="tracker" title="Rename, reorder or archive event types" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Types</span></button>
-    <button class="bnav-btn ctx" id="bd-new" data-for="board" title="New task" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Task</span></button>
+    <span class="bnav-sep"></span>
+    <div class="bnav-ctx" id="bnav-ctx"><!-- a fixed slot: the bar never moves when its button changes -->
+      <button class="bnav-btn ctx" id="links-edit" data-for="home" title="Edit actions" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Edit</span></button>
+      <button class="bnav-btn ctx" id="tr-edit" data-for="tracker" title="Rename, reorder or archive event types" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><span>Types</span></button>
+      <button class="bnav-btn ctx" id="bd-new" data-for="board" title="New task" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Task</span></button>
+    </div>
   </nav>
 
   <dialog id="files" class="dlg">

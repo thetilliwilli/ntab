@@ -90,7 +90,8 @@ save/session model, and `shell/apps.js` for the app contract.
   opened on the page.
 - Bottom navigation (replaced the sidebar, which the user didn't use): Home, Notes, Tracker, Board, Settings (fixed,
   icon + label, the screen in front lit in the accent with a bar on top), then a "|" separator and the buttons of the
-  screen in front only: Edit (actions editor) on home, Types in the tracker, Task on the board. Same bar on desktop
+  screen in front only: Edit (actions editor) on home, Types in the tracker, Task on the board, in a slot that is
+  always there (empty on Notes / Settings): nothing in the bar ever moves when switching screens. Same bar on desktop
   (centered) and phones. No title bars in the apps (the lit button says where you are). Settings is a screen: start
   screen, theme (auto / light / dark), data (sync, backup, import, delete all).
 - Home screen corner: a GitHub corner (octocat triangle, top right, new tab) to the repository and the version beside it,

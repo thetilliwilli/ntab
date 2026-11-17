@@ -55,11 +55,9 @@ function show(view) {
   $("home").hidden = view !== "home";
   $("settings").hidden = view !== "settings";
   for (const a of apps) $(`app-${a.id}`).hidden = a !== app;
-  // the bottom navigation: the screen in front is lit, its own buttons follow the separator
+  // the bottom navigation: the screen in front is lit, its own button sits in the slot after the separator
   for (const b of $("bnav").querySelectorAll("[data-view]")) b.classList.toggle("on", b.dataset.view === view);
-  let ctx = 0;
-  for (const b of $("bnav").querySelectorAll("[data-for]")) ctx += !(b.hidden = b.dataset.for !== view);
-  $("bnav-sep").hidden = !ctx;
+  for (const b of $("bnav").querySelectorAll("[data-for]")) b.hidden = b.dataset.for !== view;
 }
 
 async function enter(view) {

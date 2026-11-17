@@ -34,6 +34,9 @@
 .bnav-btn .knob { fill: var(--panel); }
 .bnav-btn span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bnav-sep { flex: none; width: 1px; margin: 14px 8px; background: var(--border-strong); }
+/* the slot of the screen's own button: always there, empty or not, so nothing in the bar ever moves */
+.bnav-ctx { flex: 0 1 96px; display: flex; min-width: 0; }
+.bnav-ctx .bnav-btn { flex: 1; }
 
 /* the screens take the row above the navigation */
 .home, .app, .settings { grid-row: 1; }

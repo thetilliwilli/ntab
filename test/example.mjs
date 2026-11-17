@@ -31,22 +31,29 @@ ok("typed text saved as note “new1”", notes.length === 1 && notes[0].text ==
 const nav = () => P.ev(`(() => ({
   on: [...document.querySelectorAll('#bnav .on')].map((b) => b.dataset.view).join(),
   ctx: [...document.querySelectorAll('#bnav [data-for]')].filter((b) => !b.hidden).map((b) => b.id).join(),
-  sep: !document.getElementById('bnav-sep').hidden, title: document.title,
+  title: document.title,
+  pos: [...document.querySelectorAll('#bnav [data-view], #bnav .bnav-sep, #bnav-ctx')].map((b) => { const r = b.getBoundingClientRect(); return r.left + ',' + r.width; }).join(' '),
 }))()`);
 let n = await nav();
-ok("nav: notes lit, no buttons of its own", n.on === "notes" && n.ctx === "" && !n.sep && n.title === "Notes", JSON.stringify(n));
+const pos0 = n.pos;
+const still = (n) => ok("nav: nothing in the bar moves", n.pos === pos0, n.pos + " / " + pos0);
+ok("nav: notes lit, no buttons of its own", n.on === "notes" && n.ctx === "" && n.title === "Notes", JSON.stringify(n));
 await openApp(P, "tracker");
 n = await nav();
-ok("nav: tracker lit, Types after the separator", n.on === "tracker" && n.ctx === "tr-edit" && n.sep, JSON.stringify(n));
+ok("nav: tracker lit, Types after the separator", n.on === "tracker" && n.ctx === "tr-edit", JSON.stringify(n));
+still(n);
 await openApp(P, "board");
 n = await nav();
 ok("nav: board lit, Task", n.on === "board" && n.ctx === "bd-new", JSON.stringify(n));
+still(n);
 await openApp(P, "home");
 n = await nav();
 ok("nav: home lit, Edit (actions)", n.on === "home" && n.ctx === "links-edit" && n.title === "new", JSON.stringify(n));
+still(n);
 await openApp(P, "settings");
 n = await nav();
 ok("nav: settings lit, the screen shown", n.on === "settings" && n.ctx === "" && !(await P.ev(`document.getElementById('settings').hidden`)), JSON.stringify(n));
+still(n);
 // the start screen of this device
 ok("start screen: auto marked", (await P.ev(`document.querySelector('#set-start .on').dataset.value`)) === "auto");
 await P.ev(`document.querySelector('#set-start [data-value=board]').click()`);
@@ -71,6 +78,9 @@ ok("auto on a phone: tracker", n.on === "tracker", JSON.stringify(n));
 const fit = await P.ev(`(() => { const r = document.getElementById('bnav').getBoundingClientRect(); return { bottom: r.bottom, h: innerHeight, w: document.documentElement.scrollWidth }; })()`);
 ok("phone: the navigation at the bottom, no sideways scroll", fit.bottom === fit.h && fit.w === 390, JSON.stringify(fit));
 if (process.env.SHOTS) await P.shot(`${process.env.SHOTS}/phone-tracker.png`);
+const phonePos = new Set();
+for (const v of ["home", "notes", "tracker", "board", "settings"]) await openApp(P, v), phonePos.add((await nav()).pos);
+ok("phone: nothing in the bar moves between screens", phonePos.size === 1, [...phonePos].join(" / "));
 await P.send("Emulation.setTouchEmulationEnabled", { enabled: false });
 await P.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 700, deviceScaleFactor: 1, mobile: false });
 await P.send("Page.reload");
