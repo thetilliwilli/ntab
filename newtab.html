@@ -367,24 +367,45 @@
         <button type="button" id="tr-time-x" class="dlg-x" title="Close">×</button>
       </div>
       <div class="dlg-body tr-time-body">
-        <label for="tr-time-date">Date</label>
-        <input id="tr-time-date" placeholder="YYYY-MM-DD" inputmode="numeric" autocomplete="off" spellcheck="false">
-        <span class="tr-pick-sys">
-          <button type="button" id="tr-time-date-pick" title="Pick a date" aria-label="Pick a date"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3.5v4M16 3.5v4"/></svg></button>
-          <input type="date" id="tr-time-date-sys" tabindex="-1" aria-hidden="true">
-        </span>
-        <label for="tr-time-hm">Time</label>
-        <input id="tr-time-hm" placeholder="HH:MM" inputmode="numeric" autocomplete="off" spellcheck="false">
-        <span class="tr-pick-sys">
-          <button type="button" id="tr-time-hm-pick" title="Pick a time" aria-label="Pick a time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></button>
-          <input type="time" id="tr-time-hm-sys" tabindex="-1" aria-hidden="true">
-        </span>
-        <div class="tr-time-quick" id="tr-time-quick">
-          <button type="button" data-min="-15">−15</button>
-          <button type="button" data-min="-5">−5</button>
-          <button type="button" data-min="now">now</button>
-          <button type="button" data-min="5">+5</button>
-          <button type="button" data-min="15">+15</button>
+        <div class="tr-when" id="tr-at-box">
+          <div class="tr-when-head" id="tr-at-label">Start</div>
+          <input id="tr-at-date" placeholder="YYYY-MM-DD" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Start: date">
+          <span class="tr-pick-sys">
+            <button type="button" id="tr-at-date-pick" title="Pick a date" aria-label="Pick a date"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3.5v4M16 3.5v4"/></svg></button>
+            <input type="date" id="tr-at-date-sys" tabindex="-1" aria-hidden="true">
+          </span>
+          <input id="tr-at-hm" placeholder="HH:MM" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Start: time">
+          <span class="tr-pick-sys">
+            <button type="button" id="tr-at-hm-pick" title="Pick a time" aria-label="Pick a time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></button>
+            <input type="time" id="tr-at-hm-sys" tabindex="-1" aria-hidden="true">
+          </span>
+          <div class="tr-time-quick" data-field="at">
+            <button type="button" data-min="-15">−15</button>
+            <button type="button" data-min="-5">−5</button>
+            <button type="button" data-min="now">now</button>
+            <button type="button" data-min="5">+5</button>
+            <button type="button" data-min="15">+15</button>
+          </div>
+        </div>
+        <div class="tr-when" id="tr-end-box">
+          <div class="tr-when-head" id="tr-end-label">Finish</div>
+          <input id="tr-end-date" placeholder="YYYY-MM-DD" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Finish: date">
+          <span class="tr-pick-sys">
+            <button type="button" id="tr-end-date-pick" title="Pick a date" aria-label="Pick a date"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3.5v4M16 3.5v4"/></svg></button>
+            <input type="date" id="tr-end-date-sys" tabindex="-1" aria-hidden="true">
+          </span>
+          <input id="tr-end-hm" placeholder="HH:MM" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Finish: time">
+          <span class="tr-pick-sys">
+            <button type="button" id="tr-end-hm-pick" title="Pick a time" aria-label="Pick a time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></button>
+            <input type="time" id="tr-end-hm-sys" tabindex="-1" aria-hidden="true">
+          </span>
+          <div class="tr-time-quick" data-field="end">
+            <button type="button" data-min="-15">−15</button>
+            <button type="button" data-min="-5">−5</button>
+            <button type="button" data-min="now">now</button>
+            <button type="button" data-min="5">+5</button>
+            <button type="button" data-min="15">+15</button>
+          </div>
         </div>
       </div>
       <div class="dlg-foot">

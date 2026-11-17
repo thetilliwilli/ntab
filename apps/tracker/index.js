@@ -93,7 +93,7 @@ async function finish(run) {
   if (f) toast(`■ ${type?.icon ?? ""} ${type?.name ?? "?"} finished · ${fmtDuration(f.endAt - f.at)}`, () => model.resume(f.id).catch(report));
 }
 
-/* ---------- log: the day's entries by their start, newest first (a running activity among them, marked) ---------- */
+/* ---------- log: the day's entries by their start, newest first (a running activity among them, lit like its tile) ---------- */
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const dayName = (d) => {
@@ -116,59 +116,47 @@ function renderLog() {
   for (const e of entries) list.append(logRow(e, longest, now));
 }
 
-/* time of an entry that changes on click ("at" = the start, "endAt" = the end of an activity) */
-function timeButton(e, field) {
-  const b = el("button", "tr-time", hm(e[field]));
-  b.title = `${ymd(e[field])} ${hm(e[field])}: click to change ${field === "at" ? (e.endAt === undefined ? "the time" : "when it started") : "when it finished"}`;
-  b.addEventListener("click", () => openTime(e, field));
-  return b;
-}
-
-/* start | end ("now" while it runs; the tile finishes it) | icon | name | duration bar (activities) | × */
+/* start | duration (activities: a bar as long as it is, growing while it runs) | icon | name | ×; the same on
+   every screen size. a click anywhere but × opens the time editor (start and finish) */
 function logRow(e, longest, now) {
   const type = model.typeById(e.typeId);
-  const row = el("div", `tr-row${e.endAt === null ? " live" : ""}`);
-  const end = el("span", "tr-end");
-  const bar = el("span", "tr-len");
+  const live = e.endAt === null;
+  const row = el("div", `tr-row${live ? " live" : ""}`);
+  row.dataset.id = e.id;
+  row.tabIndex = 0;
+  row.setAttribute("role", "button");
+  const span = e.endAt === undefined ? `${ymd(e.at)} ${hm(e.at)}` : `${ymd(e.at)} ${hm(e.at)} – ${live ? "now" : `${ymd(e.endAt)} ${hm(e.endAt)}`}`;
+  row.title = `${span}: click to change the time`;
+  const len = el("span", "tr-len");
   if (e.endAt !== undefined) {
     const ms = (e.endAt ?? now) - e.at;
-    if (e.endAt === null) {
-      if (type && type.archivedAt == null) end.append(el("span", "tr-now", "now"));
-      else {
-        // no tile to finish it with (its type is archived)
-        const done = el("button", "tr-finish primary", "Finish");
-        done.title = "Finish it now";
-        done.addEventListener("click", () => finish(e).catch(report));
-        end.append(done);
-      }
-      bar.classList.add("running");
-    } else end.append(timeButton(e, "endAt"));
     const fill = el("i");
     fill.style.width = `${Math.max(0, Math.min(1, ms / longest)) * 100}%`;
     const text = el("span", "", fmtDuration(ms));
-    if (e.endAt === null) text.dataset.at = e.at;
-    bar.append(fill, text);
+    if (live) text.dataset.at = e.at;
+    len.append(fill, text);
   }
   const del = el("button", "fdel", "×");
   del.title = "Delete this entry";
-  del.addEventListener("click", () =>
+  del.addEventListener("click", (ev) => {
+    ev.stopPropagation();
     model
       .remove(e.id)
       .then((gone) => gone && toast(`Deleted ${type?.name ?? "entry"} · ${hm(e.at)}`, () => model.restore(gone).catch(report)))
-      .catch(report),
-  );
+      .catch(report);
+  });
+  row.addEventListener("click", () => openTime(e));
+  row.addEventListener("keydown", (ev) => ev.target === row && (ev.key === "Enter" || ev.key === " ") && (ev.preventDefault(), openTime(e)));
   const archived = type?.archivedAt != null;
   const what = el("span", `tr-what${type && !archived ? "" : " gone"}`, type?.name ?? "unknown type");
   if (archived) what.title = "archived type";
-  const start = el("span", "tr-start");
-  start.append(timeButton(e, "at"));
-  row.append(start, end, el("span", "tr-emoji", type?.icon ?? "•"), what, bar, del);
+  row.append(el("span", "tr-start", hm(e.at)), len, el("span", "tr-emoji", type?.icon ?? "•"), what, del);
   return row;
 }
 
 /* ---------- time editor: date YYYY-MM-DD and 24-hour time, whatever the locale ---------- */
 
-let timing = null; // { e, field }
+let timing = null; // the entry being edited
 
 /* "2026-11-17" or "20261117"; "7:20", "07:20", "720", "0720", "7.20" -> local time in ms, NaN if it isn't one */
 function parseTime(date, time) {
@@ -182,31 +170,56 @@ function parseTime(date, time) {
 
 const timeMsg = (t) => ($("tr-time-msg").textContent = t);
 
-function fillTime(t) {
-  $("tr-time-date").value = ymd(t);
-  $("tr-time-hm").value = hm(t);
+/* k: "at" (the start, or an event's time) or "end". the fields show minutes; the exact time they were filled with
+   (the stored one, or "now") is kept while they still say that minute, so saving loses no seconds */
+const exact = {};
+const read = (k) => ({ date: $(`tr-${k}-date`).value.trim(), time: $(`tr-${k}-hm`).value.trim() });
+function fill(k, t) {
+  exact[k] = t;
+  $(`tr-${k}-date`).value = t == null ? "" : ymd(t);
+  $(`tr-${k}-hm`).value = t == null ? "" : hm(t);
+}
+/* the time the fields of k say, in ms; NaN if they don't say one */
+function timeOf(k) {
+  const { date, time } = read(k);
+  const t = parseTime(date, time);
+  return exact[k] != null && minuteOf(t) === minuteOf(exact[k]) ? exact[k] : t;
 }
 
-function openTime(e, field) {
-  timing = { e, field };
+/* the start and (an activity) the finish of an entry; a running one has no finish yet: filling it in finishes it */
+function openTime(e) {
+  timing = e;
   const type = model.typeById(e.typeId);
-  $("tr-time-title").textContent = `${type?.icon ?? "•"} ${type?.name ?? "unknown type"} · ${field === "endAt" ? "finish" : e.endAt === undefined ? "time" : "start"}`;
-  fillTime(e[field]);
+  const activity = e.endAt !== undefined;
+  $("tr-time-title").textContent = `${type?.icon ?? "•"} ${type?.name ?? "unknown type"}`;
+  $("tr-at-label").textContent = activity ? "Start" : "Time";
+  $("tr-end-box").hidden = !activity;
+  $("tr-end-label").textContent = e.endAt === null ? "Finish (running: empty keeps it running)" : "Finish";
+  fill("at", e.at);
+  fill("end", e.endAt);
   timeMsg("");
   $("tr-time").showModal();
-  // a phone would open its keyboard over the sheet: there the field is focused only when tapped
-  if (!isTouch()) $("tr-time-hm").select();
+  // a phone would open its keyboard over the sheet: there a field is focused only when tapped
+  if (!isTouch()) $("tr-at-hm").select();
   else $("tr-time-form").querySelector("button[type=submit]").focus();
 }
 
+const BAD = "date YYYY-MM-DD, time HH:MM (24 hours)";
+
 async function saveTime(ev) {
   ev.preventDefault();
-  const { e, field } = timing;
-  const time = parseTime($("tr-time-date").value, $("tr-time-hm").value);
-  if (!Number.isFinite(time)) return timeMsg("date YYYY-MM-DD, time HH:MM (24 hours)");
+  const e = timing;
+  const next = { at: timeOf("at") };
+  if (!Number.isFinite(next.at)) return timeMsg(`${e.endAt === undefined ? "time" : "start"}: ${BAD}`);
+  if (e.endAt !== undefined) {
+    const f = read("end");
+    if (f.date || f.time || e.endAt !== null) {
+      next.endAt = timeOf("end");
+      if (!Number.isFinite(next.endAt)) return timeMsg(`finish: ${BAD}`);
+    }
+  }
   try {
-    // an unchanged minute keeps the stored seconds
-    if (minuteOf(time) !== minuteOf(e[field])) await model.setTime(e.id, field, time);
+    if (next.at !== e.at || ("endAt" in next && next.endAt !== e.endAt)) await model.setTimes(e.id, next);
     $("tr-time").close();
   } catch (err) {
     timeMsg(err.message);
@@ -215,27 +228,28 @@ async function saveTime(ev) {
 
 /* the system picker of a field (a calendar, a clock: whatever the phone or the browser has); what it picks goes
    into the field in our format (the picker itself follows the locale, e.g. a 24-hour clock only if the phone uses one) */
-function systemPicker(field, sys, toSys, fromSys) {
-  $(sys).addEventListener("change", () => {
-    if (!$(sys).value) return;
-    $(field).value = fromSys($(sys).value);
+function systemPicker(field, toSys, fromSys) {
+  const sys = $(`${field}-sys`);
+  sys.addEventListener("change", () => {
+    if (!sys.value) return;
+    $(field).value = fromSys(sys.value);
     timeMsg("");
   });
   $(`${field}-pick`).addEventListener("click", () => {
-    $(sys).value = toSys($(field).value.trim()) ?? "";
+    sys.value = toSys($(field).value.trim()) ?? "";
     try {
-      $(sys).showPicker();
+      sys.showPicker();
     } catch {
-      $(sys).focus(); // no showPicker: the input itself
+      sys.focus(); // no showPicker: the input itself
     }
   });
 }
 
-/* −15 / −5 / now / +5 / +15 minutes from what the fields say */
-function nudge(step) {
-  const cur = parseTime($("tr-time-date").value, $("tr-time-hm").value);
-  const base = Number.isFinite(cur) ? cur : timing.e[timing.field];
-  fillTime(step === "now" ? Date.now() : base + Number(step) * 60000);
+/* −15 / −5 / now / +5 / +15 minutes from what the fields of k say (an empty finish: from now) */
+function nudge(k, step) {
+  const cur = timeOf(k);
+  const base = Number.isFinite(cur) ? cur : k === "at" ? timing.at : Date.now();
+  fill(k, step === "now" ? Date.now() : base + Number(step) * 60000);
   timeMsg("");
 }
 
@@ -482,10 +496,12 @@ export default {
     $("tr-time-form").addEventListener("submit", saveTime);
     $("tr-time-cancel").addEventListener("click", () => $("tr-time").close());
     $("tr-time-x").addEventListener("click", () => $("tr-time").close());
-    $("tr-time-quick").addEventListener("click", (e) => e.target.dataset.min && nudge(e.target.dataset.min));
+    for (const q of document.querySelectorAll("#tr-time .tr-time-quick")) q.addEventListener("click", (e) => e.target.dataset.min && nudge(q.dataset.field, e.target.dataset.min));
     const ok = (t) => (Number.isFinite(t) ? t : null);
-    systemPicker("tr-time-date", "tr-time-date-sys", (v) => (ok(parseTime(v, "00:00")) === null ? null : ymd(parseTime(v, "00:00"))), (v) => v);
-    systemPicker("tr-time-hm", "tr-time-hm-sys", (v) => (ok(parseTime("2000-01-01", v)) === null ? null : hm(parseTime("2000-01-01", v))), (v) => v.slice(0, 5));
+    for (const k of ["at", "end"]) {
+      systemPicker(`tr-${k}-date`, (v) => (ok(parseTime(v, "00:00")) === null ? null : ymd(parseTime(v, "00:00"))), (v) => v);
+      systemPicker(`tr-${k}-hm`, (v) => (ok(parseTime("2000-01-01", v)) === null ? null : hm(parseTime("2000-01-01", v))), (v) => v.slice(0, 5));
+    }
     $("tr-time").addEventListener("close", () => (timing = null));
 
     const go = (d) => {

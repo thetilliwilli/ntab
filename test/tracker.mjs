@@ -36,8 +36,9 @@ await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`);
 await sleep(300);
 let ev = await entries(P);
 ok("3 entries (2 events + 1 running activity)", ev.length === 3 && !("endAt" in ev[0]) && ev[2].endAt === null && ev[2].typeId === types[1].id, JSON.stringify(ev));
-ok("running activity marked in the log, no Finish button there (the tile finishes it)", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && document.querySelector('.tr-row.live .tr-now')?.textContent === 'now' && !document.querySelector('.tr-row .tr-finish')`));
-ok("running tile filled with the accent", await q(P, `(() => { const t = document.querySelector('.tr-tile.running'), b = document.querySelector('.tr-tile:not(.running)'); return !!t && getComputedStyle(t).backgroundColor !== getComputedStyle(b).backgroundColor; })()`));
+ok("running activity in the log, no Finish button (the tile finishes it)", await q(P, `document.querySelectorAll('.tr-row.live').length === 1 && !document.querySelector('.tr-row button:not(.fdel)')`));
+ok("running tile and row lit alike, with the accent", await q(P, `(() => { const t = document.querySelector('.tr-tile.running'), b = document.querySelector('.tr-tile:not(.running)'), r = document.querySelector('.tr-row.live'), bg = (n) => getComputedStyle(n).backgroundColor;
+  return !!t && bg(t) !== bg(b) && bg(r) === bg(t) && getComputedStyle(r).color === getComputedStyle(t).color; })()`));
 ok("one list: the running activity is not twice", await q(P, `document.querySelectorAll('#tr-log .tr-row').length === 3`));
 ok("tile says ×2", await q(P, `document.querySelector('.tr-tile .tr-tile-meta').textContent.includes('×2')`));
 await sleep(1500);
@@ -98,53 +99,86 @@ await P.ev(`document.getElementById('tr-toast-undo').click()`);
 await sleep(300);
 ok("restored", (await entries(P)).length === 5);
 
-// edit time of the newest row: one hour earlier, in the time editor (YYYY-MM-DD and 24-hour HH:MM)
-// shown to the minute; opening the editor and saving keeps the stored milliseconds
-const setFields = (t) => `(() => { const d = new Date(${t}); const p = (n) => String(n).padStart(2, '0');
-  document.getElementById('tr-time-date').value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-  document.getElementById('tr-time-hm').value = p(d.getHours()) + ':' + p(d.getMinutes()); })()`;
+// edit times: a click on a row (anywhere but ×) opens the editor (YYYY-MM-DD and 24-hour HH:MM); the start, and the finish
+// of an activity. shown to the minute; saving an unchanged minute keeps the stored milliseconds
+const setFields = (k, t) => `(() => { const d = new Date(${t}); const p = (n) => String(n).padStart(2, '0');
+  document.getElementById('tr-${k}-date').value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  document.getElementById('tr-${k}-hm').value = p(d.getHours()) + ':' + p(d.getMinutes()); })()`;
 const save = () => P.ev(`document.getElementById('tr-time-form').requestSubmit()`);
+const isOpen = () => q(P, `document.getElementById('tr-time').open`);
 const before = (await entries(P)).map((e) => e.at).join();
-ok("log time to the minute", /^\d\d:\d\d$/.test(await q(P, `document.querySelector('.tr-row .tr-time').textContent`)));
-await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
+ok("log: start to the minute, then the duration (no finish time)", await q(P, `/^\\d\\d:\\d\\d$/.test(document.querySelector('.tr-row .tr-start').textContent) && [...document.querySelectorAll('.tr-row')].some((r) => /^\\d+m$/.test(r.children[1].textContent))`));
+await P.ev(`document.querySelector('.tr-row .fdel').dispatchEvent(new MouseEvent('click', { bubbles: true }))`); // × doesn't open the editor
+await sleep(300);
+ok("× deletes, doesn't open the editor", !(await isOpen()) && (await entries(P)).length === 4);
+await P.ev(`document.getElementById('tr-toast-undo').click()`);
+await sleep(300);
+const evRow = `[...document.querySelectorAll('.tr-row')].find((r) => !r.children[1].textContent)`; // an event's row
+await P.ev(`${evRow}.querySelector('.tr-what').click()`);
 await sleep(100);
-const shown = await q(P, `[document.getElementById('tr-time').open, document.getElementById('tr-time-date').value, document.getElementById('tr-time-hm').value]`);
-ok("editor: ISO date, 24-hour time", shown[0] && /^\d{4}-\d\d-\d\d$/.test(shown[1]) && /^([01]\d|2[0-3]):\d\d$/.test(shown[2]), JSON.stringify(shown));
+const shown = await q(P, `[document.getElementById('tr-time').open, document.getElementById('tr-at-date').value, document.getElementById('tr-at-hm').value, document.getElementById('tr-end-box').hidden]`);
+ok("event: the editor with its time only; ISO date, 24-hour time", shown[0] && /^\d{4}-\d\d-\d\d$/.test(shown[1]) && /^([01]\d|2[0-3]):\d\d$/.test(shown[2]) && shown[3], JSON.stringify(shown));
 if (SHOTS) await P.shot(`${SHOTS}/tracker-time.png`);
 // the system pickers: the button hands the field's value to a native date / time input, what it picks comes back in our format
-await P.ev(`document.getElementById('tr-time-hm-pick').click(); document.getElementById('tr-time-date-pick').click()`);
-const sys = await q(P, `[document.getElementById('tr-time-date-sys').value, document.getElementById('tr-time-hm-sys').value]`);
+await P.ev(`document.getElementById('tr-at-hm-pick').click(); document.getElementById('tr-at-date-pick').click()`);
+const sys = await q(P, `[document.getElementById('tr-at-date-sys').value, document.getElementById('tr-at-hm-sys').value]`);
 ok("picker gets the field's value", sys[0] === shown[1] && sys[1] === shown[2], JSON.stringify(sys));
-await P.ev(`(() => { const d = document.getElementById('tr-time-date-sys'), t = document.getElementById('tr-time-hm-sys');
+await P.ev(`(() => { const d = document.getElementById('tr-at-date-sys'), t = document.getElementById('tr-at-hm-sys');
   d.value = '2026-01-02'; d.dispatchEvent(new Event('change')); t.value = '21:05'; t.dispatchEvent(new Event('change')); })()`);
-ok("picked values in the fields: ISO date, 24 hours", (await q(P, `document.getElementById('tr-time-date').value + ' ' + document.getElementById('tr-time-hm').value`)) === "2026-01-02 21:05");
-await P.ev(`document.getElementById('tr-time-date').value = ${JSON.stringify(shown[1])}; document.getElementById('tr-time-hm').value = ${JSON.stringify(shown[2])}`);
+ok("picked values in the fields: ISO date, 24 hours", (await q(P, `document.getElementById('tr-at-date').value + ' ' + document.getElementById('tr-at-hm').value`)) === "2026-01-02 21:05");
+await P.ev(`document.getElementById('tr-at-date').value = ${JSON.stringify(shown[1])}; document.getElementById('tr-at-hm').value = ${JSON.stringify(shown[2])}`);
 await save();
 await sleep(300);
-ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before && !(await q(P, `document.getElementById('tr-time').open`)));
-await P.ev(`document.querySelector('.tr-row .tr-time').click()`);
+ok("unchanged minute keeps the exact time", (await entries(P)).map((e) => e.at).join() === before && !(await isOpen()));
+await P.ev(`${evRow}.click()`);
 await sleep(100);
-await P.ev(`document.getElementById('tr-time-hm').value = '25:00'`);
+await P.ev(`document.getElementById('tr-at-hm').value = '25:00'`);
 await save();
 await sleep(200);
-ok("a wrong time is refused", await q(P, `document.getElementById('tr-time').open && document.getElementById('tr-time-msg').textContent.includes('HH:MM')`));
-const newest = (await entries(P)).at(-1);
-await P.ev(setFields(`Math.max(${newest.at} - 3600e3, new Date().setHours(0, 0, 1, 0))`)); // back, but still today
-await P.ev(`document.querySelector('#tr-time-quick [data-min="-5"]').click(); document.querySelector('#tr-time-quick [data-min="5"]').click()`); // −5 +5: the same
+ok("a wrong time is refused", (await isOpen()) && (await q(P, `document.getElementById('tr-time-msg').textContent.includes('HH:MM')`)));
+const target = await q(P, `${evRow}.querySelector('.tr-start').textContent`);
+const victimId = await q(P, `${evRow}.dataset.id`);
+const victim = (await entries(P)).find((e) => e.id === victimId);
+await P.ev(setFields("at", `Math.max(${victim.at} - 3600e3, new Date().setHours(0, 0, 1, 0))`)); // back, but still today
+await P.ev(`document.querySelector('#tr-at-box [data-min="-5"]').click(); document.querySelector('#tr-at-box [data-min="5"]').click()`); // −5 +5: the same
 await save();
 await sleep(400);
 ev = await entries(P);
-ok("time changed: one entry moved back", ev.length === 5 && Date.now() - ev[0].at > 30e3, JSON.stringify(ev[0]));
+ok("time changed: the event moved back", ev.length === 5 && ev.find((e) => e.id === victim.id).at < victim.at - 30e3, JSON.stringify({ target, victim }));
 
-// the activity: its end time is editable too, and it can't end before it starts
+// the activity: start and finish in one editor, both change in one save; it can't end before it starts
 const act = ev.find((e) => e.endAt);
-await P.ev(`[...document.querySelectorAll('.tr-end .tr-time')][0].click()`);
+await P.ev(`document.querySelector('.tr-row:not(.live) .tr-len span')?.closest('.tr-row').click()`);
 await sleep(100);
-await P.ev(setFields(`${act.at} - 120e3`));
+ok("activity: start and finish shown", await q(P, `!document.getElementById('tr-end-box').hidden && /^\\d\\d:\\d\\d$/.test(document.getElementById('tr-end-hm').value)`));
+await P.ev(setFields("end", `${act.at} - 120e3`));
 await save();
 await sleep(300);
 ok("end before start refused", (await entries(P)).find((e) => e.id === act.id).endAt === act.endAt && (await q(P, `document.getElementById('tr-time-msg').textContent.includes("can't end")`)));
-await P.ev(`document.getElementById('tr-time-cancel').click()`);
+await P.ev(setFields("at", `${act.at} - 600e3`));
+await P.ev(setFields("end", `${act.at} - 300e3`)); // both earlier: the finish before the old start, fine in one save
+await save();
+await sleep(300);
+const moved = (await entries(P)).find((e) => e.id === act.id);
+ok("start and finish changed together", !(await isOpen()) && moved.endAt - moved.at === 300e3 && moved.endAt < act.at, JSON.stringify(moved));
+// a running one: the finish is empty; empty keeps it running, filled in it finishes it
+await P.ev(`document.querySelectorAll('.tr-tile')[1].click()`);
+await sleep(400);
+await P.ev(`document.querySelector('.tr-row.live').click()`);
+await sleep(100);
+ok("running: the finish is empty", await q(P, `document.getElementById('tr-end-hm').value === '' && document.getElementById('tr-end-date').value === ''`));
+await save();
+await sleep(300);
+ok("empty finish keeps it running", !(await isOpen()) && (await q(P, `!!document.querySelector('.tr-row.live')`)));
+await P.ev(`document.querySelector('.tr-row.live').click()`);
+await sleep(100);
+await P.ev(`document.querySelector('#tr-end-box [data-min="now"]').click()`);
+await save();
+await sleep(400);
+ok("finish filled in: finished", await q(P, `!document.querySelector('.tr-row.live') && !document.querySelector('.tr-tile.running')`));
+const extra2 = (await entries(P)).filter((e) => e.at > Date.now() - 5e3 && e.endAt).map((e) => e.id);
+await P.ev(`import('/shared/db.js').then((db) => db.remove('trackerEntries', ${JSON.stringify(extra2)}))`);
+await sleep(400);
 
 // edit types: rename, reorder survives reload
 await P.send("Page.reload");

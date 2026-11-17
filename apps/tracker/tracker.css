@@ -50,61 +50,46 @@
 
 .tr-rows { border: 1px solid var(--border); background: var(--surface); }
 
+/* one row on every screen size (sizes in em: a phone only sets a smaller font): start | duration | icon | name | ×;
+   a click anywhere but × opens the time editor */
 .tr-row {
   display: grid;
-  grid-template-columns: 100px 100px 44px minmax(120px, 1fr) minmax(160px, 2fr) 48px;
+  grid-template-columns: 3.3em 4.8em 1.4em minmax(0, 1fr) 1.8em;
   align-items: center;
-  gap: 12px;
-  height: 60px;
-  padding: 0 6px 0 14px;
+  gap: 0.5em;
+  height: max(48px, 2.5em);
+  padding: 0 0.25em 0 0.6em;
   font-size: 24px;
   border-bottom: 1px solid var(--border);
+  cursor: pointer;
 }
 
 .tr-row:last-child { border-bottom: 0; }
 .tr-row:hover { background: var(--hover); }
-.tr-time { justify-self: start; height: 40px; padding: 0 6px; font-size: 24px; border-color: transparent; font-family: var(--mono); }
-.tr-time:hover { border-color: var(--border-strong); }
-.tr-start, .tr-end { position: relative; }
-/* the time editor is wider than its column: it floats over the row */
-/* a running activity: in its place in the log, marked; "now" where its end time will be */
-.tr-row.live { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--accent); }
-.tr-now { padding: 0 6px; color: var(--accent); font-family: var(--mono); font-weight: 600; }
-.tr-finish { justify-self: start; height: 40px; padding: 0 14px; font-size: 18px; font-weight: 600; }
-.tr-len { position: relative; display: flex; align-items: center; height: 40px; }
+.tr-start { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+/* the duration: a bar as long as it is (the longest of the day fills the cell) */
+.tr-len { position: relative; display: flex; align-items: center; height: 1.6em; }
 .tr-len i { position: absolute; inset: 0 auto 0 0; min-width: 2px; background: var(--accent); opacity: 0.25; }
-.tr-len.running i { opacity: 0.45; }
-.tr-len span { position: relative; padding: 0 10px; font-size: 22px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tr-row .tr-emoji { font-size: 32px; }
+.tr-len span { position: relative; padding: 0 0.3em; font-size: 0.9em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tr-row .tr-emoji { font-size: 1.3em; line-height: 1; text-align: center; }
 .tr-what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tr-what.gone { color: var(--muted); font-style: italic; }
-.tr-row .fdel { height: 44px; padding: 0; font-size: 24px; }
+.tr-row .fdel { align-self: stretch; height: auto; margin: 4px 0; padding: 0; font-size: 1em; }
 .tr-row .fdel:hover { background: var(--danger); color: #fff; }
+/* a running activity: lit like its tile */
+.tr-row.live, .tr-row.live:hover { background: var(--accent); color: var(--accent-fg); }
+.tr-row.live:hover { filter: brightness(1.1); }
+.tr-row.live .tr-len i { background: currentColor; opacity: 0.3; }
+.tr-row.live .tr-len span { font-weight: 600; }
+.tr-row.live .tr-what.gone, .tr-row.live .fdel { color: inherit; }
 
-/* undo toast */
-.tr-toast {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 90%;
-  padding: 6px 6px 6px 14px;
-  transform: translateX(-50%);
-  background: var(--fg);
-  color: var(--bg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.tr-toast button { height: 26px; border-color: currentColor; }
-.tr-toast.err { background: var(--danger); color: #fff; }
-
-/* time editor: always YYYY-MM-DD and 24-hour HH:MM (a datetime-local input follows the locale: 12-hour on some phones) */
-.tr-time-dlg { width: min(340px, 94vw); }
-.tr-time-body { display: grid; grid-template-columns: auto minmax(0, 1fr) 44px; gap: 10px 8px; align-items: center; padding: 14px 12px; }
-.tr-time-body > label { color: var(--muted); }
-.tr-time-body input { height: 44px; padding: 0 10px; font: 20px var(--mono); }
+/* time editor: always YYYY-MM-DD and 24-hour HH:MM (a datetime-local input follows the locale: 12-hour on some phones);
+   the start, and the finish of an activity: date [calendar] time [clock], then −15 −5 now +5 +15 */
+.tr-time-dlg { width: min(420px, 94vw); }
+.tr-time-body { display: flex; flex-direction: column; gap: 14px; padding: 14px 12px; }
+.tr-when { display: grid; grid-template-columns: minmax(0, 1.5fr) 44px minmax(0, 1fr) 44px; gap: 8px 6px; align-items: center; }
+.tr-when-head { grid-column: 1 / -1; color: var(--muted); }
+.tr-when input { min-width: 0; height: 44px; padding: 0 8px; font: 19px var(--mono); }
 .tr-time-quick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 /* the system picker (calendar, clock): its input stays invisible under the button, the fields show what it picked */
 .tr-pick-sys { position: relative; }
@@ -159,30 +144,11 @@
 .dlg-foot .tr-clear { color: var(--danger); }
 .dlg-foot .tr-clear:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-/* narrow screens (phones): the log row in two lines, times, icon, name and × on top, the duration bar below */
+/* narrow screens (phones): the same layout, smaller */
 @media (max-width: 600px) {
   .tr-body { padding: 12px 10px 60px; }
   .tr-day { min-width: 0; flex: 1; }
-  .tr-row {
-    grid-template-columns: auto 62px 28px minmax(0, 1fr) 36px;
-    grid-template-areas: "start end icon what del" "bar bar bar bar bar";
-    gap: 0 6px;
-    height: auto;
-    min-height: 48px;
-    padding: 4px 2px 4px 6px;
-    font-size: 17px;
-  }
-  .tr-start { grid-area: start; }
-  .tr-end { grid-area: end; }
-  .tr-row .tr-emoji { grid-area: icon; font-size: 24px; }
-  .tr-what { grid-area: what; }
-  .tr-len { grid-area: bar; height: 26px; margin-bottom: 2px; }
-  .tr-len:empty { display: none; }
-  .tr-len span { font-size: 15px; }
-  .tr-row .fdel { grid-area: del; height: 40px; font-size: 20px; }
-  .tr-time { height: 40px; padding: 0 4px; font-size: 17px; }
-  .tr-finish { height: 36px; padding: 0 8px; font-size: 14px; }
-  .tr-now { padding: 0 4px; }
+  .tr-row { font-size: 17px; }
   .tr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .tr-tile { min-height: 84px; gap: 4px; padding: 6px 4px; }
   .tr-tile .tr-emoji { font-size: 28px; }

@@ -73,9 +73,11 @@ save/session model, and `shell/apps.js` for the app contract.
   while running); types `{kind: "event" | "activity"}` with an emoji icon; types are archived (`archivedAt`),
   never deleted; undo toast. The tile that started an activity finishes it (a tap again; undo in the toast); the
   running tile is filled with the accent and shows the live duration. One log list (the user's wish, no separate
-  panel), strictly by time, newest first: a running activity stays in its place (by its start), marked, "now" for
-  its end; Finish in the row only when its type is archived (no tile). Start and finish times are
-  edited in a small dialog (a sheet at the bottom on phones): date `YYYY-MM-DD` and 24-hour `HH:MM` text fields, never
+  panel), strictly by time, newest first: a running activity stays in its place (by its start), lit like its tile.
+  A row is start | duration | icon | name | × (no finish time, no Finish button), the same layout on every screen
+  size (sizes in em, a phone only sets a smaller font; the user wants one layout and one code). A click on a row
+  (anywhere but ×) opens one dialog with the start and, for an activity, the finish (a sheet at the bottom on phones;
+  a running one's finish is empty: filling it in finishes it): date `YYYY-MM-DD` and 24-hour `HH:MM` text fields, never
   `datetime-local` (it follows the locale: 12-hour on phones; its display format can't be set from a page). Beside
   each field a button opens the system picker (`showPicker()` of a hidden `date` / `time` input), the picked value
   goes into our field (the user's choice: the system control for picking, our format for showing). "Delete all log entries…" (Types dialog, confirm +

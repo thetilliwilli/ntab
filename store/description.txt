@@ -37,7 +37,7 @@ TRACKER
 • Your own event types with an emoji
 • Activities with a start and a finish: tap the tile to start, tap it again to finish; a running tile is lit with a live timer
 • Today's count and last time on every tile
-• Day log: fix a start or finish time (always YYYY-MM-DD and 24-hour time), delete, undo
+• Day log: start, duration, name in one row on every screen; tap a row to fix its start and finish (always YYYY-MM-DD and 24-hour time); delete, undo
 • Clear the whole log in one go, your event types stay
 
 TASK BOARD

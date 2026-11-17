@@ -89,12 +89,13 @@ export async function clearEntries() {
   return gone;
 }
 
-/* changes when an entry started (field "at") or ended ("endAt") */
-export function setTime(id, field, time) {
-  if (!Number.isFinite(time)) return Promise.resolve();
+/* changes when an entry started ("at") and / or ended ("endAt"; on a running activity it finishes it), in one write */
+export function setTimes(id, times) {
+  if (Object.values(times).some((t) => !Number.isFinite(t))) return Promise.resolve();
   return db.update("trackerEntries", id, (e) => {
     if (!e) return undefined;
-    const next = { ...e, [field]: time };
+    if ("endAt" in times && e.endAt === undefined) throw new Error("an event has no finish");
+    const next = { ...e, ...times };
     if (next.endAt != null && next.endAt < next.at) throw new Error("an activity can't end before it starts");
     return next;
   });
