@@ -81,6 +81,16 @@ if (process.env.SHOTS) await P.shot(`${process.env.SHOTS}/phone-tracker.png`);
 const phonePos = new Set();
 for (const v of ["home", "notes", "tracker", "board", "settings"]) await openApp(P, v), phonePos.add((await nav()).pos);
 ok("phone: nothing in the bar moves between screens", phonePos.size === 1, [...phonePos].join(" / "));
+// a touch screen: opening Notes (a note open, or the list) focuses no text field, so no keyboard pops up
+await openApp(P, "notes");
+const typing = () => P.ev(`(() => { const a = document.activeElement; return a?.matches('textarea, input') ? a.id : ''; })()`);
+ok("phone: Notes with a note open focuses nothing", (await typing()) === "", await typing());
+await P.ev(`document.querySelector('.tab')?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 20, clientY: 20 }))`);
+await P.ev(`[...document.querySelectorAll('.ctx-menu:not([hidden]) .ctx-item')].find((b) => b.textContent === 'Delete note')?.click()`);
+await sleep(300);
+await openApp(P, "home");
+await openApp(P, "notes");
+ok("phone: Notes with the list focuses nothing", (await P.ev(`!document.getElementById('nothing').hidden`)) && (await typing()) === "", await typing());
 await P.send("Emulation.setTouchEmulationEnabled", { enabled: false });
 await P.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 700, deviceScaleFactor: 1, mobile: false });
 await P.send("Page.reload");

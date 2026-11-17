@@ -13,7 +13,7 @@
 
 import * as db from "../../shared/db.js";
 import * as editor from "./editor.js";
-import { fmtTime } from "../../shared/util.js";
+import { $, autoFocus, fmtTime } from "../../shared/util.js";
 
 const SAVE_DELAY = 300;
 const MAX_WAIT = 2000;
@@ -104,7 +104,7 @@ export async function open(id) {
     order.push(id);
   }
   activate(id);
-  editor.focus();
+  autoFocus($("text")); // opened from a list: on a phone to read, the keyboard comes with a tap into the text
 }
 
 /* closes the tab; the note stays unless del (used for empty new notes and explicit deletes) */

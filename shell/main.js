@@ -12,7 +12,7 @@ import { initRequestDialog } from "./request.js";
 import { initData, checkReminder } from "./data.js";
 import { getView, setView, onView, setViews, isView } from "./view.js";
 import { initUpdate } from "./update.js";
-import { $ } from "../shared/util.js";
+import { $, isTouch } from "../shared/util.js";
 import { startSync } from "../shared/sync.js";
 
 setViews(["home", "settings", ...apps.map((a) => a.id)]);
@@ -38,7 +38,7 @@ onSeg("set-theme", (theme) => settings.updateSettings({ theme }));
 /* ---------- start screen (this device): "auto" = the tracker on a touch screen (a phone), home otherwise ---------- */
 
 const startPref = async () => (await db.getDevice("start"))?.value ?? "auto";
-const resolveStart = (pref) => (pref === "auto" ? (matchMedia("(pointer: coarse)").matches ? "tracker" : "home") : isView(pref) ? pref : "home");
+const resolveStart = (pref) => (pref === "auto" ? (isTouch() ? "tracker" : "home") : isView(pref) ? pref : "home");
 
 onSeg("set-start", (value) => {
   markSeg("set-start", value);

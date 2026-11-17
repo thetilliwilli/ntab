@@ -1,7 +1,7 @@
 /* the Tracker app: tiles that log events (a moment) or activities (a start and a finish, with a duration) */
 
 import * as model from "./model.js";
-import { $, el, fmtDuration, sortable } from "../../shared/util.js";
+import { $, el, fmtDuration, isTouch, sortable } from "../../shared/util.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 const hms = (t) => {
@@ -189,7 +189,7 @@ function openTime(e, field) {
   timeMsg("");
   $("tr-time").showModal();
   // a phone would open its keyboard over the sheet: there the field is focused only when tapped
-  if (!matchMedia("(pointer: coarse)").matches) $("tr-time-hm").select();
+  if (!isTouch()) $("tr-time-hm").select();
   else $("tr-time-form").querySelector("button[type=submit]").focus();
 }
 

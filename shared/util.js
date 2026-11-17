@@ -1,5 +1,12 @@
 export const $ = (id) => document.getElementById(id);
 
+/* a touch screen (a phone): focusing a text field there opens the keyboard over half the screen */
+export const isTouch = () => matchMedia("(pointer: coarse)").matches;
+
+/* focus that is only a convenience (a screen or a list came up): not on a touch screen, where it would open the
+   keyboard nobody asked for; focus after an explicit "type here" action (a new note, rename) stays plain focus() */
+export const autoFocus = (node) => isTouch() || node.focus();
+
 export function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;

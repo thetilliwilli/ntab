@@ -5,7 +5,7 @@ import * as editor from "./editor.js";
 import { initTabbar } from "./tabbar.js";
 import { initFilesDialog, initClosePanel, showInlineFiles } from "./dialogs.js";
 import { getSettings, updateSettings, subscribeSettings } from "../../shared/settings.js";
-import { $ } from "../../shared/util.js";
+import { $, autoFocus } from "../../shared/util.js";
 
 let ready = false; // notes.start() has run
 
@@ -70,8 +70,8 @@ export default {
   },
 
   show() {
-    if (ready && notes.getOrder().length) editor.focus();
-    else if (ready) $("nothing-filter").focus();
+    if (ready && notes.getOrder().length) autoFocus($("text"));
+    else if (ready) autoFocus($("nothing-filter"));
   },
 
   flush: () => notes.flushAll(),

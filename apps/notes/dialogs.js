@@ -1,7 +1,7 @@
 /* the list of notes ([+] dialog and the no-open-tabs screen), and the non-modal "close tab as…" panel */
 
 import * as notes from "./notes.js";
-import { $, el, extStart, fmtTime, fmtSize } from "../../shared/util.js";
+import { $, autoFocus, el, extStart, fmtTime, fmtSize } from "../../shared/util.js";
 
 /* ---------- note list: [+] dialog and the no-open-tabs screen ---------- */
 
@@ -90,13 +90,13 @@ export function initFilesDialog() {
 
 function openFiles() {
   dlg.showModal();
-  $("files-filter").focus();
+  autoFocus($("files-filter"));
   return dialogFiles.load();
 }
 
 /* fills the no-open-tabs screen */
 export function showInlineFiles() {
-  $("nothing-filter").focus();
+  autoFocus($("nothing-filter"));
   return inlineFiles.load();
 }
 
